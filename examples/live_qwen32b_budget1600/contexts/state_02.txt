@@ -1,0 +1,160 @@
+Investigation progress:
+Counts are per area; overlapping areas must not be added together.
+- Study_area contains 2400 analysis grid locations: 1115 queried, 1285 not queried.
+  1104 queried locations have valid data; 11 have missing data.
+  Valid records: 1085 have cell coverage; 19 have no cell coverage; 431 have other cells but no D0.
+- S1 contains 36 analysis grid locations: 36 queried, 0 not queried.
+  35 queried locations have valid data; 1 have missing data.
+  Valid records: 33 have cell coverage; 2 have no cell coverage; 0 have other cells but no D0.
+- S2 contains 200 analysis grid locations: 36 queried, 164 not queried.
+  All 36 queried locations have valid data.
+  Valid records: 36 have cell coverage; 0 have no cell coverage; 16 have other cells but no D0.
+- S3 contains 48 analysis grid locations: 18 queried, 30 not queried.
+  All 18 queried locations have valid data.
+  Valid records: 17 have cell coverage; 1 have no cell coverage; 17 have other cells but no D0.
+- H1_buffer contains 88 analysis grid locations: 88 queried, 0 not queried.
+  87 queried locations have valid data; 1 have missing data.
+  Valid records: 85 have cell coverage; 2 have no cell coverage; 25 have other cells but no D0.
+- H2_buffer contains 192 analysis grid locations: 192 queried, 0 not queried.
+  190 queried locations have valid data; 2 have missing data.
+  Valid records: 185 have cell coverage; 5 have no cell coverage; 16 have other cells but no D0.
+- F1 contains 240 analysis grid locations: 240 queried, 0 not queried.
+  237 queried locations have valid data; 3 have missing data.
+  Valid records: 232 have cell coverage; 5 have no cell coverage; 178 have other cells but no D0.
+- V1 contains 247 analysis grid locations: 247 queried, 0 not queried.
+  243 queried locations have valid data; 4 have missing data.
+  Valid records: 238 have cell coverage; 5 have no cell coverage; 183 have other cells but no D0.
+- F2 contains 240 analysis grid locations: 0 queried, 240 not queried.
+- F3 contains 304 analysis grid locations: 304 queried, 0 not queried.
+  302 queried locations have valid data; 2 have missing data.
+  Valid records: 300 have cell coverage; 2 have no cell coverage; 20 have other cells but no D0.
+- F4 contains 104 analysis grid locations: 104 queried, 0 not queried.
+  All 104 queried locations have valid data.
+  Valid records: 104 have cell coverage; 0 have no cell coverage; 17 have other cells but no D0.
+- F5 contains 156 analysis grid locations: 130 queried, 26 not queried.
+  129 queried locations have valid data; 1 have missing data.
+  Valid records: 125 have cell coverage; 4 have no cell coverage; 0 have other cells but no D0.
+- F6 contains 65 analysis grid locations: 0 queried, 65 not queried.
+- F7 contains 80 analysis grid locations: 0 queried, 80 not queried.
+- F8 contains 240 analysis grid locations: 0 queried, 240 not queried.
+- W1 contains 440 analysis grid locations: 0 queried, 440 not queried.
+- S2_roadside contains 40 analysis grid locations: 36 queried, 4 not queried.
+  All 36 queried locations have valid data.
+  Valid records: 36 have cell coverage; 0 have no cell coverage; 16 have other cells but no D0.
+- S2_remaining contains 160 analysis grid locations: 0 queried, 160 not queried.
+
+Key areas with unqueried locations:
+- S2: 164 unqueried locations; 4 of them border a queried location where D0 is present.
+- S3: 30 unqueried locations; 0 of them border a queried location where D0 is present.
+- F2: 240 unqueried locations; 0 of them border a queried location where D0 is present.
+- F5: 26 unqueried locations; 26 of them border a queried location where D0 is present.
+- F6: 65 unqueried locations; 0 of them border a queried location where D0 is present.
+- F7: 80 unqueried locations; 4 of them border a queried location where D0 is present.
+- F8: 240 unqueried locations; 0 of them border a queried location where D0 is present.
+- W1: 440 unqueried locations; 0 of them border a queried location where D0 is present.
+
+Coverage observations:
+Query boundary rule: within each area, a queried grid location is on the query boundary if at least one of its four orthogonal grid neighbors in the same area is unqueried. Signal presence never selects the boundary.
+Missing boundary records are unknown, not target-absent observations.
+- Study_area: D0 is present at 654 of the 1115 queried locations.
+  Its RSRP at these locations ranges from -111 to -80.47 dBm.
+  Along the query boundary facing the unqueried interior, D0 is present at 45 of 127 boundary locations (126 valid, 1 missing).
+  Coverage in the unqueried interior remains unknown.
+  Coverage at locations with missing data also remains unknown.
+- S1: D0 is present at 33 of the 36 queried locations.
+  Its RSRP at these locations ranges from -87.96 to -80.47 dBm.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- S2: D0 is present at 20 of the 36 queried locations.
+  Its RSRP at these locations ranges from -111 to -104 dBm.
+  Along the query boundary facing the unqueried interior, D0 is present at 4 of 11 boundary locations (11 valid, 0 missing).
+  Coverage in the unqueried interior remains unknown.
+- S3: D0 is present at 0 of the 18 queried locations.
+  Along the query boundary facing the unqueried interior, D0 is present at 0 of 10 boundary locations (10 valid, 0 missing).
+  Coverage in the unqueried interior remains unknown.
+- H1_buffer: D0 is present at 60 of the 88 queried locations.
+  Its RSRP at these locations ranges from -107.6 to -80.47 dBm.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- H2_buffer: D0 is present at 169 of the 192 queried locations.
+  Its RSRP at these locations ranges from -111 to -80.47 dBm.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- F1: D0 is present at 54 of the 240 queried locations.
+  Its RSRP at these locations ranges from -108.79 to -94.38 dBm.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- V1: D0 is present at 55 of the 247 queried locations.
+  Its RSRP at these locations ranges from -108.79 to -94.38 dBm.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- F2: coverage is unknown; no locations queried.
+- F3: D0 is present at 280 of the 304 queried locations.
+  Its RSRP at these locations ranges from -108.79 to -84.31 dBm.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- F4: D0 is present at 87 of the 104 queried locations.
+  Its RSRP at these locations ranges from -108.65 to -86.37 dBm.
+  No queried/unqueried interior boundary exists in this area.
+- F5: D0 is present at 125 of the 130 queried locations.
+  Its RSRP at these locations ranges from -109.1 to -88.43 dBm.
+  Along the query boundary facing the unqueried interior, D0 is present at 26 of 26 boundary locations (26 valid, 0 missing).
+  Coverage in the unqueried interior remains unknown.
+  Coverage at locations with missing data also remains unknown.
+- F6: coverage is unknown; no locations queried.
+- F7: coverage is unknown; no locations queried.
+- F8: coverage is unknown; no locations queried.
+- W1: coverage is unknown; no locations queried.
+- S2_roadside: D0 is present at 20 of the 36 queried locations.
+  Its RSRP at these locations ranges from -111 to -104 dBm.
+  Along the query boundary facing the unqueried interior, D0 is present at 0 of 5 boundary locations (5 valid, 0 missing).
+  Coverage in the unqueried interior remains unknown.
+- S2_remaining: coverage is unknown; no locations queried.
+
+Impact and backup analysis:
+Backup candidates seen in coverage records: B1, B2, B3.
+Backup selection, traffic transfer, and load estimation have not been performed.
+
+Remaining unknowns:
+- Study_area: coverage at 1285 unqueried locations is unknown.
+- Study_area: coverage at 11 queried locations with missing data is unknown.
+- S1: coverage at 1 queried locations with missing data is unknown.
+- S2: coverage at 164 unqueried locations is unknown.
+- S3: coverage at 30 unqueried locations is unknown.
+- H1_buffer: coverage at 1 queried locations with missing data is unknown.
+- H2_buffer: coverage at 2 queried locations with missing data is unknown.
+- F1: coverage at 3 queried locations with missing data is unknown.
+- V1: coverage at 4 queried locations with missing data is unknown.
+- F2: coverage at 240 unqueried locations is unknown.
+- F3: coverage at 2 queried locations with missing data is unknown.
+- F5: coverage at 26 unqueried locations is unknown.
+- F5: coverage at 1 queried locations with missing data is unknown.
+- F6: coverage at 65 unqueried locations is unknown.
+- F7: coverage at 80 unqueried locations is unknown.
+- F8: coverage at 240 unqueried locations is unknown.
+- W1: coverage at 440 unqueried locations is unknown.
+- S2_roadside: coverage at 4 unqueried locations is unknown.
+- S2_remaining: coverage at 160 unqueried locations is unknown.
+- Pre-outage KPI is incomplete for backup candidates: B1 has no prb_utilization or capacity; B2 has no prb_utilization or capacity; B3 has no prb_utilization or capacity.
+- Backup selection, traffic transfer and load have not been computed.
+- Coverage beyond the study area is unknown.
+- Land-use labels do not establish population or complete network demand.
+- Investigation sufficiency is unknown until a finish passes the completion checks.
+
+Actions allowed now (phase backup): coverage.query, kpi.query, inspect_observation, finish.
+Query budget: 1115 of 1600 locations used; 485 remain. A coverage query costs the locations it adds for the first time.
+
+Evidence provenance:
+- obs_01_F3: observations/obs_01_F3.json; area F3; 304 returned locations.
+- obs_01_F4: observations/obs_01_F4.json; area F4; 104 returned locations.
+- obs_01_H1_buffer: observations/obs_01_H1_buffer.json; area H1_buffer; 88 returned locations.
+- obs_01_S1: observations/obs_01_S1.json; area S1; 36 returned locations.
+- obs_02_F1: observations/obs_02_F1.json; area F1; 240 returned locations.
+- obs_02_H2_buffer: observations/obs_02_H2_buffer.json; area H2_buffer; 192 returned locations.
+- obs_02_V1: observations/obs_02_V1.json; area V1; 247 returned locations.
+The state evidence index maps each queried location to its observation; full cell lists and measurements remain in those query results.
+
+Feedback from the last two rounds:
+- None.
+
+Reply with your next decision in the three-line decision format of the skill.

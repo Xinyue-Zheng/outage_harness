@@ -1,0 +1,15 @@
+action: coverage.query
+parameters: {"areas": ["F7", "H1_buffer", "H2_buffer", "S3"], "epoch": "pre_outage"}
+gap: {"targets": ["F7", "H1_buffer", "H2_buffer", "S3"], "question": "Does D0 reach south of S2, along both corridors, or into S3?"}
+
+action: kpi.query
+parameters: {"cells": ["B1", "B2", "B3"], "window": "pre_outage", "indicators": ["prb_utilization", "capacity"]}
+gap: {"targets": ["B1", "B2", "B3"], "question": "What were the pre-outage PRB utilization and capacity of the backup candidates B1, B2 and B3?"}
+
+action: impact.estimate
+parameters: {"scope": "Study_area", "min_rsrp_dbm": -112, "min_rsrq_db": -16}
+gap: {"targets": ["Study_area"], "question": "For every queried location where D0 was present, which backup cell takes its traffic, and what load results?"}
+
+action: finish
+parameters: {}
+gap: {"targets": ["F2", "F8", "W1"], "question": "The query boundary no longer shows D0 and the backup load is estimated; F2, F8 and W1 are left unqueried because none of their locations borders a queried D0 location."}

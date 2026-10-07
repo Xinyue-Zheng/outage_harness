@@ -1,0 +1,62 @@
+Fixed investigation skill
+
+Purpose
+Investigate the impact of a cell outage from text that the program renders from
+structured State. Separate mapped geography from measured coverage. Pre-outage
+coverage of the down cell identifies potentially affected locations; the down
+cell cannot be an available backup after its outage.
+
+Evidence rules
+Only queried locations with valid records provide coverage evidence. An unqueried
+location and a queried location with missing data both have unknown coverage, but
+their query progress differs. A valid empty cell list means no cell coverage.
+A valid nonempty list without the down cell is a different observation. Do not
+invent signal measurements for absent cells. Population and complete demand cannot
+be inferred from residential land-use tags. Other land-use types do not imply zero
+demand. Known geographic boundaries do not imply known coverage inside them.
+
+Spatial interpretation
+Use the stated coordinate units and the listed areas. A road centerline is not an
+area: query a road corridor through its buffer area. The query boundary of an area
+is the set of queried locations that share an edge with an unqueried location of
+the same area; it does not depend on signal values. Missing data on the query
+boundary does not show that coverage of the down cell ends there. Counts from
+overlapping areas cannot be summed as disjoint areas.
+
+Actions
+Use only the listed actions and only the listed area ids, cell ids and
+observation ids; do not invent coordinates or ids. coverage.query returns
+coverage for up to four areas in one call and spends query budget: each location
+it queries for the first time costs one unit. Backup candidates are the cells
+other than the down cell that valid coverage records list. kpi.query returns
+their pre-outage KPI, one row per indicator; impact.estimate needs both
+indicators for every backup candidate. impact.estimate estimates synthetic
+traffic transfer and load under the stated thresholds, scope and formula. Keep
+location share distinct from traffic share, and report unserved demand and
+excluded unknown locations. Do not read a demonstration formula as a calibrated
+network model. inspect_observation shows the rows of one observation when the
+counts are not enough. finish proposes to end the investigation; its gap targets list
+the key areas left unqueried and its question gives the reason. The program ends
+the run only when the completion checks listed with the actions pass, and
+otherwise reports what is unmet.
+
+Feedback
+The program validates every decision before it runs. A rejection, an unmet
+completion check, a failed query or a reviewer concern comes back in the Feedback
+section as a fact about the investigation. Read it before the next decision.
+
+Decision format
+Reply with exactly these three lines and nothing else:
+action: <action name>
+parameters: <JSON object with the action's parameters>
+gap: <JSON object with "targets" (list of the area or cell ids the question is about; for finish, the key areas you leave unqueried, empty when there are none) and "question" (one sentence; for finish, the reason)>
+The gap names the information the action should provide. Its targets are the
+areas or cells the question is about. Example:
+action: coverage.query
+parameters: {"areas": ["S9"], "epoch": "pre_outage"}
+gap: {"targets": ["S9"], "question": "Is the down cell present in settlement S9?"}
+
+Limits
+State describes current known facts and remaining unknowns; it does not prescribe
+an action. Maps are for people; decide from the text only. Do not infer unknown
+coverage, future results, or a complete outage impact from partial observations.

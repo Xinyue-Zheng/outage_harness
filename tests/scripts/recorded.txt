@@ -1,0 +1,39 @@
+action: coverage.query
+parameters: {"areas": ["S1"], "epoch": "pre_outage"}
+gap: {"targets": ["S1"], "question": "Which locations in S1, the settlement nearest D0, had D0 coverage before the outage, and how strong was it?"}
+
+action: coverage.query
+parameters: {"areas": ["H1_buffer"], "epoch": "pre_outage"}
+gap: {"targets": ["H1_buffer"], "question": "H1 crosses S1 and S3. Does D0 coverage extend along the H1 corridor beyond S1?"}
+
+action: coverage.query
+parameters: {"areas": ["H2_buffer"], "epoch": "pre_outage"}
+gap: {"targets": ["H2_buffer"], "question": "H2 crosses S1 and S2. Does D0 coverage extend along the H2 corridor toward S2?"}
+
+action: coverage.query
+parameters: {"areas": ["S2_roadside"], "epoch": "pre_outage"}
+gap: {"targets": ["S2_roadside"], "question": "The H2 corridor shows D0 at its northern edge next to S2. Is D0 present in the five roadside rows of S2?"}
+
+action: coverage.query
+parameters: {"areas": ["S2_remaining"], "epoch": "pre_outage"}
+gap: {"targets": ["S2_remaining"], "question": "D0 is present at 4 of the 8 query-boundary locations facing the S2 interior. Does D0 coverage reach the interior of S2?"}
+
+action: coverage.query
+parameters: {"areas": ["S3"], "epoch": "pre_outage"}
+gap: {"targets": ["S3"], "question": "The H1 corridor has valid data up to S3. Is any location in S3 covered by D0?"}
+
+action: coverage.query
+parameters: {"areas": ["S2_roadside"], "epoch": "pre_outage"}
+gap: {"targets": ["S2_roadside"], "question": "Confirm the S2 roadside result before the backup analysis."}
+
+action: kpi.query
+parameters: {"cells": ["B1", "B2", "B3"], "window": "pre_outage", "indicators": ["prb_utilization", "capacity"]}
+gap: {"targets": ["B1", "B2", "B3"], "question": "What were the pre-outage PRB utilization and capacity of the backup candidates B1, B2 and B3?"}
+
+action: impact.estimate
+parameters: {"scope": "Study_area", "min_rsrp_dbm": -112, "min_rsrq_db": -16}
+gap: {"targets": ["Study_area"], "question": "For every queried location where D0 was present, which backup cell takes its traffic, and what load results?"}
+
+action: finish
+parameters: {}
+gap: {"targets": [], "question": "All key areas are queried and the backup load is estimated; is the investigation of the D0 outage complete?"}

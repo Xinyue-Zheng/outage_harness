@@ -1,0 +1,34 @@
+{
+  "run_id": "run_43e7359515d0",
+  "config": {
+    "data_version": null,
+    "step_cap": 30,
+    "query_budget_locations": 1600,
+    "time_cap_s": 1800.0,
+    "retry_cap": 3,
+    "rejection_cap": 5,
+    "repeated_query_threshold": 2,
+    "query_timeout_s": 30.0,
+    "boundary_d0_max_share": 0.0,
+    "include_recent_steps": false,
+    "recent_steps": 0,
+    "inspect_max_rows": 50,
+    "init_radius_m": 4000.0,
+    "grid_spacing_m": 100.0,
+    "write_maps": true
+  },
+  "decision_model": "qwen2.5-32b-instruct-awq at http://127.0.0.1:8012/v1",
+  "verifier_model": "qwen2.5-32b-instruct-awq at http://127.0.0.1:8012/v1",
+  "end_reason": "query_budget",
+  "counters": {
+    "step": 6,
+    "retries": 0,
+    "rejections": 1,
+    "queried_locations": 1526,
+    "elapsed_s": 28.373337738215923
+  },
+  "last_step": "steps/step_06.json",
+  "started_at": "2026-10-07T00:22:56.327106+00:00",
+  "ended_at": "2026-10-07T00:23:24.760911+00:00",
+  "resumed_from": null
+}

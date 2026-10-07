@@ -1,0 +1,631 @@
+{
+  "id": "obs_01",
+  "source": "synthetic",
+  "parameters": {
+    "area_id": "S1",
+    "geometry": {
+      "kind": "polygon",
+      "coordinates": [
+        [
+          800,
+          1000
+        ],
+        [
+          1400,
+          1000
+        ],
+        [
+          1400,
+          1600
+        ],
+        [
+          800,
+          1600
+        ]
+      ],
+      "buffer_width_m": null
+    },
+    "grid_ids": [
+      "G_r10_c08",
+      "G_r10_c09",
+      "G_r10_c10",
+      "G_r10_c11",
+      "G_r10_c12",
+      "G_r10_c13",
+      "G_r11_c08",
+      "G_r11_c09",
+      "G_r11_c10",
+      "G_r11_c11",
+      "G_r11_c12",
+      "G_r11_c13",
+      "G_r12_c08",
+      "G_r12_c09",
+      "G_r12_c10",
+      "G_r12_c11",
+      "G_r12_c12",
+      "G_r12_c13",
+      "G_r13_c08",
+      "G_r13_c09",
+      "G_r13_c10",
+      "G_r13_c11",
+      "G_r13_c12",
+      "G_r13_c13",
+      "G_r14_c08",
+      "G_r14_c09",
+      "G_r14_c10",
+      "G_r14_c11",
+      "G_r14_c12",
+      "G_r14_c13",
+      "G_r15_c08",
+      "G_r15_c09",
+      "G_r15_c10",
+      "G_r15_c11",
+      "G_r15_c12",
+      "G_r15_c13"
+    ],
+    "coordinate_system": "synthetic local planar coordinates in metres; not latitude/longitude",
+    "coverage_epoch": "pre_outage"
+  },
+  "result_status": "partial_missing",
+  "records": [
+    {
+      "grid_id": "G_r10_c08",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -85.07,
+          "rsrq_db": -9.84
+        }
+      ],
+      "down_cell_traffic_mbps": 0.63
+    },
+    {
+      "grid_id": "G_r10_c09",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -84.31,
+          "rsrq_db": -9.72
+        }
+      ],
+      "down_cell_traffic_mbps": 0.96
+    },
+    {
+      "grid_id": "G_r10_c10",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -84.31,
+          "rsrq_db": -9.72
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -90.96,
+          "rsrq_db": -10.36
+        }
+      ],
+      "down_cell_traffic_mbps": 1.29
+    },
+    {
+      "grid_id": "G_r10_c11",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -85.07,
+          "rsrq_db": -9.84
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -89.84,
+          "rsrq_db": -10.15
+        }
+      ],
+      "down_cell_traffic_mbps": 1.62
+    },
+    {
+      "grid_id": "G_r10_c12",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -86.37,
+          "rsrq_db": -10.06
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -88.87,
+          "rsrq_db": -9.98
+        }
+      ],
+      "down_cell_traffic_mbps": 0.52
+    },
+    {
+      "grid_id": "G_r10_c13",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -87.96,
+          "rsrq_db": -10.33
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -88.07,
+          "rsrq_db": -9.83
+        }
+      ],
+      "down_cell_traffic_mbps": 0.85
+    },
+    {
+      "grid_id": "G_r11_c08",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -83.42,
+          "rsrq_db": -9.57
+        }
+      ],
+      "down_cell_traffic_mbps": 1.4
+    },
+    {
+      "grid_id": "G_r11_c09",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -82.29,
+          "rsrq_db": -9.38
+        }
+      ],
+      "down_cell_traffic_mbps": 0.3
+    },
+    {
+      "grid_id": "G_r11_c10",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -82.29,
+          "rsrq_db": -9.38
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -89.84,
+          "rsrq_db": -10.15
+        }
+      ],
+      "down_cell_traffic_mbps": 0.63
+    },
+    {
+      "grid_id": "G_r11_c11",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -83.42,
+          "rsrq_db": -9.57
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -88.61,
+          "rsrq_db": -9.93
+        }
+      ],
+      "down_cell_traffic_mbps": 0.96
+    },
+    {
+      "grid_id": "G_r11_c12",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -85.07,
+          "rsrq_db": -9.84
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -87.5,
+          "rsrq_db": -9.73
+        }
+      ],
+      "down_cell_traffic_mbps": 1.29
+    },
+    {
+      "grid_id": "G_r11_c13",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -86.93,
+          "rsrq_db": -10.16
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -86.58,
+          "rsrq_db": -9.56
+        }
+      ],
+      "down_cell_traffic_mbps": 1.62
+    },
+    {
+      "grid_id": "G_r12_c08",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -82.29,
+          "rsrq_db": -9.38
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -91.79,
+          "rsrq_db": -10.51
+        }
+      ],
+      "down_cell_traffic_mbps": 0.74
+    },
+    {
+      "grid_id": "G_r12_c09",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -80.47,
+          "rsrq_db": -9.08
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -90.3,
+          "rsrq_db": -10.24
+        }
+      ],
+      "down_cell_traffic_mbps": 1.07
+    },
+    {
+      "grid_id": "G_r12_c10",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -80.47,
+          "rsrq_db": -9.08
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -88.87,
+          "rsrq_db": -9.98
+        }
+      ],
+      "down_cell_traffic_mbps": 1.4
+    },
+    {
+      "grid_id": "G_r12_c11",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -82.29,
+          "rsrq_db": -9.38
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -87.5,
+          "rsrq_db": -9.73
+        }
+      ],
+      "down_cell_traffic_mbps": 0.3
+    },
+    {
+      "grid_id": "G_r12_c12",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -84.31,
+          "rsrq_db": -9.72
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -86.25,
+          "rsrq_db": -9.5
+        }
+      ],
+      "down_cell_traffic_mbps": 0.63
+    },
+    {
+      "grid_id": "G_r12_c13",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -86.37,
+          "rsrq_db": -10.06
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -85.17,
+          "rsrq_db": -9.3
+        }
+      ],
+      "down_cell_traffic_mbps": 0.96
+    },
+    {
+      "grid_id": "G_r13_c08",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -82.29,
+          "rsrq_db": -9.38
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -91.18,
+          "rsrq_db": -10.4
+        }
+      ],
+      "down_cell_traffic_mbps": 1.51
+    },
+    {
+      "grid_id": "G_r13_c09",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -80.47,
+          "rsrq_db": -9.08
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -89.61,
+          "rsrq_db": -10.11
+        }
+      ],
+      "down_cell_traffic_mbps": 0.41
+    },
+    {
+      "grid_id": "G_r13_c10",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -80.47,
+          "rsrq_db": -9.08
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -88.07,
+          "rsrq_db": -9.83
+        }
+      ],
+      "down_cell_traffic_mbps": 0.74
+    },
+    {
+      "grid_id": "G_r13_c11",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -82.29,
+          "rsrq_db": -9.38
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -86.58,
+          "rsrq_db": -9.56
+        }
+      ],
+      "down_cell_traffic_mbps": 1.07
+    },
+    {
+      "grid_id": "G_r13_c12",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -84.31,
+          "rsrq_db": -9.72
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -85.17,
+          "rsrq_db": -9.3
+        }
+      ],
+      "down_cell_traffic_mbps": 1.4
+    },
+    {
+      "grid_id": "G_r13_c13",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -86.37,
+          "rsrq_db": -10.06
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -83.89,
+          "rsrq_db": -9.07
+        }
+      ],
+      "down_cell_traffic_mbps": 0.3
+    },
+    {
+      "grid_id": "G_r14_c08",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -83.42,
+          "rsrq_db": -9.57
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -90.75,
+          "rsrq_db": -10.32
+        }
+      ],
+      "down_cell_traffic_mbps": 0.85
+    },
+    {
+      "grid_id": "G_r14_c09",
+      "status": "missing",
+      "cells": [],
+      "down_cell_traffic_mbps": null
+    },
+    {
+      "grid_id": "G_r14_c10",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -82.29,
+          "rsrq_db": -9.38
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -87.5,
+          "rsrq_db": -9.73
+        }
+      ],
+      "down_cell_traffic_mbps": 1.51
+    },
+    {
+      "grid_id": "G_r14_c11",
+      "status": "valid",
+      "cells": [],
+      "down_cell_traffic_mbps": 0.0
+    },
+    {
+      "grid_id": "G_r14_c12",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -85.07,
+          "rsrq_db": -9.84
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -84.35,
+          "rsrq_db": -9.15
+        }
+      ],
+      "down_cell_traffic_mbps": 0.74
+    },
+    {
+      "grid_id": "G_r14_c13",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -86.93,
+          "rsrq_db": -10.16
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -82.86,
+          "rsrq_db": -8.88
+        }
+      ],
+      "down_cell_traffic_mbps": 1.07
+    },
+    {
+      "grid_id": "G_r15_c08",
+      "status": "valid",
+      "cells": [],
+      "down_cell_traffic_mbps": 0.0
+    },
+    {
+      "grid_id": "G_r15_c09",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -84.31,
+          "rsrq_db": -9.72
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -88.87,
+          "rsrq_db": -9.98
+        }
+      ],
+      "down_cell_traffic_mbps": 0.52
+    },
+    {
+      "grid_id": "G_r15_c10",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -84.31,
+          "rsrq_db": -9.72
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -87.2,
+          "rsrq_db": -9.67
+        }
+      ],
+      "down_cell_traffic_mbps": 0.85
+    },
+    {
+      "grid_id": "G_r15_c11",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -85.07,
+          "rsrq_db": -9.84
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -85.55,
+          "rsrq_db": -9.37
+        }
+      ],
+      "down_cell_traffic_mbps": 1.18
+    },
+    {
+      "grid_id": "G_r15_c12",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -86.37,
+          "rsrq_db": -10.06
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -83.89,
+          "rsrq_db": -9.07
+        }
+      ],
+      "down_cell_traffic_mbps": 1.51
+    },
+    {
+      "grid_id": "G_r15_c13",
+      "status": "valid",
+      "cells": [
+        {
+          "cell_id": "D0",
+          "rsrp_dbm": -87.96,
+          "rsrq_db": -10.33
+        },
+        {
+          "cell_id": "B1",
+          "rsrp_dbm": -82.25,
+          "rsrq_db": -8.77
+        }
+      ],
+      "down_cell_traffic_mbps": 0.41
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+I think the next useful step is to look at the settlement nearest to the down cell, because a rural cell often covers a wide area and the nearest settlement is where most users are likely to be.
+
+action: coverage.scan
+parameters: {"areas": ["S1"], "epoch": "pre_outage"}
+gap: {"targets": ["S1"], "question": "Where does D0 cover S1?"}
+
+action: coverage.query
+parameters: {"areas": ["S4"], "epoch": "pre_outage"}
+gap: {"targets": ["S1"], "question": "Is D0 present in the settlement S4?"}
+
+action: impact.estimate
+parameters: {"scope": "Study_area", "min_rsrp_dbm": -112, "min_rsrq_db": -16}
+gap: {"targets": ["Study_area"], "question": "Which backup cells take the traffic of D0?"}
+
+action: coverage.query
+parameters: {"areas": ["S1"], "epoch": "pre_outage"}
+gap: {"targets": ["S1"], "question": "Which locations in S1, the settlement nearest D0, had D0 coverage before the outage?"}
+
+action: kpi.query
+parameters: {"cells": ["B1"], "window": "pre_outage", "indicators": ["prb_utilization", "capacity"]}
+gap: {"targets": ["S1"], "question": "How loaded is S1 before the outage?"}
+
+action: coverage.query
+parameters: {"areas": ["S2_roadside"], "epoch": "pre_outage"}
+gap: {"targets": ["S2_roadside"], "question": "Is D0 present in the roadside rows of S2?"}
+
+action: coverage.query
+parameters: {"areas": ["H2_buffer"], "epoch": "pre_outage"}
+gap: {"targets": ["S2_roadside"], "question": "Which roadside locations of S2 have no coverage data yet?"}
+
+action: coverage.query
+parameters: {"areas": ["S1"], "epoch": "pre_outage"}
+gap: {"targets": ["S1"], "question": "Check the S1 coverage once more."}

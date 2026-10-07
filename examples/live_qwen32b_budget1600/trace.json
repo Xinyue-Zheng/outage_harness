@@ -1,0 +1,31 @@
+{
+  "run_id": "run_43e7359515d0",
+  "config": {
+    "data_version": null,
+    "step_cap": 30,
+    "query_budget_locations": 1600,
+    "time_cap_s": 1800.0,
+    "retry_cap": 3,
+    "rejection_cap": 5,
+    "repeated_query_threshold": 2,
+    "query_timeout_s": 30.0,
+    "boundary_d0_max_share": 0.0,
+    "include_recent_steps": false,
+    "recent_steps": 0,
+    "inspect_max_rows": 50,
+    "init_radius_m": 4000.0,
+    "grid_spacing_m": 100.0,
+    "write_maps": true
+  },
+  "initial_state": "states/state_00.json",
+  "prefix": "contexts/prefix.txt",
+  "steps": [
+    "steps/step_01.json",
+    "steps/step_02.json",
+    "steps/step_03.json",
+    "steps/step_04.json",
+    "steps/step_05.json",
+    "steps/step_06.json"
+  ],
+  "end_reason": "query_budget"
+}

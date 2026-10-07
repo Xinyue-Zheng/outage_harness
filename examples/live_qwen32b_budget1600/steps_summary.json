@@ -1,0 +1,224 @@
+[
+ {
+  "index": 1,
+  "validation": "accepted",
+  "validation_message": null,
+  "action": "coverage.query",
+  "parameters": {
+   "areas": [
+    "S1",
+    "H1_buffer",
+    "F3",
+    "F4"
+   ],
+   "epoch": "pre_outage"
+  },
+  "gap": {
+   "targets": [
+    "S1",
+    "H1_buffer",
+    "F3",
+    "F4"
+   ],
+   "question": "Are the down cell and other backup candidates present in these areas?"
+  },
+  "review": "agree",
+  "review_reason": "The proposed action aims to gather necessary coverage information from key areas that have not yet been queried, which is a logical next step.",
+  "outcome": "obs_01 ok (F3 ok, F4 ok, H1_buffer ok, S1 ok)",
+  "counters": {
+   "step": 1,
+   "retries": 0,
+   "rejections": 0,
+   "queried_locations": 462,
+   "elapsed_s": 4.9031722620129585
+  },
+  "notes_added": []
+ },
+ {
+  "index": 2,
+  "validation": "accepted",
+  "validation_message": null,
+  "action": "coverage.query",
+  "parameters": {
+   "areas": [
+    "H2_buffer",
+    "F1",
+    "V1"
+   ],
+   "epoch": "pre_outage"
+  },
+  "gap": {
+   "targets": [
+    "H2_buffer",
+    "F1",
+    "V1"
+   ],
+   "question": "What is the coverage of D0 and other cells in these areas?"
+  },
+  "review": "agree",
+  "review_reason": "The State shows that these areas contain unqueried locations that border queried locations with D0 coverage, making their coverage relevant to the investigation.",
+  "outcome": "obs_02 ok (F1 ok, H2_buffer ok, V1 ok)",
+  "counters": {
+   "step": 2,
+   "retries": 0,
+   "rejections": 0,
+   "queried_locations": 1115,
+   "elapsed_s": 10.398711621761322
+  },
+  "notes_added": []
+ },
+ {
+  "index": 3,
+  "validation": "accepted",
+  "validation_message": null,
+  "action": "kpi.query",
+  "parameters": {
+   "cells": [
+    "B1",
+    "B2",
+    "B3"
+   ],
+   "window": "pre_outage",
+   "indicators": [
+    "prb_utilization",
+    "capacity"
+   ]
+  },
+  "gap": {
+   "targets": [
+    "B1",
+    "B2",
+    "B3"
+   ],
+   "question": "What are the pre-outage KPI values for the backup candidates?"
+  },
+  "review": "agree",
+  "review_reason": "The State shows that pre-outage KPI values for the backup candidates B1, B2, and B3 are incomplete, which is necessary for the impact estimation.",
+  "outcome": "obs_03 ok (B1 ok, B2 ok, B3 ok)",
+  "counters": {
+   "step": 3,
+   "retries": 0,
+   "rejections": 0,
+   "queried_locations": 1115,
+   "elapsed_s": 16.87449454329908
+  },
+  "notes_added": []
+ },
+ {
+  "index": 4,
+  "validation": "accepted",
+  "validation_message": null,
+  "action": "coverage.query",
+  "parameters": {
+   "areas": [
+    "F2",
+    "F5",
+    "F6",
+    "F7"
+   ],
+   "epoch": "pre_outage"
+  },
+  "gap": {
+   "targets": [
+    "F2",
+    "F5",
+    "F6",
+    "F7"
+   ],
+   "question": "What is the coverage of D0 and other cells in these areas?"
+  },
+  "review": "agree",
+  "review_reason": "The State shows unqueried locations in F2, F5, F6, and F7 that border queried locations where D0 is present, making their coverage relevant to the investigation.",
+  "outcome": "obs_04 ok (F2 ok, F5 ok, F6 ok, F7 ok)",
+  "counters": {
+   "step": 4,
+   "retries": 0,
+   "rejections": 0,
+   "queried_locations": 1526,
+   "elapsed_s": 21.131666788831353
+  },
+  "notes_added": []
+ },
+ {
+  "index": 5,
+  "validation": "rejected",
+  "validation_message": "finish lists S2_remaining as left unqueried, but the key areas with unqueried locations are: F8, S2, S3, W1",
+  "action": "finish",
+  "parameters": {},
+  "gap": {
+   "targets": [
+    "S2",
+    "S3",
+    "F8",
+    "W1",
+    "S2_remaining"
+   ],
+   "question": "Insufficient budget to query all key areas that border D0."
+  },
+  "review": "not_run",
+  "review_reason": null,
+  "outcome": "rejected: gap_contradicted",
+  "counters": {
+   "step": 5,
+   "retries": 0,
+   "rejections": 1,
+   "queried_locations": 1526,
+   "elapsed_s": 24.346418138593435
+  },
+  "notes_added": [
+   {
+    "kind": "rejected",
+    "step_index": 5,
+    "text": "gap_contradicted: finish lists S2_remaining as left unqueried, but the key areas with unqueried locations are: F8, S2, S3, W1"
+   }
+  ]
+ },
+ {
+  "index": 6,
+  "validation": "accepted",
+  "validation_message": null,
+  "action": "finish",
+  "parameters": {},
+  "gap": {
+   "targets": [
+    "F8",
+    "S2",
+    "S3",
+    "W1"
+   ],
+   "question": "Insufficient budget to query all key areas bordering D0."
+  },
+  "review": "concern",
+  "review_reason": "The State shows that S2 has unqueried locations bordering D0, violating the boundary check requirement.",
+  "outcome": "finish refused: unmet boundary, unmet backup_load, the boundary check cannot be met within the budget",
+  "counters": {
+   "step": 6,
+   "retries": 0,
+   "rejections": 1,
+   "queried_locations": 1526,
+   "elapsed_s": 28.373337738215923
+  },
+  "notes_added": [
+   {
+    "kind": "concern",
+    "step_index": 6,
+    "text": "The State shows that S2 has unqueried locations bordering D0, violating the boundary check requirement."
+   },
+   {
+    "kind": "unmet",
+    "step_index": 6,
+    "text": "unmet boundary: the down cell is present at 4 of 111 query-boundary locations (allowed share 0)"
+   },
+   {
+    "kind": "unmet",
+    "step_index": 6,
+    "text": "unmet backup_load: impact.estimate has not been computed"
+   },
+   {
+    "kind": "unmet",
+    "step_index": 6,
+    "text": "the boundary check cannot be met within the budget: S2 is the cheapest key area whose unqueried locations border D0 and it would cost 164 locations, but only 74 remain"
+   }
+  ]
+ }
+]

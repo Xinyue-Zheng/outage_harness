@@ -164,6 +164,47 @@ the same arguments. The State method alone: `uv run python -m outage_poc ...`.
 Run them with `uv run python -m unittest discover -s tests -p "test_transcript.py"`.
 The full suite (81 tests, 1 skipped without an endpoint) passes with the new files.
 
+## Results so far (one live run per setting, 2026-10-08)
+
+Qwen2.5-32B-Instruct-AWQ for both model nodes, temperature 0, step cap 30,
+boundary share 0, condition A for the State method. Folders:
+`outputs/compare_live_1600/` and `outputs/compare_live_2400/`.
+
+| Budget | Method | End | Rounds | Rejections | Queried | Input tokens, max / total |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1,600 | state_context | query_budget | 6 | 1 | 1,526 | 6,397 / 35,602 |
+| 1,600 | transcript_context | query_budget | 8 | 4 | 1,575 | 14,229 / 68,425 |
+| 2,400 | state_context | repeated_query | 6 | 0 | 2,126 | 6,579 / 35,718 |
+| 2,400 | transcript_context | complete | 13 | 4 | 2,400 | 19,027 / 157,169 |
+
+What the runs show, and what they do not:
+
+- Input size: the State rendering stays between 4.9k and 6.6k tokens per round
+  in every run; the transcript grows every round and reaches 19k tokens by round
+  13. Over a run the transcript costs 2 to 4 times the input tokens. No
+  compaction fired (threshold 20k), so the transcript method ran uncompacted.
+- Rejections: 4 per run with the transcript against 0 or 1 with the State
+  rendering. The transcript's first decision in both runs was `cell.lookup`, an
+  initialization action, because nothing in the transcript says initialization
+  already ran; the State rendering names the phase and the allowed actions. The
+  other rejections were gap-versus-State contradictions and a malformed
+  drill-down parameter, facts the State rendering states and the transcript
+  leaves to the model to infer from raw rows.
+- Outcome at 1,600: both end `query_budget`. The State method spent 1,526
+  locations in 4 queries and then proposed a finish naming the unaffordable
+  areas; the transcript method spent 1,575 in 5 queries, one of them a re-query
+  of an area it had already queried (round 7, F3, 0 new locations).
+- Outcome at 2,400: the transcript method completed in 13 rounds by querying
+  every area, then KPI, then impact. The State method ended on the
+  repeated-query guard: it proposed the same query in rounds 5 and 6 after a
+  verifier concern on round 5. In condition A the model does not see its own
+  previous decision, only the concern about it; condition B (recent steps in the
+  context) exists for this case and was not run here. The earlier run G with the
+  same settings completed, so this outcome is within run-to-run variation.
+- These are single runs. Repeat each setting, and run condition B, before
+  comparing end reasons; the token and rejection differences are stable across
+  the two budgets, the end reasons are not.
+
 ## What the live comparison measures
 
 Per method, from `comparison.md`: the typed end reason, rounds, rejections,

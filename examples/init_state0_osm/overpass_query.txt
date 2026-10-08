@@ -1,0 +1,10 @@
+[out:json][timeout:240][bbox:39.81525,-88.12577,40.08475,-87.77423];
+(
+  node["place"~"^(city|town|village|hamlet)$"];
+  way["place"~"^(city|town|village|hamlet)$"];
+  way["landuse"~"^(residential|farmland|farmyard|orchard|vineyard|forest|industrial|commercial|retail|meadow|grass|reservoir|cemetery|quarry)$"];
+  relation["landuse"~"^(residential|farmland|forest|industrial)$"];
+  way["natural"~"^(wood|water|grassland|scrub)$"];
+  way["highway"~"^(motorway|trunk|primary|secondary)$"];
+);
+out geom;

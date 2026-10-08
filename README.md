@@ -4,7 +4,7 @@ This package runs the outage investigation system of the design in the UI reposi
 
 **Only the data is synthetic.** The four data actions are functions in a tool library that the loop calls by name through one client interface. The two model nodes call a real model through any OpenAI-compatible chat endpoint. The package has no dependencies beyond the standard library; the development tools are Ruff and ty.
 
-Session report with the live-run results: `REPORT_2026-10-06.md`. Example live run: `examples/live_qwen32b_budget1600/`.
+Session report with the live-run results: `REPORT_2026-10-06.md`. Example live run: `examples/live_qwen32b_budget1600/`. State 0 built from real OpenStreetMap data for a rural Illinois site: `examples/init_state0_osm/`.
 
 ## The loop
 

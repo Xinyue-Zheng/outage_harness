@@ -1,0 +1,146 @@
+Task:
+Investigate the outage impact of cell C-IL-0042.
+Outage time: 2026-03-02T06:40:00Z. Coverage epoch: before the outage time.
+Site of C-IL-0042: lat 39.95, lon -87.95 (x 15000.0 m, y 15000.0 m in the local frame). Environment class: rural.
+
+Study area:
+initial_window_by_environment[rural] = 30000 m square centered on the site. Bounds: lat 39.8153 to 40.0847, lon -88.1258 to -87.7742. Analysis grid: 300 x 300 locations at 100 m spacing; 90000 locations in total. Coordinates are local metres, not latitude/longitude.
+
+Known geography (from OpenStreetMap; a land-use label says what the map shows, never how many people or how much traffic there is):
+Mapped grid cells by label: settlement 3148, industrial_commercial 406, water 155, forest 1068, farmland 69791, grassland 386, unmapped 15046.
+Unmapped means no OpenStreetMap polygon covers the location; it is an area to query like any other.
+
+Areas (each resolves to a fixed set of grid locations; counts of overlapping areas must not be added together):
+- S01 [settlement]: Hildreth (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 79 locations.
+- S02 [settlement]: Block (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 77 locations.
+- S03 [settlement]: Maizetown (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 79 locations.
+- S04 [settlement]: Fairmount (village): disc of radius 1000 m around the mapped place node, by the settlement rule. Resolves to 313 locations.
+- S05 [settlement]: Allerton (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 78 locations.
+- S06 [settlement]: State Road (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 78 locations.
+- S07 [settlement]: Sidney (village): disc of radius 1000 m around the mapped place node, by the settlement rule. Resolves to 311 locations.
+- S08 [settlement]: Tipton (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 78 locations.
+- S09 [settlement]: Rutherford (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 76 locations.
+- S10 [settlement]: Bongard (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 57 locations.
+- S11 [settlement]: Ryan (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 79 locations.
+- S12 [settlement]: Deers (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 66 locations.
+- S13 [settlement]: Fairland (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 79 locations.
+- S14 [settlement]: Broadlands (village): disc of radius 1000 m around the mapped place node, by the settlement rule. Resolves to 316 locations.
+- S15 [settlement]: Sidell (village): disc of radius 1000 m around the mapped place node, by the settlement rule. Resolves to 315 locations.
+- S16 [settlement]: Palermo (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 80 locations.
+- S17 [settlement]: Hastings (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 80 locations.
+- S18 [settlement]: Longview (village): disc of radius 1000 m around the mapped place node, by the settlement rule. Resolves to 312 locations.
+- S19 [settlement]: Archie (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 80 locations.
+- S20 [settlement]: Homer (village): disc of radius 1000 m around the mapped place node, by the settlement rule. Resolves to 315 locations.
+- S21 [settlement]: Bennett (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 79 locations.
+- S22 [settlement]: Jamaica (hamlet): disc of radius 500 m around the mapped place node, by the settlement rule. Resolves to 79 locations.
+- R02 [road_corridor]: CR 1350N (secondary): road-centerline buffer with full width 200 m, 5 mapped segments. Resolves to 65 locations.
+- R05 [road_corridor]: CR 2125E (secondary): road-centerline buffer with full width 200 m, 3 mapped segments. Resolves to 64 locations.
+- R06 [road_corridor]: CR 2200E (secondary): road-centerline buffer with full width 200 m, 2 mapped segments. Resolves to 88 locations.
+- R08 [road_corridor]: County Road 1000 North (secondary): road-centerline buffer with full width 200 m, 6 mapped segments. Resolves to 133 locations.
+- R09 [road_corridor]: County Road 1050 North (secondary): road-centerline buffer with full width 200 m, 5 mapped segments. Resolves to 95 locations.
+- R14 [road_corridor]: IL 49 (secondary): road-centerline buffer with full width 200 m, 32 mapped segments. Resolves to 633 locations.
+- B1a [block]: 5 km square, row 1 column 1 from the south-west corner. Mapped land use: farmland 95%, unmapped 4%, forest 1%, grassland 0%, water 0%. Resolves to 2500 locations.
+- B1b [block]: 5 km square, row 1 column 2 from the south-west corner. Mapped land use: farmland 91%, unmapped 8%, forest 1%, grassland 0%, water 0%. Resolves to 2500 locations.
+- B1c [block]: 5 km square, row 1 column 3 from the south-west corner. Mapped land use: farmland 94%, unmapped 5%, forest 0%. Resolves to 2500 locations.
+- B1d [block]: 5 km square, row 1 column 4 from the south-west corner. Mapped land use: unmapped 77%, farmland 23%, forest 0%. Resolves to 2500 locations.
+- B1e [block]: 5 km square, row 1 column 5 from the south-west corner. Mapped land use: unmapped 100%. Resolves to 2500 locations.
+- B1f [block]: 5 km square, row 1 column 6 from the south-west corner. Mapped land use: unmapped 100%. Resolves to 2500 locations.
+- B2a [block]: 5 km square, row 2 column 1 from the south-west corner. Mapped land use: farmland 87%, settlement 9%, unmapped 3%, forest 1%, water 0%. Resolves to 2500 locations.
+- B2b [block]: 5 km square, row 2 column 2 from the south-west corner. Mapped land use: farmland 89%, settlement 7%, unmapped 4%, forest 0%, grassland 0%. Resolves to 2500 locations.
+- B2c [block]: 5 km square, row 2 column 3 from the south-west corner. Mapped land use: farmland 90%, unmapped 4%, settlement 3%, grassland 1%, forest 1%, water 0%. Resolves to 2500 locations.
+- B2d [block]: 5 km square, row 2 column 4 from the south-west corner. Mapped land use: farmland 88%, unmapped 10%, grassland 1%, forest 0%. Resolves to 2500 locations.
+- B2e [block]: 5 km square, row 2 column 5 from the south-west corner. Mapped land use: farmland 66%, unmapped 28%, settlement 6%. Resolves to 2500 locations.
+- B2f [block]: 5 km square, row 2 column 6 from the south-west corner. Mapped land use: unmapped 50%, farmland 41%, settlement 6%, forest 3%, grassland 0%, water 0%. Resolves to 2500 locations.
+- B3a [block]: 5 km square, row 3 column 1 from the south-west corner. Mapped land use: farmland 92%, unmapped 5%, settlement 2%, forest 0%. Resolves to 2500 locations.
+- B3b [block]: 5 km square, row 3 column 2 from the south-west corner. Mapped land use: farmland 98%, unmapped 2%, forest 0%. Resolves to 2500 locations.
+- B3c [block]: 5 km square, row 3 column 3 from the south-west corner. Mapped land use: farmland 89%, settlement 9%, unmapped 1%. Resolves to 2500 locations.
+- B3d [block]: 5 km square, row 3 column 4 from the south-west corner. Mapped land use: farmland 90%, settlement 5%, unmapped 5%, grassland 0%. Resolves to 2500 locations.
+- B3e [block]: 5 km square, row 3 column 5 from the south-west corner. Mapped land use: farmland 93%, unmapped 5%, settlement 2%, forest 0%, grassland 0%. Resolves to 2500 locations.
+- B3f [block]: 5 km square, row 3 column 6 from the south-west corner. Mapped land use: farmland 81%, settlement 10%, unmapped 7%, forest 1%, water 0%, grassland 0%. Resolves to 2500 locations.
+- B4a [block]: 5 km square, row 4 column 1 from the south-west corner. Mapped land use: farmland 91%, unmapped 6%, settlement 3%, forest 0%. Resolves to 2500 locations.
+- B4b [block]: 5 km square, row 4 column 2 from the south-west corner. Mapped land use: farmland 96%, unmapped 4%. Resolves to 2500 locations.
+- B4c [block]: 5 km square, row 4 column 3 from the south-west corner. Mapped land use: farmland 94%, unmapped 6%, forest 0%. Resolves to 2500 locations.
+- B4d [block]: 5 km square, row 4 column 4 from the south-west corner. Mapped land use: farmland 97%, unmapped 3%, grassland 0%, forest 0%. Resolves to 2500 locations.
+- B4e [block]: 5 km square, row 4 column 5 from the south-west corner. Mapped land use: farmland 97%, unmapped 3%. Resolves to 2500 locations.
+- B4f [block]: 5 km square, row 4 column 6 from the south-west corner. Mapped land use: farmland 91%, settlement 6%, unmapped 2%, grassland 0%, forest 0%. Resolves to 2500 locations.
+- B5a [block]: 5 km square, row 5 column 1 from the south-west corner. Mapped land use: farmland 81%, settlement 10%, unmapped 7%, forest 1%, industrial_commercial 0%. Resolves to 2500 locations.
+- B5b [block]: 5 km square, row 5 column 2 from the south-west corner. Mapped land use: farmland 79%, unmapped 13%, settlement 6%, forest 1%, industrial_commercial 1%, water 0%. Resolves to 2500 locations.
+- B5c [block]: 5 km square, row 5 column 3 from the south-west corner. Mapped land use: farmland 86%, settlement 9%, unmapped 4%. Resolves to 2500 locations.
+- B5d [block]: 5 km square, row 5 column 4 from the south-west corner. Mapped land use: farmland 93%, unmapped 6%, settlement 1%, grassland 0%. Resolves to 2500 locations.
+- B5e [block]: 5 km square, row 5 column 5 from the south-west corner. Mapped land use: farmland 54%, unmapped 17%, industrial_commercial 13%, forest 9%, water 3%, grassland 2%, settlement 0%. Resolves to 2500 locations.
+- B5f [block]: 5 km square, row 5 column 6 from the south-west corner. Mapped land use: farmland 94%, unmapped 4%, settlement 1%, grassland 1%, forest 0%, water 0%. Resolves to 2500 locations.
+- B6a [block]: 5 km square, row 6 column 1 from the south-west corner. Mapped land use: farmland 84%, unmapped 9%, forest 5%, settlement 3%. Resolves to 2500 locations.
+- B6b [block]: 5 km square, row 6 column 2 from the south-west corner. Mapped land use: farmland 75%, unmapped 15%, forest 6%, settlement 3%, water 0%. Resolves to 2500 locations.
+- B6c [block]: 5 km square, row 6 column 3 from the south-west corner. Mapped land use: farmland 62%, unmapped 25%, forest 5%, settlement 5%, grassland 2%, water 1%. Resolves to 2500 locations.
+- B6d [block]: 5 km square, row 6 column 4 from the south-west corner. Mapped land use: farmland 73%, unmapped 22%, forest 3%, grassland 2%, water 0%, settlement 0%. Resolves to 2500 locations.
+- B6e [block]: 5 km square, row 6 column 5 from the south-west corner. Mapped land use: farmland 69%, unmapped 21%, settlement 4%, grassland 2%, industrial_commercial 2%, forest 1%, water 0%. Resolves to 2500 locations.
+- B6f [block]: 5 km square, row 6 column 6 from the south-west corner. Mapped land use: farmland 64%, unmapped 17%, settlement 14%, grassland 3%, forest 2%, water 0%, industrial_commercial 0%. Resolves to 2500 locations.
+
+Spatial relations:
+- R02 crosses S06. Evidence: corridor cells overlap the settlement disc (11 grid cells).
+- R05 crosses S07. Evidence: corridor cells overlap the settlement disc (7 grid cells).
+- R08 crosses S07. Evidence: corridor cells overlap the settlement disc (7 grid cells).
+- R08 crosses S09. Evidence: corridor cells overlap the settlement disc (18 grid cells).
+- R14 crosses S05. Evidence: corridor cells overlap the settlement disc (7 grid cells).
+- R14 crosses S06. Evidence: corridor cells overlap the settlement disc (20 grid cells).
+- R14 crosses S20. Evidence: corridor cells overlap the settlement disc (40 grid cells).
+- B2a contains part of S13. Evidence: 79 settlement grid cells inside the block.
+- B2a contains part of S18. Evidence: 142 settlement grid cells inside the block.
+- B2b contains part of S18. Evidence: 170 settlement grid cells inside the block.
+- B2c contains part of S14. Evidence: 81 settlement grid cells inside the block.
+- B2e contains part of S01. Evidence: 63 settlement grid cells inside the block.
+- B2e contains part of S16. Evidence: 80 settlement grid cells inside the block.
+- B2e contains part of S19. Evidence: 5 settlement grid cells inside the block.
+- B2f contains part of S01. Evidence: 16 settlement grid cells inside the block.
+- B2f contains part of S15. Evidence: 56 settlement grid cells inside the block.
+- B2f contains part of S19. Evidence: 75 settlement grid cells inside the block.
+- B3a contains part of S10. Evidence: 57 settlement grid cells inside the block.
+- B3c contains part of S14. Evidence: 235 settlement grid cells inside the block.
+- B3d contains part of S05. Evidence: 78 settlement grid cells inside the block.
+- B3d contains part of S17. Evidence: 40 settlement grid cells inside the block.
+- B3e contains part of S17. Evidence: 40 settlement grid cells inside the block.
+- B3f contains part of S15. Evidence: 259 settlement grid cells inside the block.
+- B4a contains part of S02. Evidence: 77 settlement grid cells inside the block.
+- B4f contains part of S03. Evidence: 79 settlement grid cells inside the block.
+- B4f contains part of S22. Evidence: 76 settlement grid cells inside the block.
+- B5a contains part of S07. Evidence: 252 settlement grid cells inside the block.
+- B5b contains part of S07. Evidence: 59 settlement grid cells inside the block.
+- B5b contains part of S09. Evidence: 76 settlement grid cells inside the block.
+- B5c contains part of S20. Evidence: 235 settlement grid cells inside the block.
+- B5d contains part of S20. Evidence: 30 settlement grid cells inside the block.
+- B5e contains part of S04. Evidence: 12 settlement grid cells inside the block.
+- B5f contains part of S04. Evidence: 25 settlement grid cells inside the block.
+- B5f contains part of S22. Evidence: 3 settlement grid cells inside the block.
+- B6a contains part of S12. Evidence: 66 settlement grid cells inside the block.
+- B6b contains part of S08. Evidence: 78 settlement grid cells inside the block.
+- B6c contains part of S06. Evidence: 78 settlement grid cells inside the block.
+- B6c contains part of S20. Evidence: 49 settlement grid cells inside the block.
+- B6d contains part of S20. Evidence: 1 settlement grid cells inside the block.
+- B6e contains part of S04. Evidence: 107 settlement grid cells inside the block.
+- B6f contains part of S04. Evidence: 169 settlement grid cells inside the block.
+- B6f contains part of S11. Evidence: 79 settlement grid cells inside the block.
+- B6f contains part of S21. Evidence: 79 settlement grid cells inside the block.
+
+Investigation progress:
+No coverage has been queried. Every area has 0 queried locations.
+Cells seen in coverage records: none yet; the down cell is the only known cell.
+Backup selection, traffic transfer and load estimation have not been performed.
+
+Remaining unknowns:
+- Coverage: unknown in all 64 areas (22 settlements, 6 road_corridors, 36 blocks); 90000 locations unqueried.
+- Backup cells: unknown until a coverage record lists a cell other than the down cell.
+- KPI: none queried. Impact: not computed.
+
+Scope of the investigation:
+You do not have to resolve every unknown. Decide which areas matter for the
+impact of C-IL-0042 and in what order, and stop when the evidence supports
+a result. When you choose finish, name the areas you leave unqueried in the gap
+targets and give the reason in the question. The program accepts a stop only if:
+- no query-boundary location of the study area shows the down cell (boundary rule),
+- every area left unqueried has no unqueried location bordering an observed
+  C-IL-0042 location, or is named with a reason (key-areas rule),
+- the backup load is estimated after the last coverage query (backup-load rule).
+Areas whose unqueried locations border observed down-cell coverage cannot be
+skipped; the program reports that border count for every open area after each query.
+
+Actions allowed now (phase coverage): coverage.query.

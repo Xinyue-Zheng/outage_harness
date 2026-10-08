@@ -4,7 +4,8 @@ Live:   uv run python -m outage_poc.run_transcript --output outputs/run_transcri
             --base-url http://127.0.0.1:8012/v1 --model qwen2.5-32b-instruct-awq \\
             --verifier-model qwen2.5-32b-instruct-awq
 Replay: add --script <file> to replace the decision model with recorded replies;
-        compaction then uses a deterministic head summary instead of a model.
+        the verifier then agrees with every decision and compaction uses a
+        deterministic head summary, so no model is called.
 
 The harness is the one `outage_poc.run` uses; only what the deciding model
 reads differs. Resume is not supported with this method.
@@ -16,7 +17,13 @@ from pathlib import Path
 
 from outage_poc.data_tools import synthetic_client
 from outage_poc.model import ChatEndpoint
-from outage_poc.models import CellId, ExecutionSource, RunConfig, RunResult, TaskInput
+from outage_poc.models import (
+    CellId,
+    ExecutionSource,
+    RunConfig,
+    RunResult,
+    TaskInput,
+)
 from outage_poc.run import (
     DECISION_MAX_TOKENS,
     MODEL_TIMEOUT_S,

@@ -103,8 +103,9 @@ Rules of the transcript method, taken from Codex CLI:
 
 ## How to run
 
-Scripted (no model; the decisions come from a file, so both methods produce the
-same States and the comparison shows only the input difference):
+Scripted (no model is called: the decisions come from a file, the verifier agrees
+with every decision and compaction uses a deterministic head summary, so both
+methods produce the same States and the comparison shows only the input difference):
 
 ```bash
 uv run python -m outage_poc.compare_contexts --output outputs/compare_scripted \

@@ -20,8 +20,11 @@ State in `src/outage_poc`.
   request body.
 - `LLM_input.txt`: the same text laid out as the two chat messages the program
   sends: the prefix as the system message, the variable part as the user message.
-- `context_02_inspection_excerpt.txt`: the drill-down rows of one observation,
-  read from the coverage table.
+- `state_02.json`: the snapshot after round 2, in which the model asked to
+  inspect `obs_01_S1`. Coverage is unchanged; only `inspection` is set.
+- `context_02.txt`: the full context rendered from `state_02.json` for round
+  3. It includes all 36 drill-down rows of `obs_01_S1`, read from the
+  coverage table.
 - `builder/state_model.py`: the State contracts, the loader that reads a
   snapshot and the geometry file it names (hash-checked), and the State facts
   the builder needs.

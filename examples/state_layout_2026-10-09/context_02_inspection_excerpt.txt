@@ -1,0 +1,14 @@
+Inspected rows 0 to 35 of 36 in obs_01_S1 (area S1), in grid order:
+- G_r10_c08: valid, D0 -85.07 dBm / -9.84 dB; synthetic down-cell traffic 0.63 Mbps
+- G_r10_c09: valid, D0 -84.31 dBm / -9.72 dB; synthetic down-cell traffic 0.96 Mbps
+- G_r10_c10: valid, D0 -84.31 dBm / -9.72 dB, B1 -90.96 dBm / -10.36 dB; synthetic down-cell traffic 1.29 Mbps
+- G_r10_c11: valid, D0 -85.07 dBm / -9.84 dB, B1 -89.84 dBm / -10.15 dB; synthetic down-cell traffic 1.62 Mbps
+- G_r10_c12: valid, D0 -86.37 dBm / -10.06 dB, B1 -88.87 dBm / -9.98 dB; synthetic down-cell traffic 0.52 Mbps
+- G_r10_c13: valid, D0 -87.96 dBm / -10.33 dB, B1 -88.07 dBm / -9.83 dB; synthetic down-cell traffic 0.85 Mbps
+- G_r11_c08: valid, D0 -83.42 dBm / -9.57 dB; synthetic down-cell traffic 1.4 Mbps
+- G_r11_c09: valid, D0 -82.29 dBm / -9.38 dB; synthetic down-cell traffic 0.3 Mbps
+- G_r11_c10: valid, D0 -82.29 dBm / -9.38 dB, B1 -89.84 dBm / -10.15 dB; synthetic down-cell traffic 0.63 Mbps
+- G_r11_c11: valid, D0 -83.42 dBm / -9.57 dB, B1 -88.61 dBm / -9.93 dB; synthetic down-cell traffic 0.96 Mbps
+- G_r11_c12: valid, D0 -85.07 dBm / -9.84 dB, B1 -87.5 dBm / -9.73 dB; synthetic down-cell traffic 1.29 Mbps
+- G_r11_c13: valid, D0 -86.93 dBm / -10.16 dB, B1 -86.58 dBm / -9.56 dB; synthetic down-cell traffic 1.62 Mbps
+  ... (rows 12 to 35 omitted in this excerpt)

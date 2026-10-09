@@ -15,6 +15,8 @@ State in `src/outage_poc`.
   program derives it from the coverage table; not stored in State.
 - `investigation_skill.txt`: the fixed skill text that opens every context.
 - `context_01.txt`: the context rendered from `state_01.json`.
+- `LLM_input.txt`: the same text laid out as the two chat messages the program
+  sends: the prefix as the system message, the variable part as the user message.
 - `context_02_inspection_excerpt.txt`: the drill-down rows of one observation,
   read from the coverage table.
 - `builder/state_model.py`: the State contracts, the loader that reads a

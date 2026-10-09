@@ -12,6 +12,7 @@ from outage_poc.models import (
     BackupAssignment,
     BackupLoad,
     BaselineKPI,
+    CellCoverage,
     CellId,
     CoverageObservation,
     CoverageRecord,
@@ -146,6 +147,9 @@ def _summarize(
     target = set(target_signals)
     rsrp = [signal.rsrp_dbm for signal in target_signals.values()]
     boundary = set(query_boundary(queried, unqueried, grid))
+    cells = _cell_coverage(
+        {point_id: records[point_id] for point_id in valid}, target_cell
+    )
     return RegionSummary(
         area_id=area.id,
         total_ids=tuple(sorted(total)),
@@ -164,6 +168,41 @@ def _summarize(
         boundary_missing_ids=tuple(sorted(boundary & missing)),
         boundary_target_ids=tuple(sorted(boundary & target)),
         observation_ids=tuple(sorted({evidence[point_id] for point_id in queried})),
+        cells=cells,
+    )
+
+
+def _cell_coverage(
+    valid: dict[GridId, CoverageRecord], down_cell_id: CellId
+) -> tuple[CellCoverage, ...]:
+    """Per cell: where it is present, where it is strongest, where it overlaps the down cell."""
+    present: dict[CellId, list[GridId]] = {}
+    strongest: dict[CellId, list[GridId]] = {}
+    with_down: dict[CellId, list[GridId]] = {}
+    rsrp: dict[CellId, list[float]] = {}
+    for point_id in sorted(valid):
+        signals = valid[point_id].cells
+        if not signals:
+            continue
+        listed = {signal.cell_id for signal in signals}
+        best = min(signals, key=lambda signal: (-signal.rsrp_dbm, signal.cell_id))
+        strongest.setdefault(best.cell_id, []).append(point_id)
+        for signal in signals:
+            present.setdefault(signal.cell_id, []).append(point_id)
+            rsrp.setdefault(signal.cell_id, []).append(signal.rsrp_dbm)
+            if signal.cell_id != down_cell_id and down_cell_id in listed:
+                with_down.setdefault(signal.cell_id, []).append(point_id)
+    return tuple(
+        CellCoverage(
+            cell_id=cell_id,
+            present_ids=tuple(present[cell_id]),
+            strongest_ids=tuple(strongest.get(cell_id, [])),
+            with_down_cell_ids=tuple(with_down.get(cell_id, [])),
+            rsrp_min_dbm=min(rsrp[cell_id]),
+            rsrp_max_dbm=max(rsrp[cell_id]),
+            rsrp_mean_dbm=sum(rsrp[cell_id]) / len(rsrp[cell_id]),
+        )
+        for cell_id in sorted(present)
     )
 
 

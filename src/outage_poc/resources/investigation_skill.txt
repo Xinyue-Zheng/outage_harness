@@ -28,7 +28,9 @@ Use only the listed actions and only the listed area ids, cell ids and
 observation ids; do not invent coordinates or ids. coverage.query returns
 coverage for up to four areas in one call and spends query budget: each location
 it queries for the first time costs one unit. Backup candidates are the cells
-other than the down cell that valid coverage records list. kpi.query returns
+other than the down cell that valid coverage records list. For every area, State
+reports each listed cell: where it is present, where it is the strongest cell,
+where it overlaps the down cell, and its RSRP range. kpi.query returns
 their pre-outage KPI, one row per indicator; impact.estimate needs both
 indicators for every backup candidate. impact.estimate estimates synthetic
 traffic transfer and load under the stated thresholds, scope and formula. Keep

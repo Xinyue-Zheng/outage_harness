@@ -1,6 +1,7 @@
 """Initialization against the recorded State 0, the land use, and the context builder."""
 
 import json
+import re
 import unittest
 from collections import Counter
 from dataclasses import asdict
@@ -115,6 +116,9 @@ class InitializationTests(unittest.TestCase):
         # The prototype's eleven areas and their summaries are unchanged.
         for name, key in (("areas", "id"), ("regions", "area_id")):
             kept = [item for item in _items(new[name]) if item[key] not in NEW_AREAS]
+            if name == "regions":
+                # The per-cell coverage block is new; before any query it is empty.
+                self.assertTrue(all(item.pop("cells") == [] for item in kept))
             self.assertEqual(kept, recorded[name], name)
         old_geography = [
             item for item in _items(recorded["geography"]) if item["kind"] != "cell"
@@ -203,7 +207,14 @@ class ContextTests(unittest.TestCase):
             theirs = _area_blocks(recorded, section)
             self.assertEqual(set(theirs), set(ours) - set(NEW_AREAS), section)
             for area, lines in theirs.items():
-                self.assertEqual(ours[area], lines, f"{section} {area}")
+                # The per-cell lines are new; the recorded text predates them.
+                kept = [
+                    line
+                    for line in ours[area]
+                    if not re.match(r"  \S+ is present at \d+ of the \d+ valid", line)
+                    and " is the strongest cell at " not in line
+                ]
+                self.assertEqual(kept, lines, f"{section} {area}")
 
     def test_prefix_lists_every_action_the_epoch_and_the_completion_checks(
         self,

@@ -87,6 +87,7 @@ def _coverage_lines(region: RegionSummary, down_cell_id: str) -> list[str]:
             f"{_number(region.target_rsrp_min_dbm)} to "
             f"{_number(region.target_rsrp_max_dbm)} dBm."
         )
+    lines.extend(_cell_lines(region, down_cell_id))
     if region.boundary_ids:
         lines.append(
             "  Along the query boundary facing the unqueried interior, "
@@ -101,6 +102,26 @@ def _coverage_lines(region: RegionSummary, down_cell_id: str) -> list[str]:
         lines.append("  Coverage in the unqueried interior remains unknown.")
     if region.missing_ids:
         lines.append("  Coverage at locations with missing data also remains unknown.")
+    return lines
+
+
+def _cell_lines(region: RegionSummary, down_cell_id: str) -> list[str]:
+    """Every cell the area's valid records list: where present, strongest, with the down cell."""
+    lines: list[str] = []
+    valid = len(region.valid_ids)
+    for cell in region.cells:
+        if cell.cell_id == down_cell_id:
+            lines.append(
+                f"  {down_cell_id} is the strongest cell at {len(cell.strongest_ids)} "
+                f"of these {len(cell.present_ids)} locations."
+            )
+            continue
+        lines.append(
+            f"  {cell.cell_id} is present at {len(cell.present_ids)} of the {valid} "
+            f"valid locations, strongest at {len(cell.strongest_ids)}, together with "
+            f"{down_cell_id} at {len(cell.with_down_cell_ids)}; RSRP "
+            f"{_number(cell.rsrp_min_dbm)} to {_number(cell.rsrp_max_dbm)} dBm."
+        )
     return lines
 
 
@@ -236,6 +257,16 @@ def _impact_lines(state: State) -> list[str]:
             else "No backup candidate has been seen in a coverage record yet."
         )
     ]
+    study = summary_for(state, STUDY_AREA)
+    for cell in study.cells:
+        if cell.cell_id == state.task.down_cell_id or cell.cell_id not in candidates:
+            continue
+        lines.append(
+            f"- {cell.cell_id}: present at {len(cell.present_ids)} queried locations, "
+            f"together with {state.task.down_cell_id} at {len(cell.with_down_cell_ids)}, "
+            f"strongest at {len(cell.strongest_ids)}; RSRP "
+            f"{_number(cell.rsrp_min_dbm)} to {_number(cell.rsrp_max_dbm)} dBm."
+        )
     if state.kpis:
         lines.append("KPI records:")
         lines.extend(

@@ -292,6 +292,36 @@ class InvestigationTests(unittest.TestCase):
             self.assertEqual(parameters.grid_ids, area.grid_ids)
             self.assertEqual(parameters.geometry, area.geometry)
 
+    def test_state_keeps_every_cell_s_coverage_per_area(self) -> None:
+        state = self.query(self.initial, "S1", "s1")
+        s1 = summary_for(state, S1)
+        by_cell = {cell.cell_id: cell for cell in s1.cells}
+        self.assertEqual(sorted(by_cell), ["B1", "D0"])
+        b1 = by_cell[CellId("B1")]
+        self.assertEqual(
+            (len(b1.present_ids), len(b1.strongest_ids), len(b1.with_down_cell_ids)),
+            (29, 7, 29),
+        )
+        self.assertEqual((b1.rsrp_min_dbm, b1.rsrp_max_dbm), (-91.79, -82.25))
+        d0 = by_cell[CellId("D0")]
+        self.assertEqual((len(d0.present_ids), len(d0.strongest_ids)), (33, 26))
+        self.assertEqual(d0.with_down_cell_ids, ())
+        self.assertEqual(set(d0.present_ids), set(s1.target_ids))
+        # Every strongest location belongs to exactly one cell.
+        strongest = [g for cell in s1.cells for g in cell.strongest_ids]
+        self.assertEqual(len(strongest), len(set(strongest)))
+        self.assertEqual(set(strongest), set(s1.valid_covered_ids))
+        text = context(state)
+        self.assertIn(
+            "B1 is present at 29 of the 35 valid locations, strongest at 7, "
+            "together with D0 at 29; RSRP -91.79 to -82.25 dBm.",
+            text,
+        )
+        self.assertIn("D0 is the strongest cell at 26 of these 33 locations.", text)
+        self.assertIn(
+            "- B1: present at 29 queried locations, together with D0 at 29", text
+        )
+
     def test_load_uses_observed_target_traffic_and_excludes_down_cell(self) -> None:
         state = self.query(self.initial, "S1", "s1")
         state = self.query(state, "S2_roadside", "roadside")

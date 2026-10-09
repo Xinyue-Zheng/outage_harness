@@ -166,6 +166,22 @@ class GridEvidence:
 
 
 @dataclass(frozen=True)
+class CellCoverage:
+    """One cell's coverage inside one area, from the valid records that list it."""
+
+    cell_id: CellId
+    # Valid locations whose record lists the cell.
+    present_ids: tuple[GridId, ...]
+    # Locations where the cell has the highest RSRP (ties by cell id).
+    strongest_ids: tuple[GridId, ...]
+    # Locations where the record lists both this cell and the down cell; empty for the down cell.
+    with_down_cell_ids: tuple[GridId, ...]
+    rsrp_min_dbm: float
+    rsrp_max_dbm: float
+    rsrp_mean_dbm: float
+
+
+@dataclass(frozen=True)
 class RegionSummary:
     area_id: AreaId
     total_ids: tuple[GridId, ...]
@@ -185,6 +201,8 @@ class RegionSummary:
     boundary_missing_ids: tuple[GridId, ...]
     boundary_target_ids: tuple[GridId, ...]
     observation_ids: tuple[ObservationId, ...]
+    # Every cell that a valid record in the area lists, the down cell included, by cell id.
+    cells: tuple[CellCoverage, ...]
 
 
 @dataclass(frozen=True)

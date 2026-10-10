@@ -20,6 +20,8 @@ State in `src/outage_poc`.
   request body.
 - `LLM_input.txt`: the same text laid out as the two chat messages the program
   sends: the prefix as the system message, the variable part as the user message.
+- `Verifier_input.txt`: the two messages the verifier model receives for one
+  accepted decision: fixed instructions, then the same context plus the decision.
 - `state_02.json`: the snapshot after round 2, in which the model asked to
   inspect `obs_01_S1`. Coverage is unchanged; only `inspection` is set.
 - `context_02.txt`: the full context rendered from `state_02.json` for round

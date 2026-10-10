@@ -1,0 +1,406 @@
+==============================================================================
+Verifier input for round 2, after the decision passed the four program checks.
+
+One chat-completions request with two messages:
+  messages[0] = {"role": "system", "content": <fixed verifier instructions>}
+  messages[1] = {"role": "user",   "content": <the context the deciding model
+                 read (prefix and variable part), then the accepted decision,
+                 then the two-line request>}
+The verifier never sees raw query results or the deciding model's reply text;
+it sees the same rendered State and the parsed, validated decision.
+==============================================================================
+
+==============================================================================
+MESSAGE 1  role: "system"  (fixed verifier instructions)
+==============================================================================
+You review one proposed step of an outage impact investigation.
+
+A deciding model read the investigation State shown to you and proposed an
+action, its parameters and an information gap: the question the action is meant
+to answer. The program has already checked that the action exists, that the
+parameters are valid, and that the gap agrees with the State.
+
+Answer one question: is this gap a sensible next question to ask now, given what
+the State already shows?
+
+Answer concern only for a specific reason that the State supports. For example:
+the State already answers the question; the decision ignores a Feedback line;
+the action spends query budget where the State gives no sign of the down cell
+while an area next to observed down-cell coverage is still unqueried; or the
+investigation tries to finish while the State shows open questions. Otherwise
+answer agree. Judge the question, not the result it has not produced yet:
+impact.estimate is itself the computation of backup selection, traffic transfer
+and load, so "impact has not been computed" is not a reason against it. For a
+finish, judge whether the reason for each area left unqueried is supported by
+the State: an area whose unqueried locations border no queried down-cell
+location may be left unqueried; one that does border such a location may not.
+
+Reply with exactly two lines and nothing else. The first line starts with
+"outcome: " followed by agree or concern; the second starts with "reason: ".
+Example of a reply:
+outcome: concern
+reason: The State already shows all 36 locations of S1 queried with valid data.
+
+==============================================================================
+MESSAGE 2  role: "user"  (context as the decider read it, decision, request)
+==============================================================================
+The investigation State, exactly as the deciding model read it:
+<<<
+Fixed investigation skill
+
+Purpose
+Investigate the impact of a cell outage from text that the program renders from
+structured State. Separate mapped geography from measured coverage. Pre-outage
+coverage of the down cell identifies potentially affected locations; the down
+cell cannot be an available backup after its outage.
+
+Evidence rules
+Only queried locations with valid records provide coverage evidence. An unqueried
+location and a queried location with missing data both have unknown coverage, but
+their query progress differs. A valid empty cell list means no cell coverage.
+A valid nonempty list without the down cell is a different observation. Do not
+invent signal measurements for absent cells. Population and complete demand cannot
+be inferred from residential land-use tags. Other land-use types do not imply zero
+demand. Known geographic boundaries do not imply known coverage inside them.
+
+Spatial interpretation
+Use the stated coordinate units and the listed areas. A road centerline is not an
+area: query a road corridor through its buffer area. The query boundary of an area
+is the set of queried locations that share an edge with an unqueried location of
+the same area; it does not depend on signal values. Missing data on the query
+boundary does not show that coverage of the down cell ends there. Counts from
+overlapping areas cannot be summed as disjoint areas.
+
+Actions
+Use only the listed actions and only the listed area ids, cell ids and
+observation ids; do not invent coordinates or ids. coverage.query returns
+coverage for up to four areas in one call and spends query budget: each location
+it queries for the first time costs one unit. Backup candidates are the cells
+other than the down cell that valid coverage records list. For every area, State
+reports each listed cell: where it is present, where it is the strongest cell,
+where it overlaps the down cell, and its RSRP range. kpi.query returns
+their pre-outage KPI, one row per indicator; impact.estimate needs both
+indicators for every backup candidate. impact.estimate estimates synthetic
+traffic transfer and load under the stated thresholds, scope and formula. Keep
+location share distinct from traffic share, and report unserved demand and
+excluded unknown locations. Do not read a demonstration formula as a calibrated
+network model. inspect_observation shows the rows of one observation when the
+counts are not enough. finish proposes to end the investigation; its gap targets list
+the key areas left unqueried and its question gives the reason. The program ends
+the run only when the completion checks listed with the actions pass, and
+otherwise reports what is unmet.
+
+Feedback
+The program validates every decision before it runs. A rejection, an unmet
+completion check, a failed query or a reviewer concern comes back in the Feedback
+section as a fact about the investigation. Read it before the next decision.
+
+Decision format
+Reply with exactly these three lines and nothing else:
+action: <action name>
+parameters: <JSON object with the action's parameters>
+gap: <JSON object with "targets" (list of the area or cell ids the question is about; for finish, the key areas you leave unqueried, empty when there are none) and "question" (one sentence; for finish, the reason)>
+The gap names the information the action should provide. Its targets are the
+areas or cells the question is about. Example:
+action: coverage.query
+parameters: {"areas": ["S9"], "epoch": "pre_outage"}
+gap: {"targets": ["S9"], "question": "Is the down cell present in settlement S9?"}
+
+Limits
+State describes current known facts and remaining unknowns; it does not prescribe
+an action. Maps are for people; decide from the text only. Do not infer unknown
+coverage, future results, or a complete outage impact from partial observations.
+
+Task:
+Investigate the outage impact of cell D0.
+Outage time: 2026-01-15T09:00:00Z.
+Coverage epoch: pre_outage. Coverage and KPI queries use evidence from before the outage time only.
+Analysis objective: Investigate the outage impact of cell D0 using synthetic pre-outage coverage and explicit synthetic demand.
+Site of D0: x 1000 m, y 1300 m.
+This is a synthetic investigation. Coverage describes the pre-outage network; D0 is unavailable after the outage.
+
+Known geography:
+Coordinate system: synthetic local planar coordinates in metres; not latitude/longitude; grid spacing 100 m.
+Source: cell.lookup observation obs_00_cell, osm.geometry observation obs_00_osm.
+- Study_area is a study_area. Synthetic rural study area; land use does not imply population or demand
+  Study_area has a known boundary and contains 2400 analysis grid locations.
+- S1 is a settlement. Synthetic settlement nearest the down cell
+  S1 has a known boundary and contains 36 analysis grid locations.
+- S2 is a settlement. Synthetic settlement extending north from H2
+  S2 has a known boundary and contains 200 analysis grid locations.
+- S3 is a settlement. Synthetic northern settlement
+  S3 has a known boundary and contains 48 analysis grid locations.
+- H1 is a highway. Synthetic highway centreline; query with H1_buffer (300 m full width)
+  H1 has a known road centerline, not an area boundary; its query corridor is H1_buffer (full width 300 m).
+- H2 is a highway. Synthetic highway centreline; query with H2_buffer (500 m full width)
+  H2 has a known road centerline, not an area boundary; its query corridor is H2_buffer (full width 500 m).
+- F1 is a farmland. Synthetic farmland; demand is not inferred from land use
+  F1 has a known boundary and contains 240 analysis grid locations.
+- V1 is a vineyard. Synthetic vineyard; demand is not inferred from land use
+  V1 has a known boundary and contains 247 analysis grid locations.
+- F2 is a forest. Synthetic forest; demand is not assumed to be zero
+  F2 has a known boundary and contains 240 analysis grid locations.
+- F3 is a farmland. Synthetic farmland west and south of S1; demand is not inferred from land use
+  F3 has a known boundary and contains 304 analysis grid locations.
+- F4 is a farmland. Synthetic farmland between S1 and S3; demand is not inferred from land use
+  F4 has a known boundary and contains 104 analysis grid locations.
+- F5 is a farmland. Synthetic farmland along H2 east of S1; demand is not inferred from land use
+  F5 has a known boundary and contains 156 analysis grid locations.
+- F6 is a farmland. Synthetic farmland east of V1; demand is not inferred from land use
+  F6 has a known boundary and contains 65 analysis grid locations.
+- F7 is a farmland. Synthetic farmland south of S2; demand is not inferred from land use
+  F7 has a known boundary and contains 80 analysis grid locations.
+- F8 is a farmland. Synthetic farmland in the south-east; demand is not inferred from land use
+  F8 has a known boundary and contains 240 analysis grid locations.
+- W1 is a forest. Synthetic forest across the north; demand is not assumed to be zero
+  W1 has a known boundary and contains 440 analysis grid locations.
+- Study_area contains S1. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains S2. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains S3. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains H1. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains H2. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains F1. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains V1. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains F2. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains F3. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains F4. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains F5. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains F6. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains F7. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains F8. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- Study_area contains W1. Spatial evidence: All geometry vertices lie in the convex rectangular study area
+- H1 intersects S1. Spatial evidence: Polyline and polygon intersect in synthetic local metre coordinates
+- H1 intersects S3. Spatial evidence: Polyline and polygon intersect in synthetic local metre coordinates
+- H2 intersects S1. Spatial evidence: Polyline and polygon intersect in synthetic local metre coordinates
+- H2 intersects S2. Spatial evidence: Polyline and polygon intersect in synthetic local metre coordinates
+Land-use labels identify mapped types only: they do not establish population, complete network demand, or zero demand in farmland/forest.
+
+Areas:
+- Study_area: the whole study area. Resolves to 2400 analysis grid locations.
+- S1: part of Study_area. Resolves to 36 analysis grid locations.
+- S2: part of Study_area. Resolves to 200 analysis grid locations.
+- S3: part of Study_area. Resolves to 48 analysis grid locations.
+- H1_buffer: corridor of H1. Resolves to 88 analysis grid locations.
+  Coverage query area: road-centerline buffer with full width 300 m (distance <= 150 m from the centerline, including round end caps).
+- H2_buffer: corridor of H2. Resolves to 192 analysis grid locations.
+  Coverage query area: road-centerline buffer with full width 500 m (distance <= 250 m from the centerline, including round end caps).
+- F1: part of Study_area. Resolves to 240 analysis grid locations.
+- V1: part of Study_area. Resolves to 247 analysis grid locations.
+- F2: part of Study_area. Resolves to 240 analysis grid locations.
+- F3: part of Study_area. Resolves to 304 analysis grid locations.
+- F4: part of Study_area. Resolves to 104 analysis grid locations.
+- F5: part of Study_area. Resolves to 156 analysis grid locations.
+- F6: part of Study_area. Resolves to 65 analysis grid locations.
+- F7: part of Study_area. Resolves to 80 analysis grid locations.
+- F8: part of Study_area. Resolves to 240 analysis grid locations.
+- W1: part of Study_area. Resolves to 440 analysis grid locations.
+- S2_roadside: part of S2. Resolves to 40 analysis grid locations.
+- S2_remaining: part of S2. Resolves to 160 analysis grid locations.
+
+Available actions:
+- cell.lookup(cell_id: cell_id). Phase: initialization. Site position (local metres) and metadata of one cell.
+- osm.geometry(center_x_m: float m, center_y_m: float m, radius_m: float m). Phase: initialization. Mapped geography objects with some part within a radius of a point: the study area, settlements, roads as centrelines, and land use.
+- coverage.query(areas: list of 1 to 4 area_id, epoch: "pre_outage"). Phase: coverage. Pre-outage coverage for every analysis grid location in each named area: data status (valid or missing), each cell present with RSRP and RSRQ, and synthetic down-cell traffic.
+- kpi.query(cells: list of 1 to 4 cell_id, window: "pre_outage", indicators: list of 1 to 2 of "prb_utilization", "capacity"). Phase: backup. Pre-outage KPI of each named cell, one row per indicator: prb_utilization (percent of PRBs in use) and capacity (Mbps).
+- impact.estimate(scope: area_id, min_rsrp_dbm: float dBm, min_rsrq_db: float dB). Phase: backup. Assign the synthetic traffic of each queried location in the scope where the down cell was present to its strongest eligible backup cell, then estimate each backup cell's PRB load. Needs both KPI indicators for every backup candidate.
+- inspect_observation(observation: observation_id, first_row: int). Phase: any. Show the rows of one coverage observation listed under Evidence provenance, starting at first_row (0-based), up to the row cap of the run. Use it when the counts are not enough, for example to see the cells and signal levels on a query boundary.
+- finish(). Phase: any. Propose to end the investigation. The gap targets list the key areas left unqueried; the gap question gives the reason. The run ends only when the completion checks pass; otherwise the unmet checks come back as feedback.
+
+Completion checks, applied when you choose finish:
+- boundary: at most 0 of the study area's query-boundary locations show D0.
+- key_areas: S1, S2, S3, H1_buffer, H2_buffer, F1, V1, F2, F3, F4, F5, F6, F7, F8, W1 are each fully queried, or listed in the finish gap targets as left unqueried, with the reason in the question. An area whose unqueried locations border no queried D0 location can be left unqueried this way; one that does border such a location also fails the boundary check.
+- labels: every queried location has exactly one coverage class.
+- backup_load: impact.estimate is computed after the last coverage query, with both KPI indicators for every backup candidate.
+A coverage query is refused when it would exceed the query budget of 1600 locations. When the remaining budget cannot cover the cheapest key area that borders D0, the boundary check can no longer be met and the run ends as query_budget.
+
+Investigation progress:
+Counts are per area; overlapping areas must not be added together.
+- Study_area contains 2400 analysis grid locations: 723 queried, 1677 not queried.
+  706 queried locations have valid data; 17 have missing data.
+  Valid records: 686 have cell coverage; 20 have no cell coverage; 494 have other cells but no D0.
+- S1 contains 36 analysis grid locations: 36 queried, 0 not queried.
+  35 queried locations have valid data; 1 have missing data.
+  Valid records: 33 have cell coverage; 2 have no cell coverage; 0 have other cells but no D0.
+- S2 contains 200 analysis grid locations: 200 queried, 0 not queried.
+  191 queried locations have valid data; 9 have missing data.
+  Valid records: 183 have cell coverage; 8 have no cell coverage; 133 have other cells but no D0.
+- S3 contains 48 analysis grid locations: 0 queried, 48 not queried.
+- H1_buffer contains 88 analysis grid locations: 18 queried, 70 not queried.
+  17 queried locations have valid data; 1 have missing data.
+  Valid records: 16 have cell coverage; 1 have no cell coverage; 0 have other cells but no D0.
+- H2_buffer contains 192 analysis grid locations: 62 queried, 130 not queried.
+  61 queried locations have valid data; 1 have missing data.
+  Valid records: 60 have cell coverage; 1 have no cell coverage; 16 have other cells but no D0.
+- F1 contains 240 analysis grid locations: 240 queried, 0 not queried.
+  237 queried locations have valid data; 3 have missing data.
+  Valid records: 232 have cell coverage; 5 have no cell coverage; 178 have other cells but no D0.
+- V1 contains 247 analysis grid locations: 247 queried, 0 not queried.
+  243 queried locations have valid data; 4 have missing data.
+  Valid records: 238 have cell coverage; 5 have no cell coverage; 183 have other cells but no D0.
+- F2 contains 240 analysis grid locations: 0 queried, 240 not queried.
+- F3 contains 304 analysis grid locations: 0 queried, 304 not queried.
+- F4 contains 104 analysis grid locations: 0 queried, 104 not queried.
+- F5 contains 156 analysis grid locations: 0 queried, 156 not queried.
+- F6 contains 65 analysis grid locations: 0 queried, 65 not queried.
+- F7 contains 80 analysis grid locations: 0 queried, 80 not queried.
+- F8 contains 240 analysis grid locations: 0 queried, 240 not queried.
+- W1 contains 440 analysis grid locations: 0 queried, 440 not queried.
+- S2_roadside contains 40 analysis grid locations: 40 queried, 0 not queried.
+  All 40 queried locations have valid data.
+  Valid records: 40 have cell coverage; 0 have no cell coverage; 20 have other cells but no D0.
+- S2_remaining contains 160 analysis grid locations: 160 queried, 0 not queried.
+  151 queried locations have valid data; 9 have missing data.
+  Valid records: 143 have cell coverage; 8 have no cell coverage; 113 have other cells but no D0.
+
+Key areas with unqueried locations:
+- S3: 48 unqueried locations; 0 of them border a queried location where D0 is present.
+- H1_buffer: 70 unqueried locations; 4 of them border a queried location where D0 is present.
+- H2_buffer: 130 unqueried locations; 18 of them border a queried location where D0 is present.
+- F2: 240 unqueried locations; 0 of them border a queried location where D0 is present.
+- F3: 304 unqueried locations; 21 of them border a queried location where D0 is present.
+- F4: 104 unqueried locations; 15 of them border a queried location where D0 is present.
+- F5: 156 unqueried locations; 28 of them border a queried location where D0 is present.
+- F6: 65 unqueried locations; 10 of them border a queried location where D0 is present.
+- F7: 80 unqueried locations; 4 of them border a queried location where D0 is present.
+- F8: 240 unqueried locations; 0 of them border a queried location where D0 is present.
+- W1: 440 unqueried locations; 0 of them border a queried location where D0 is present.
+
+Coverage observations:
+Query boundary rule: within each area, a queried grid location is on the query boundary if at least one of its four orthogonal grid neighbors in the same area is unqueried. Signal presence never selects the boundary.
+Missing boundary records are unknown, not target-absent observations.
+- Study_area: D0 is present at 192 of the 723 queried locations.
+  Its RSRP at these locations ranges from -113 to -80.47 dBm.
+  B1 is present at 459 of the 706 valid locations, strongest at 283, together with D0 at 138; RSRP -116.17 to -79.18 dBm.
+  B2 is present at 555 of the 706 valid locations, strongest at 241, together with D0 at 100; RSRP -116.24 to -79.18 dBm.
+  B3 is present at 339 of the 706 valid locations, strongest at 136, together with D0 at 50; RSRP -116.24 to -79.18 dBm.
+  D0 is the strongest cell at 26 of these 192 locations.
+  Along the query boundary facing the unqueried interior, D0 is present at 72 of 184 boundary locations (180 valid, 4 missing).
+  Coverage in the unqueried interior remains unknown.
+  Coverage at locations with missing data also remains unknown.
+- S1: D0 is present at 33 of the 36 queried locations.
+  Its RSRP at these locations ranges from -87.96 to -80.47 dBm.
+  B1 is present at 29 of the 35 valid locations, strongest at 7, together with D0 at 29; RSRP -91.79 to -82.25 dBm.
+  D0 is the strongest cell at 26 of these 33 locations.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- S2: D0 is present at 50 of the 200 queried locations.
+  Its RSRP at these locations ranges from -113 to -104 dBm.
+  B2 is present at 181 of the 191 valid locations, strongest at 77, together with D0 at 50; RSRP -116.24 to -79.18 dBm.
+  B3 is present at 183 of the 191 valid locations, strongest at 106, together with D0 at 50; RSRP -108.57 to -79.18 dBm.
+  D0 is the strongest cell at 0 of these 50 locations.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- S3: coverage is unknown; no locations queried.
+- H1_buffer: D0 is present at 16 of the 18 queried locations.
+  Its RSRP at these locations ranges from -86.37 to -80.47 dBm.
+  B1 is present at 16 of the 17 valid locations, strongest at 2, together with D0 at 16; RSRP -90.3 to -83.89 dBm.
+  D0 is the strongest cell at 14 of these 16 locations.
+  Along the query boundary facing the unqueried interior, D0 is present at 4 of 4 boundary locations (4 valid, 0 missing).
+  Coverage in the unqueried interior remains unknown.
+  Coverage at locations with missing data also remains unknown.
+- H2_buffer: D0 is present at 44 of the 62 queried locations.
+  Its RSRP at these locations ranges from -111 to -80.47 dBm.
+  B1 is present at 22 of the 61 valid locations, strongest at 5, together with D0 at 22; RSRP -91.79 to -82.86 dBm.
+  B2 is present at 36 of the 61 valid locations, strongest at 36, together with D0 at 20; RSRP -88.87 to -79.18 dBm.
+  B3 is present at 36 of the 61 valid locations, strongest at 0, together with D0 at 20; RSRP -108.57 to -100.52 dBm.
+  D0 is the strongest cell at 19 of these 44 locations.
+  Along the query boundary facing the unqueried interior, D0 is present at 10 of 10 boundary locations (10 valid, 0 missing).
+  Coverage in the unqueried interior remains unknown.
+  Coverage at locations with missing data also remains unknown.
+- F1: D0 is present at 54 of the 240 queried locations.
+  Its RSRP at these locations ranges from -108.79 to -94.38 dBm.
+  B1 is present at 192 of the 237 valid locations, strongest at 108, together with D0 at 54; RSRP -116.17 to -88.87 dBm.
+  B2 is present at 199 of the 237 valid locations, strongest at 124, together with D0 at 27; RSRP -116.24 to -82.86 dBm.
+  B3 is present at 20 of the 237 valid locations, strongest at 0, together with D0 at 0; RSRP -116.17 to -110.68 dBm.
+  D0 is the strongest cell at 0 of these 54 locations.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- V1: D0 is present at 55 of the 247 queried locations.
+  Its RSRP at these locations ranges from -108.79 to -94.38 dBm.
+  B1 is present at 238 of the 243 valid locations, strongest at 168, together with D0 at 55; RSRP -115.21 to -79.18 dBm.
+  B2 is present at 175 of the 243 valid locations, strongest at 40, together with D0 at 23; RSRP -116.24 to -91.18 dBm.
+  B3 is present at 136 of the 243 valid locations, strongest at 30, together with D0 at 0; RSRP -116.24 to -97.18 dBm.
+  D0 is the strongest cell at 0 of these 55 locations.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+- F2: coverage is unknown; no locations queried.
+- F3: coverage is unknown; no locations queried.
+- F4: coverage is unknown; no locations queried.
+- F5: coverage is unknown; no locations queried.
+- F6: coverage is unknown; no locations queried.
+- F7: coverage is unknown; no locations queried.
+- F8: coverage is unknown; no locations queried.
+- W1: coverage is unknown; no locations queried.
+- S2_roadside: D0 is present at 20 of the 40 queried locations.
+  Its RSRP at these locations ranges from -111 to -104 dBm.
+  B2 is present at 40 of the 40 valid locations, strongest at 40, together with D0 at 20; RSRP -89.61 to -79.18 dBm.
+  B3 is present at 40 of the 40 valid locations, strongest at 0, together with D0 at 20; RSRP -108.57 to -100.52 dBm.
+  D0 is the strongest cell at 0 of these 20 locations.
+  No queried/unqueried interior boundary exists in this area.
+- S2_remaining: D0 is present at 30 of the 160 queried locations.
+  Its RSRP at these locations ranges from -113 to -107 dBm.
+  B2 is present at 141 of the 151 valid locations, strongest at 37, together with D0 at 30; RSRP -116.24 to -83.89 dBm.
+  B3 is present at 143 of the 151 valid locations, strongest at 106, together with D0 at 30; RSRP -100.76 to -79.18 dBm.
+  D0 is the strongest cell at 0 of these 30 locations.
+  No queried/unqueried interior boundary exists in this area.
+  Coverage at locations with missing data also remains unknown.
+
+Impact and backup analysis:
+Backup candidates seen in coverage records: B1, B2, B3.
+- B1: present at 459 queried locations, together with D0 at 138, strongest at 283; RSRP -116.17 to -79.18 dBm.
+- B2: present at 555 queried locations, together with D0 at 100, strongest at 241; RSRP -116.24 to -79.18 dBm.
+- B3: present at 339 queried locations, together with D0 at 50, strongest at 136; RSRP -116.24 to -79.18 dBm.
+Backup selection, traffic transfer, and load estimation have not been performed.
+
+Remaining unknowns:
+- Study_area: coverage at 1677 unqueried locations is unknown.
+- Study_area: coverage at 17 queried locations with missing data is unknown.
+- S1: coverage at 1 queried locations with missing data is unknown.
+- S2: coverage at 9 queried locations with missing data is unknown.
+- S3: coverage at 48 unqueried locations is unknown.
+- H1_buffer: coverage at 70 unqueried locations is unknown.
+- H1_buffer: coverage at 1 queried locations with missing data is unknown.
+- H2_buffer: coverage at 130 unqueried locations is unknown.
+- H2_buffer: coverage at 1 queried locations with missing data is unknown.
+- F1: coverage at 3 queried locations with missing data is unknown.
+- V1: coverage at 4 queried locations with missing data is unknown.
+- F2: coverage at 240 unqueried locations is unknown.
+- F3: coverage at 304 unqueried locations is unknown.
+- F4: coverage at 104 unqueried locations is unknown.
+- F5: coverage at 156 unqueried locations is unknown.
+- F6: coverage at 65 unqueried locations is unknown.
+- F7: coverage at 80 unqueried locations is unknown.
+- F8: coverage at 240 unqueried locations is unknown.
+- W1: coverage at 440 unqueried locations is unknown.
+- S2_remaining: coverage at 9 queried locations with missing data is unknown.
+- Pre-outage KPI is incomplete for backup candidates: B1 has no prb_utilization or capacity; B2 has no prb_utilization or capacity; B3 has no prb_utilization or capacity.
+- Backup selection, traffic transfer and load have not been computed.
+- Coverage beyond the study area is unknown.
+- Land-use labels do not establish population or complete network demand.
+- Investigation sufficiency is unknown until a finish passes the completion checks.
+
+Actions allowed now (phase backup): coverage.query, kpi.query, inspect_observation, finish.
+Query budget: 723 of 1600 locations used; 877 remain. A coverage query costs the locations it adds for the first time.
+
+Evidence provenance:
+- obs_01_F1: observations/obs_01_F1.json; area F1; 240 returned locations.
+- obs_01_S1: observations/obs_01_S1.json; area S1; 36 returned locations.
+- obs_01_S2: observations/obs_01_S2.json; area S2; 200 returned locations.
+- obs_01_V1: observations/obs_01_V1.json; area V1; 247 returned locations.
+The state coverage table maps each queried location to its observation, its cells and their signal levels; inspect_observation shows those rows.
+
+Feedback from the last two rounds:
+- None.
+
+Reply with your next decision in the three-line decision format of the skill.
+
+>>>
+
+The proposed decision:
+action: coverage.query
+parameters: {"areas": ["F5", "H2_buffer"], "epoch": "pre_outage"}
+gap: {"targets": ["F5", "H2_buffer"], "question": "Does D0 coverage continue east of S1 along H2 into F5, where 28 and 18 unqueried locations border observed D0 coverage?"}
+
+Is this gap a sensible next question to ask now? Reply with exactly two lines in this form:
+outcome: <agree or concern>
+reason: <one sentence>

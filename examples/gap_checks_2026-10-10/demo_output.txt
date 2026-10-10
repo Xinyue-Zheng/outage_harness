@@ -1,0 +1,36 @@
+[accepted: open areas, same as the queried areas]
+  coverage.query {'areas': ('F5', 'H2_buffer'), 'epoch': 'pre_outage'} targets=['F5', 'H2_buffer']
+  -> accepted
+
+[3a: unknown target]
+  coverage.query {'areas': ('F5',), 'epoch': 'pre_outage'} targets=['F9']
+  -> rejected (bad_parameter): gap target "F9" is neither a known area nor a cell seen; known areas: F1, F2, F3, F4, F5, F6, F7, F8, H1_buffer, H2_buffer, S1, S2, S2_remaining, S2_roadside, S3, Study_area, V1, W1; cells seen: B1, B2, B3, D0
+
+[3b: no target]
+  coverage.query {'areas': ('F5',), 'epoch': 'pre_outage'} targets=[]
+  -> rejected (bad_parameter): the gap of coverage.query names no targets; list the area ids or cell ids the question is about
+
+[3c: area already fully queried with no missing data]
+  coverage.query {'areas': ('S2_roadside',), 'epoch': 'pre_outage'} targets=['S2_roadside']
+  -> rejected (gap_contradicted): gap target S2_roadside is already answered: all 40 locations are queried and none has missing data
+
+[3c: finish names an area that is not an open key area]
+  finish {} targets=['S1']
+  -> rejected (gap_contradicted): finish lists S1 as left unqueried, but the key areas with unqueried locations are: F2, F3, F4, F5, F6, F7, F8, H1_buffer, H2_buffer, S3, W1
+
+[4a: coverage query asked about a cell]
+  coverage.query {'areas': ('F5',), 'epoch': 'pre_outage'} targets=['B1']
+  -> rejected (action_cannot_answer_gap): coverage.query returns coverage of areas; it cannot answer a question about cell B1; use kpi.query for cell KPI
+
+[4a: KPI query asked about an area]
+  kpi.query {'cells': ('B1',), 'window': 'pre_outage', 'indicators': ('capacity',)} targets=['F5']
+  -> rejected (action_cannot_answer_gap): kpi.query returns KPI of cells; it cannot answer a question about area F5; use coverage.query for areas
+
+[4b: target outside the queried areas]
+  coverage.query {'areas': ('F5',), 'epoch': 'pre_outage'} targets=['S3']
+  -> rejected (action_cannot_answer_gap): coverage.query queries ['F5'], so it cannot answer a question about S3; add it to the areas or change the gap targets
+
+[4a: impact asked about two areas]
+  impact.estimate {'scope': 'Study_area', 'min_rsrp_dbm': -110.0, 'min_rsrq_db': -15.0} targets=['S1', 'S2']
+  -> rejected (action_cannot_answer_gap): impact.estimate answers a question about its one scope area (Study_area); the gap targets are ['S1', 'S2']
+

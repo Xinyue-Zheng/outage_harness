@@ -1,0 +1,71 @@
+[
+    {'info': {
+        'rsrq': 00,
+        'rssi': 00,
+        'serving': {
+            'id': 00,
+            'latitude':00,
+            'longitude':00,
+            'rsrp':00,
+            'sector_name':'xxxx_aa_1'
+        },
+        'top1':{
+            'id': 00,
+            'latitude':00,
+            'longitude':00,
+            'rsrp':00,
+            'sector_name':'xxxx_aa_1'
+        },
+        'top2':{
+            'id': 00,
+            'latitude':00,
+            'longitude':00,
+            'rsrp':00,
+            'sector_name':'xxxx_aa_1'
+        },
+        'top3':{
+            'id': 00,
+            'latitude':00,
+            'longitude':00,
+            'rsrp':00,
+            'sector_name':'xxxx_aa_1'   
+        } ,
+    'latitude' : 00,
+    'longitude' : 00,}},
+
+    {'info': {
+        'rsrq': 00,
+        'rssi': 00,
+        'serving': {
+            'id': 00,
+            'latitude':00,
+            'longitude':00,
+            'rsrp':00,
+            'sector_name':'xxxx_aa_1'
+        },
+        'top1':{
+            'id': 00,
+            'latitude':00,
+            'longitude':00,
+            'rsrp':00,
+            'sector_name':'xxxx_aa_1'
+        },
+        'top2':{
+            'id': 00,
+            'latitude':00,
+            'longitude':00,
+            'rsrp':00,
+            'sector_name':'xxxx_aa_1'
+        },
+        'top3':{
+            'id': 00,
+            'latitude':00,
+            'longitude':00,
+            'rsrp':00,
+            'sector_name':'xxxx_aa_1'   
+        } ,
+    'latitude' : 00,
+    'longitude' : 00,}},
+
+
+]

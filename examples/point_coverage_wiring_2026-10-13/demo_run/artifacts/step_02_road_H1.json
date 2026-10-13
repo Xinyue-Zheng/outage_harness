@@ -1,0 +1,1832 @@
+{
+ "area_id": "road_H1",
+ "radius_m": 50.0,
+ "requested_grid_ids": [
+  "173",
+  "174",
+  "175",
+  "176",
+  "177",
+  "178",
+  "179",
+  "188",
+  "189",
+  "190",
+  "191",
+  "192",
+  "193",
+  "194",
+  "195",
+  "196",
+  "197",
+  "198",
+  "199",
+  "204",
+  "205",
+  "206",
+  "207",
+  "208",
+  "209",
+  "210",
+  "211",
+  "212",
+  "213",
+  "214",
+  "215",
+  "216",
+  "217",
+  "218",
+  "219",
+  "220",
+  "221",
+  "222",
+  "223",
+  "224",
+  "225",
+  "226",
+  "227",
+  "228",
+  "229",
+  "230",
+  "231",
+  "232",
+  "240",
+  "241",
+  "242",
+  "243",
+  "244",
+  "245",
+  "246",
+  "247",
+  "260",
+  "261",
+  "262",
+  "263"
+ ],
+ "skipped_already_queried": [
+  "188",
+  "189",
+  "190",
+  "191",
+  "192",
+  "207",
+  "208",
+  "209",
+  "210",
+  "211",
+  "212",
+  "227",
+  "228",
+  "229",
+  "230",
+  "231",
+  "232",
+  "247"
+ ],
+ "points": [
+  {
+   "grid_id": "173",
+   "lat": 41.80763564498742,
+   "lon": -72.28372999094735,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "174",
+   "lat": 41.80763564498742,
+   "lon": -72.2825248050916,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -12.43,
+      "rssi": -60.44,
+      "serving": {
+       "id": 24629,
+       "latitude": 41.807722,
+       "longitude": -72.282537,
+       "rsrp": -106.61,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top1": {
+       "id": 24629,
+       "latitude": 41.807722,
+       "longitude": -72.282537,
+       "rsrp": -106.61,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top2": {
+       "id": 18993,
+       "latitude": 41.807722,
+       "longitude": -72.282537,
+       "rsrp": -107.8,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top3": {
+       "id": 47700,
+       "latitude": 41.807722,
+       "longitude": -72.282537,
+       "rsrp": -108.58,
+       "sector_name": "CCSN000004_aa_1"
+      },
+      "latitude": 41.807722,
+      "longitude": -72.282537
+     }
+    },
+    {
+     "info": {
+      "rsrq": -9.87,
+      "rssi": -72.36,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807676,
+       "longitude": -72.282933,
+       "rsrp": -107.63,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807676,
+       "longitude": -72.282933,
+       "rsrp": -107.63,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 24629,
+       "latitude": 41.807676,
+       "longitude": -72.282933,
+       "rsrp": -107.72,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top3": {
+       "id": 47700,
+       "latitude": 41.807676,
+       "longitude": -72.282933,
+       "rsrp": -110.36,
+       "sector_name": "CCSN000004_aa_1"
+      },
+      "latitude": 41.807676,
+      "longitude": -72.282933
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "175",
+   "lat": 41.80763564498742,
+   "lon": -72.28131961923584,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -12.81,
+      "rssi": -60.53,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807443,
+       "longitude": -72.280894,
+       "rsrp": -103.84,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807443,
+       "longitude": -72.280894,
+       "rsrp": -103.84,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 47700,
+       "latitude": 41.807443,
+       "longitude": -72.280894,
+       "rsrp": -108.93,
+       "sector_name": "CCSN000004_aa_1"
+      },
+      "latitude": 41.807443,
+      "longitude": -72.280894
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "176",
+   "lat": 41.80763564498742,
+   "lon": -72.28011443338009,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -12.82,
+      "rssi": -74.5,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807738,
+       "longitude": -72.280198,
+       "rsrp": -103.16,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807738,
+       "longitude": -72.280198,
+       "rsrp": -103.16,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 47700,
+       "latitude": 41.807738,
+       "longitude": -72.280198,
+       "rsrp": -111.37,
+       "sector_name": "CCSN000004_aa_1"
+      },
+      "top3": {
+       "id": 24629,
+       "latitude": 41.807738,
+       "longitude": -72.280198,
+       "rsrp": -111.87,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "latitude": 41.807738,
+      "longitude": -72.280198
+     }
+    },
+    {
+     "info": {
+      "rsrq": -9.84,
+      "rssi": -70.18,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807566,
+       "longitude": -72.280126,
+       "rsrp": -101.97,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807566,
+       "longitude": -72.280126,
+       "rsrp": -101.97,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.807566,
+      "longitude": -72.280126
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "177",
+   "lat": 41.80763564498742,
+   "lon": -72.27890924752434,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -13.88,
+      "rssi": -60.46,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807659,
+       "longitude": -72.278621,
+       "rsrp": -102.17,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807659,
+       "longitude": -72.278621,
+       "rsrp": -102.17,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.807659,
+      "longitude": -72.278621
+     }
+    },
+    {
+     "info": {
+      "rsrq": -12.54,
+      "rssi": -64.46,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807657,
+       "longitude": -72.278913,
+       "rsrp": -100.77,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807657,
+       "longitude": -72.278913,
+       "rsrp": -100.77,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.807657,
+      "longitude": -72.278913
+     }
+    },
+    {
+     "info": {
+      "rsrq": -9.38,
+      "rssi": -71.5,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.80746,
+       "longitude": -72.279218,
+       "rsrp": -103.12,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.80746,
+       "longitude": -72.279218,
+       "rsrp": -103.12,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 47700,
+       "latitude": 41.80746,
+       "longitude": -72.279218,
+       "rsrp": -111.79,
+       "sector_name": "CCSN000004_aa_1"
+      },
+      "latitude": 41.80746,
+      "longitude": -72.279218
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "178",
+   "lat": 41.80763564498742,
+   "lon": -72.27770406166859,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -13.59,
+      "rssi": -65.48,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807625,
+       "longitude": -72.277647,
+       "rsrp": -103.93,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807625,
+       "longitude": -72.277647,
+       "rsrp": -103.93,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.807625,
+      "longitude": -72.277647
+     }
+    },
+    {
+     "info": {
+      "rsrq": -8.42,
+      "rssi": -69.23,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807666,
+       "longitude": -72.277922,
+       "rsrp": -100.98,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807666,
+       "longitude": -72.277922,
+       "rsrp": -100.98,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.807666,
+      "longitude": -72.277922
+     }
+    },
+    {
+     "info": {
+      "rsrq": -10.56,
+      "rssi": -60.88,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807474,
+       "longitude": -72.277748,
+       "rsrp": -101.93,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807474,
+       "longitude": -72.277748,
+       "rsrp": -101.93,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.807474,
+      "longitude": -72.277748
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "179",
+   "lat": 41.80763564498742,
+   "lon": -72.27649887581283,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -12.3,
+      "rssi": -72.61,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807369,
+       "longitude": -72.276431,
+       "rsrp": -109.77,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807369,
+       "longitude": -72.276431,
+       "rsrp": -109.77,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.807369,
+      "longitude": -72.276431
+     }
+    },
+    {
+     "info": {
+      "rsrq": -11.01,
+      "rssi": -75.97,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.807537,
+       "longitude": -72.276268,
+       "rsrp": -109.6,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.807537,
+       "longitude": -72.276268,
+       "rsrp": -109.6,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.807537,
+      "longitude": -72.276268
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "193",
+   "lat": 41.808533956162414,
+   "lon": -72.28372999094735,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -8.23,
+      "rssi": -69.84,
+      "serving": {
+       "id": 24629,
+       "latitude": 41.808554,
+       "longitude": -72.283816,
+       "rsrp": -101.96,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top1": {
+       "id": 24629,
+       "latitude": 41.808554,
+       "longitude": -72.283816,
+       "rsrp": -101.96,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top2": {
+       "id": 47700,
+       "latitude": 41.808554,
+       "longitude": -72.283816,
+       "rsrp": -108.41,
+       "sector_name": "CCSN000004_aa_1"
+      },
+      "top3": {
+       "id": 18993,
+       "latitude": 41.808554,
+       "longitude": -72.283816,
+       "rsrp": -110.81,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.808554,
+      "longitude": -72.283816
+     }
+    },
+    {
+     "info": {
+      "rsrq": -11.64,
+      "rssi": -77.13,
+      "serving": {
+       "id": 24629,
+       "latitude": 41.808622,
+       "longitude": -72.283809,
+       "rsrp": -102.73,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top1": {
+       "id": 24629,
+       "latitude": 41.808622,
+       "longitude": -72.283809,
+       "rsrp": -102.73,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top2": {
+       "id": 18993,
+       "latitude": 41.808622,
+       "longitude": -72.283809,
+       "rsrp": -110.08,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.808622,
+      "longitude": -72.283809
+     }
+    },
+    {
+     "info": {
+      "rsrq": -12.35,
+      "rssi": -65.76,
+      "serving": {
+       "id": 24629,
+       "latitude": 41.808737,
+       "longitude": -72.28372,
+       "rsrp": -102.24,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top1": {
+       "id": 24629,
+       "latitude": 41.808737,
+       "longitude": -72.28372,
+       "rsrp": -102.24,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top2": {
+       "id": 18993,
+       "latitude": 41.808737,
+       "longitude": -72.28372,
+       "rsrp": -107.83,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top3": {
+       "id": 47700,
+       "latitude": 41.808737,
+       "longitude": -72.28372,
+       "rsrp": -110.78,
+       "sector_name": "CCSN000004_aa_1"
+      },
+      "latitude": 41.808737,
+      "longitude": -72.28372
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "194",
+   "lat": 41.808533956162414,
+   "lon": -72.2825248050916,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "195",
+   "lat": 41.808533956162414,
+   "lon": -72.28131961923584,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -13.39,
+      "rssi": -71.53,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808701,
+       "longitude": -72.2817,
+       "rsrp": -104.0,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808701,
+       "longitude": -72.2817,
+       "rsrp": -104.0,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 24629,
+       "latitude": 41.808701,
+       "longitude": -72.2817,
+       "rsrp": -109.17,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top3": {
+       "id": 47700,
+       "latitude": 41.808701,
+       "longitude": -72.2817,
+       "rsrp": -111.84,
+       "sector_name": "CCSN000004_aa_1"
+      },
+      "latitude": 41.808701,
+      "longitude": -72.2817
+     }
+    },
+    {
+     "info": {
+      "rsrq": -12.49,
+      "rssi": -61.83,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808541,
+       "longitude": -72.281248,
+       "rsrp": -103.37,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808541,
+       "longitude": -72.281248,
+       "rsrp": -103.37,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 24629,
+       "latitude": 41.808541,
+       "longitude": -72.281248,
+       "rsrp": -109.84,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "latitude": 41.808541,
+      "longitude": -72.281248
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "196",
+   "lat": 41.808533956162414,
+   "lon": -72.28011443338009,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -9.02,
+      "rssi": -75.49,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808138,
+       "longitude": -72.280253,
+       "rsrp": -100.22,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808138,
+       "longitude": -72.280253,
+       "rsrp": -100.22,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 24629,
+       "latitude": 41.808138,
+       "longitude": -72.280253,
+       "rsrp": -111.69,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "latitude": 41.808138,
+      "longitude": -72.280253
+     }
+    },
+    {
+     "info": {
+      "rsrq": -8.96,
+      "rssi": -63.78,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808522,
+       "longitude": -72.280199,
+       "rsrp": -98.61,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808522,
+       "longitude": -72.280199,
+       "rsrp": -98.61,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.808522,
+      "longitude": -72.280199
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "197",
+   "lat": 41.808533956162414,
+   "lon": -72.27890924752434,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -10.98,
+      "rssi": -67.99,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.80894,
+       "longitude": -72.279108,
+       "rsrp": -90.96,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.80894,
+       "longitude": -72.279108,
+       "rsrp": -90.96,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.80894,
+      "longitude": -72.279108
+     }
+    },
+    {
+     "info": {
+      "rsrq": -13.82,
+      "rssi": -69.31,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808312,
+       "longitude": -72.278659,
+       "rsrp": -91.14,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808312,
+       "longitude": -72.278659,
+       "rsrp": -91.14,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.808312,
+      "longitude": -72.278659
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "198",
+   "lat": 41.808533956162414,
+   "lon": -72.27770406166859,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -12.09,
+      "rssi": -67.99,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808658,
+       "longitude": -72.278236,
+       "rsrp": -90.29,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808658,
+       "longitude": -72.278236,
+       "rsrp": -90.29,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.808658,
+      "longitude": -72.278236
+     }
+    },
+    {
+     "info": {
+      "rsrq": -9.72,
+      "rssi": -65.11,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808289,
+       "longitude": -72.277891,
+       "rsrp": -95.61,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808289,
+       "longitude": -72.277891,
+       "rsrp": -95.61,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.808289,
+      "longitude": -72.277891
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "199",
+   "lat": 41.808533956162414,
+   "lon": -72.27649887581283,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -9.31,
+      "rssi": -78.83,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808456,
+       "longitude": -72.277022,
+       "rsrp": -96.47,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808456,
+       "longitude": -72.277022,
+       "rsrp": -96.47,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.808456,
+      "longitude": -72.277022
+     }
+    },
+    {
+     "info": {
+      "rsrq": -9.99,
+      "rssi": -69.79,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.808519,
+       "longitude": -72.276485,
+       "rsrp": -98.47,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.808519,
+       "longitude": -72.276485,
+       "rsrp": -98.47,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.808519,
+      "longitude": -72.276485
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "204",
+   "lat": 41.8094322673374,
+   "lon": -72.29457666364911,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -13.6,
+      "rssi": -79.72,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809286,
+       "longitude": -72.294377,
+       "rsrp": -111.08,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809286,
+       "longitude": -72.294377,
+       "rsrp": -111.08,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.809286,
+      "longitude": -72.294377
+     }
+    },
+    {
+     "info": {
+      "rsrq": -11.05,
+      "rssi": -60.78,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809602,
+       "longitude": -72.294733,
+       "rsrp": -108.98,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809602,
+       "longitude": -72.294733,
+       "rsrp": -108.98,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.809602,
+      "longitude": -72.294733
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "205",
+   "lat": 41.8094322673374,
+   "lon": -72.29337147779336,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -13.12,
+      "rssi": -64.17,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809179,
+       "longitude": -72.293767,
+       "rsrp": -106.97,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809179,
+       "longitude": -72.293767,
+       "rsrp": -106.97,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.809179,
+      "longitude": -72.293767
+     }
+    },
+    {
+     "info": {
+      "rsrq": -8.03,
+      "rssi": -65.97,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809661,
+       "longitude": -72.293289,
+       "rsrp": -105.35,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809661,
+       "longitude": -72.293289,
+       "rsrp": -105.35,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top2": {
+       "id": 41549,
+       "latitude": 41.809661,
+       "longitude": -72.293289,
+       "rsrp": -111.37,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.809661,
+      "longitude": -72.293289
+     }
+    },
+    {
+     "info": {
+      "rsrq": -9.21,
+      "rssi": -61.15,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809221,
+       "longitude": -72.293283,
+       "rsrp": -106.88,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809221,
+       "longitude": -72.293283,
+       "rsrp": -106.88,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.809221,
+      "longitude": -72.293283
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "206",
+   "lat": 41.8094322673374,
+   "lon": -72.2921662919376,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -10.29,
+      "rssi": -66.59,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809529,
+       "longitude": -72.292152,
+       "rsrp": -100.8,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809529,
+       "longitude": -72.292152,
+       "rsrp": -100.8,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.809529,
+      "longitude": -72.292152
+     }
+    },
+    {
+     "info": {
+      "rsrq": -8.02,
+      "rssi": -71.94,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809391,
+       "longitude": -72.292185,
+       "rsrp": -100.47,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809391,
+       "longitude": -72.292185,
+       "rsrp": -100.47,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.809391,
+      "longitude": -72.292185
+     }
+    },
+    {
+     "info": {
+      "rsrq": -9.59,
+      "rssi": -71.07,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809448,
+       "longitude": -72.292544,
+       "rsrp": -104.46,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809448,
+       "longitude": -72.292544,
+       "rsrp": -104.46,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.809448,
+      "longitude": -72.292544
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "213",
+   "lat": 41.8094322673374,
+   "lon": -72.28372999094735,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -9.9,
+      "rssi": -60.37,
+      "serving": {
+       "id": 24629,
+       "latitude": 41.809468,
+       "longitude": -72.283671,
+       "rsrp": -106.17,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top1": {
+       "id": 24629,
+       "latitude": 41.809468,
+       "longitude": -72.283671,
+       "rsrp": -106.17,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top2": {
+       "id": 18993,
+       "latitude": 41.809468,
+       "longitude": -72.283671,
+       "rsrp": -108.77,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.809468,
+      "longitude": -72.283671
+     }
+    },
+    {
+     "info": {
+      "rsrq": -11.49,
+      "rssi": -62.02,
+      "serving": {
+       "id": 24629,
+       "latitude": 41.809234,
+       "longitude": -72.283896,
+       "rsrp": -102.67,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top1": {
+       "id": 24629,
+       "latitude": 41.809234,
+       "longitude": -72.283896,
+       "rsrp": -102.67,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "top2": {
+       "id": 18993,
+       "latitude": 41.809234,
+       "longitude": -72.283896,
+       "rsrp": -106.97,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.809234,
+      "longitude": -72.283896
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "214",
+   "lat": 41.8094322673374,
+   "lon": -72.2825248050916,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -12.25,
+      "rssi": -73.08,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.809403,
+       "longitude": -72.282043,
+       "rsrp": -106.16,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.809403,
+       "longitude": -72.282043,
+       "rsrp": -106.16,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 24629,
+       "latitude": 41.809403,
+       "longitude": -72.282043,
+       "rsrp": -107.98,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "latitude": 41.809403,
+      "longitude": -72.282043
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "215",
+   "lat": 41.8094322673374,
+   "lon": -72.28131961923584,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -12.76,
+      "rssi": -77.79,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.809291,
+       "longitude": -72.281185,
+       "rsrp": -101.89,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.809291,
+       "longitude": -72.281185,
+       "rsrp": -101.89,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 24629,
+       "latitude": 41.809291,
+       "longitude": -72.281185,
+       "rsrp": -110.64,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "latitude": 41.809291,
+      "longitude": -72.281185
+     }
+    },
+    {
+     "info": {
+      "rsrq": -13.86,
+      "rssi": -66.38,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.809285,
+       "longitude": -72.280944,
+       "rsrp": -99.88,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.809285,
+       "longitude": -72.280944,
+       "rsrp": -99.88,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top2": {
+       "id": 24629,
+       "latitude": 41.809285,
+       "longitude": -72.280944,
+       "rsrp": -110.17,
+       "sector_name": "CCL00001_aa_1"
+      },
+      "latitude": 41.809285,
+      "longitude": -72.280944
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "216",
+   "lat": 41.8094322673374,
+   "lon": -72.28011443338009,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "217",
+   "lat": 41.8094322673374,
+   "lon": -72.27890924752434,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -11.71,
+      "rssi": -68.68,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.809405,
+       "longitude": -72.278491,
+       "rsrp": -84.21,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.809405,
+       "longitude": -72.278491,
+       "rsrp": -84.21,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.809405,
+      "longitude": -72.278491
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "218",
+   "lat": 41.8094322673374,
+   "lon": -72.27770406166859,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -8.27,
+      "rssi": -70.31,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.80932,
+       "longitude": -72.277716,
+       "rsrp": -77.35,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.80932,
+       "longitude": -72.277716,
+       "rsrp": -77.35,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.80932,
+      "longitude": -72.277716
+     }
+    },
+    {
+     "info": {
+      "rsrq": -10.8,
+      "rssi": -74.03,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.809085,
+       "longitude": -72.277877,
+       "rsrp": -83.41,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.809085,
+       "longitude": -72.277877,
+       "rsrp": -83.41,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.809085,
+      "longitude": -72.277877
+     }
+    },
+    {
+     "info": {
+      "rsrq": -11.76,
+      "rssi": -68.15,
+      "serving": {
+       "id": 18993,
+       "latitude": 41.809822,
+       "longitude": -72.277841,
+       "rsrp": -70.82,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "top1": {
+       "id": 18993,
+       "latitude": 41.809822,
+       "longitude": -72.277841,
+       "rsrp": -70.82,
+       "sector_name": "CCL00002_aa_1"
+      },
+      "latitude": 41.809822,
+      "longitude": -72.277841
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "219",
+   "lat": 41.8094322673374,
+   "lon": -72.27649887581283,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "220",
+   "lat": 41.81033057851239,
+   "lon": -72.29939740707212,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "221",
+   "lat": 41.81033057851239,
+   "lon": -72.29819222121637,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "222",
+   "lat": 41.81033057851239,
+   "lon": -72.29698703536062,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "223",
+   "lat": 41.81033057851239,
+   "lon": -72.29578184950486,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "224",
+   "lat": 41.81033057851239,
+   "lon": -72.29457666364911,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -9.91,
+      "rssi": -60.85,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.810377,
+       "longitude": -72.294522,
+       "rsrp": -109.46,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.810377,
+       "longitude": -72.294522,
+       "rsrp": -109.46,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top2": {
+       "id": 41549,
+       "latitude": 41.810377,
+       "longitude": -72.294522,
+       "rsrp": -110.3,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.810377,
+      "longitude": -72.294522
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "225",
+   "lat": 41.81033057851239,
+   "lon": -72.29337147779336,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -10.42,
+      "rssi": -66.72,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.809967,
+       "longitude": -72.293458,
+       "rsrp": -106.95,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.809967,
+       "longitude": -72.293458,
+       "rsrp": -106.95,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top2": {
+       "id": 41549,
+       "latitude": 41.809967,
+       "longitude": -72.293458,
+       "rsrp": -111.65,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.809967,
+      "longitude": -72.293458
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "226",
+   "lat": 41.81033057851239,
+   "lon": -72.2921662919376,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -13.86,
+      "rssi": -73.54,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.810066,
+       "longitude": -72.292583,
+       "rsrp": -109.0,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.810066,
+       "longitude": -72.292583,
+       "rsrp": -109.0,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top2": {
+       "id": 41549,
+       "latitude": 41.810066,
+       "longitude": -72.292583,
+       "rsrp": -111.42,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.810066,
+      "longitude": -72.292583
+     }
+    },
+    {
+     "info": {
+      "rsrq": -13.03,
+      "rssi": -79.92,
+      "serving": {
+       "id": 11969,
+       "latitude": 41.810434,
+       "longitude": -72.292227,
+       "rsrp": -105.5,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "top1": {
+       "id": 11969,
+       "latitude": 41.810434,
+       "longitude": -72.292227,
+       "rsrp": -105.5,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.810434,
+      "longitude": -72.292227
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "240",
+   "lat": 41.811228889687385,
+   "lon": -72.29939740707212,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "241",
+   "lat": 41.811228889687385,
+   "lon": -72.29819222121637,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "242",
+   "lat": 41.811228889687385,
+   "lon": -72.29698703536062,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -13.53,
+      "rssi": -73.08,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.81118,
+       "longitude": -72.297048,
+       "rsrp": -110.96,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.81118,
+       "longitude": -72.297048,
+       "rsrp": -110.96,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.81118,
+      "longitude": -72.297048
+     }
+    },
+    {
+     "info": {
+      "rsrq": -13.87,
+      "rssi": -69.94,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.811658,
+       "longitude": -72.297154,
+       "rsrp": -108.7,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.811658,
+       "longitude": -72.297154,
+       "rsrp": -108.7,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.811658,
+      "longitude": -72.297154
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "243",
+   "lat": 41.811228889687385,
+   "lon": -72.29578184950486,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -8.09,
+      "rssi": -64.77,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.811264,
+       "longitude": -72.29576,
+       "rsrp": -110.32,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.811264,
+       "longitude": -72.29576,
+       "rsrp": -110.32,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.811264,
+      "longitude": -72.29576
+     }
+    },
+    {
+     "info": {
+      "rsrq": -13.85,
+      "rssi": -75.83,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.811233,
+       "longitude": -72.295781,
+       "rsrp": -110.14,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.811233,
+       "longitude": -72.295781,
+       "rsrp": -110.14,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.811233,
+      "longitude": -72.295781
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "244",
+   "lat": 41.811228889687385,
+   "lon": -72.29457666364911,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -10.17,
+      "rssi": -66.0,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.811063,
+       "longitude": -72.294704,
+       "rsrp": -108.2,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.811063,
+       "longitude": -72.294704,
+       "rsrp": -108.2,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top2": {
+       "id": 11969,
+       "latitude": 41.811063,
+       "longitude": -72.294704,
+       "rsrp": -111.15,
+       "sector_name": "CCL00001_ab_1"
+      },
+      "latitude": 41.811063,
+      "longitude": -72.294704
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "245",
+   "lat": 41.811228889687385,
+   "lon": -72.29337147779336,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -9.71,
+      "rssi": -72.9,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.811475,
+       "longitude": -72.293371,
+       "rsrp": -110.52,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.811475,
+       "longitude": -72.293371,
+       "rsrp": -110.52,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.811475,
+      "longitude": -72.293371
+     }
+    },
+    {
+     "info": {
+      "rsrq": -8.09,
+      "rssi": -66.05,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.811309,
+       "longitude": -72.293292,
+       "rsrp": -108.55,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.811309,
+       "longitude": -72.293292,
+       "rsrp": -108.55,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.811309,
+      "longitude": -72.293292
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "246",
+   "lat": 41.811228889687385,
+   "lon": -72.2921662919376,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -12.42,
+      "rssi": -70.88,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.810951,
+       "longitude": -72.292346,
+       "rsrp": -110.79,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.810951,
+       "longitude": -72.292346,
+       "rsrp": -110.79,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.810951,
+      "longitude": -72.292346
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "260",
+   "lat": 41.81212720086238,
+   "lon": -72.29939740707212,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "261",
+   "lat": 41.81212720086238,
+   "lon": -72.29819222121637,
+   "status": "missing",
+   "samples": []
+  },
+  {
+   "grid_id": "262",
+   "lat": 41.81212720086238,
+   "lon": -72.29698703536062,
+   "status": "valid",
+   "samples": [
+    {
+     "info": {
+      "rsrq": -11.88,
+      "rssi": -77.72,
+      "serving": {
+       "id": 41549,
+       "latitude": 41.812265,
+       "longitude": -72.297142,
+       "rsrp": -108.83,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "top1": {
+       "id": 41549,
+       "latitude": 41.812265,
+       "longitude": -72.297142,
+       "rsrp": -108.83,
+       "sector_name": "CCL00003_ab_1"
+      },
+      "latitude": 41.812265,
+      "longitude": -72.297142
+     }
+    }
+   ]
+  },
+  {
+   "grid_id": "263",
+   "lat": 41.81212720086238,
+   "lon": -72.29578184950486,
+   "status": "missing",
+   "samples": []
+  }
+ ]
+}

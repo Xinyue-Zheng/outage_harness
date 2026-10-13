@@ -23,7 +23,7 @@ from context_builder_point import build_context  # noqa: E402
 from point_coverage import apply_point_coverage, fetch_area_points, inspect_point_coverage  # noqa: E402
 from synthetic_case import TOOL_DECLARATIONS, build_case, fake_point_api  # noqa: E402
 
-RADIUS_M = 50.0
+RESOLUTION = 10  # the model's choice: the point-API radius in metres
 
 
 def main(run_dir: Path) -> None:
@@ -39,12 +39,12 @@ def main(run_dir: Path) -> None:
     rendered = build_context(state, TOOL_DECLARATIONS)
     (run_dir / "context_00.txt").write_text(rendered.text, encoding="utf-8")
     for step, area_id in enumerate(("S1", "road_H1"), start=1):
-        result = fetch_area_points(state, area_id, run_dir, fake_point_api, radius_m=RADIUS_M,
+        result = fetch_area_points(state, area_id, run_dir, fake_point_api, radius_m=float(RESOLUTION),
                                    call_id=f"step_{step:02d}")
         observation = {
             "id": f"real_obs_{step:02d}",
             "purpose": f"Coverage of {area_id}",
-            "action": {"function": "query_area_coverage", "parameters": {"area_id": area_id},
+            "action": {"function": "query_area_coverage", "parameters": {"area_id": area_id, "resolution": RESOLUTION},
                        "requested_area_id": area_id},
             "result": result,
         }

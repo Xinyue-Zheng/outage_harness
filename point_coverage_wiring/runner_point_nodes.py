@@ -4,7 +4,9 @@ These replace the heatmap-specific parts of langgraph_runner.py, runner.py and
 policy.py. Each item names the function it replaces. Nothing else in the
 graph changes: parse, verifier, record_error, finish_check and the caps stay.
 
-1. Tool declaration and decision schema: query_area_coverage takes area_id only.
+1. Tool declaration and decision schema: query_area_coverage takes area_id and
+   resolution; resolution is the point-API radius r and must be one of
+   AREA_RESOLUTIONS, as before.
 2. RunLimits/RunGuard: a location budget, so the per-point cost is capped by
    the program, not by the model.
 3. validate_node branch: area must exist, cost must fit the budget.
@@ -14,8 +16,9 @@ graph changes: parse, verifier, record_error, finish_check and the caps stay.
 6. inspect_observation: read rows from the coverage table.
 
 The point API client is one function `query_point_coverage(lat, lon, r, token)`.
-`make_point_query` binds radius and token so the runner passes a plain
-(lat, lon, radius_m) -> samples callable, and secrets never enter State.
+`make_point_query` binds the token so the runner passes a plain
+(lat, lon, r) -> samples callable, and secrets never enter State. The radius
+comes from the model's resolution parameter on every call.
 """
 
 from __future__ import annotations
@@ -41,33 +44,36 @@ QUERY_AREA_COVERAGE = {
     "name": "query_area_coverage",
     "description": (
         "Fetch pre-outage coverage at every analysis grid location of one listed area "
-        "through the point API: for each location, every sample within the radius with "
-        "its serving sector and strongest neighbour cells and their RSRP."
+        "through the point API: for each location, every sample within the resolution "
+        "radius with its serving sector and strongest neighbour cells and their RSRP. "
+        "resolution is the radius in metres around each location and must be 4, 10 or 100."
     ),
     "input_schema": {
         "type": "object",
-        "properties": {"area_id": {"type": "string"}},
-        "required": ["area_id"],
+        "properties": {"area_id": {"type": "string"},
+                       "resolution": {"type": "number", "enum": [4, 10, 100]}},
+        "required": ["area_id", "resolution"],
         "additionalProperties": False,
     },
 }
 
-# runner.PARAMETERS: replace the query_area_coverage entry and drop the heatmap.
+# The radius values the point API accepts; the model picks one per query.
+AREA_RESOLUTIONS = (100, 10, 4)
+
+# runner.PARAMETERS: keep the query_area_coverage entry as it is and drop the heatmap.
 PARAMETERS_PATCH = {
-    "query_area_coverage": {"area_id"},
+    "query_area_coverage": {"area_id", "resolution"},
     "inspect_observation": {"observation_id", "area_id", "offset", "limit"},
 }
 # runner.DECISION_SCHEMA["properties"]["action"]["properties"]["function"]["enum"]:
 # remove "query_coverage_heatmap". The model has no bounding boxes to give.
 
 # Program configuration, never shown to the model as a parameter.
-POINT_RADIUS_M = 50.0
 POINT_WORKERS = 4
 
 
-def make_point_query(query_point_coverage: Callable[..., list[dict[str, Any]]], token: str,
-                     radius_m: float = POINT_RADIUS_M) -> PointQuery:
-    """Bind the API function to the run's radius and token."""
+def make_point_query(query_point_coverage: Callable[..., list[dict[str, Any]]], token: str) -> PointQuery:
+    """Bind the API function to the token; the radius is passed per call."""
 
     def query(lat: float, lon: float, r: float) -> list[dict[str, Any]]:
         return query_point_coverage(str(lat), str(lon), str(int(r)), token)
@@ -120,6 +126,8 @@ def validate_query_area_coverage(arguments: dict[str, Any], state: dict[str, Any
     geometry = read_geometry(state, run_dir)
     if arguments["area_id"] not in geometry["areas"]:
         raise ValueError("Choose a listed area_id")
+    if arguments["resolution"] not in AREA_RESOLUTIONS or isinstance(arguments["resolution"], bool):
+        raise ValueError(f"resolution must be one of {list(AREA_RESOLUTIONS)}")
     cost = new_locations(state, arguments["area_id"], run_dir)
     if cost == 0:
         raise ValueError(f"{arguments['area_id']} is already fully queried; no location would be fetched")
@@ -142,15 +150,16 @@ def execute_query_area_coverage(state: dict[str, Any], arguments: dict[str, Any]
     writes steps/step_NN/tool_result.json. No ToolSuccess object is needed:
     _update_state reads the summary fields.
     """
+    radius_m = float(arguments["resolution"])
     result = fetch_area_points(
         state, arguments["area_id"], run_dir, query,
-        radius_m=POINT_RADIUS_M, call_id=f"step_{step_index:02d}", workers=POINT_WORKERS,
+        radius_m=radius_m, call_id=f"step_{step_index:02d}", workers=POINT_WORKERS,
     )
     guard.record_locations(result["details"]["fetched"])
     step_dir = Path(run_dir) / "steps" / f"step_{step_index:02d}"
     step_dir.mkdir(parents=True, exist_ok=True)
     (step_dir / "resolved_parameters.json").write_text(
-        json.dumps({"area_id": arguments["area_id"], "radius_m": POINT_RADIUS_M,
+        json.dumps({"area_id": arguments["area_id"], "resolution": arguments["resolution"], "radius_m": radius_m,
                     "fetched": result["details"]["fetched"]}, indent=2) + "\n", encoding="utf-8")
     (step_dir / "tool_result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     return result
@@ -193,7 +202,7 @@ def update_state_query_area_coverage(state: dict[str, Any], observation: dict[st
 # and per-cell aggregates (rsrp min/max/mean, sample_count, serving_count); the
 # raw samples stay in the table and the artifact.
 __all__ = [
-    "PARAMETERS_PATCH", "QUERY_AREA_COVERAGE", "execute_query_area_coverage", "guard_check_locations",
+    "AREA_RESOLUTIONS", "PARAMETERS_PATCH", "QUERY_AREA_COVERAGE", "execute_query_area_coverage", "guard_check_locations",
     "guard_record_locations", "inspect_point_coverage", "make_point_query", "new_locations",
     "update_state_query_area_coverage", "validate_query_area_coverage",
 ]

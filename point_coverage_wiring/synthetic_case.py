@@ -69,7 +69,12 @@ def _rsrp(cell: str, x_m: float, y_m: float) -> float:
 
 
 def fake_point_api(lat: float, lon: float, radius_m: float, *, seed: int = 7) -> list[dict[str, Any]]:
-    """Samples within radius_m of the point: 0 to 3 of them, each listing serving and top-N cells."""
+    """Samples within radius_m of the point, each listing serving and top-N cells.
+
+    Mirrors the real API's accepted radii: 4, 10 or 100 m. Any other value is
+    an error, so a wrong resolution fails loudly in tests."""
+    if radius_m not in (4.0, 10.0, 100.0):
+        raise ValueError(f"fake point API accepts radius 4, 10 or 100 m, got {radius_m}")
     x, y = _to_xy(lat, lon)
     rng = random.Random(f"{seed}:{round(x)}:{round(y)}")
     count = rng.choice((0, 1, 2, 2, 3)) if rng.random() > 0.06 else 0
@@ -212,10 +217,12 @@ def build_case(run_dir: Path) -> dict[str, Any]:
 TOOL_DECLARATIONS = (
     {"name": "query_area_coverage",
      "description": "Fetch pre-outage coverage at every analysis grid location of one listed area through "
-                    "the point API: for each location, every sample within the radius with its serving "
-                    "sector and strongest neighbour cells and their RSRP.",
-     "input_schema": {"type": "object", "properties": {"area_id": {"type": "string"}},
-                      "required": ["area_id"], "additionalProperties": False}},
+                    "the point API: for each location, every sample within the resolution radius with its serving "
+                    "sector and strongest neighbour cells and their RSRP. resolution is the radius in metres "
+                    "around each location and must be 4, 10 or 100.",
+     "input_schema": {"type": "object", "properties": {"area_id": {"type": "string"},
+                                                       "resolution": {"type": "number", "enum": [4, 10, 100]}},
+                      "required": ["area_id", "resolution"], "additionalProperties": False}},
     {"name": "inspect_observation",
      "description": "Inspect existing coverage rows without another API query.",
      "input_schema": {"type": "object", "properties": {"observation_id": {"type": "string"}, "area_id": {"type": "string"},

@@ -43,14 +43,9 @@ environment in the runner (step 7), never from State. Nothing else changes.
 
 ## Step 3. `runner.py`: parameters and decision schema
 
-**`PARAMETERS`** (the dict after `DECISION_SCHEMA`):
-
-```python
-# old
-"query_area_coverage": {"area_id", "resolution"},
-# new
-"query_area_coverage": {"area_id"},
-```
+**`PARAMETERS`** (the dict after `DECISION_SCHEMA`): keep
+`"query_area_coverage": {"area_id", "resolution"}` as it is. The model still
+chooses the resolution; it is now the radius of each point call.
 
 Delete the whole `"query_coverage_heatmap": {...}` entry.
 
@@ -131,23 +126,30 @@ Also raise `max_time_seconds`. One point call per location with the
 
 ## Step 5. `client.py`: the declaration the model sees
 
-In `TOOL_DECLARATIONS`, replace the `query_area_coverage` declaration (the
-one with `area_id` and `resolution`) by the area-only one. The exact object is
-`QUERY_AREA_COVERAGE` in `runner_point_nodes.py`; as a `ToolDeclaration`:
+In `TOOL_DECLARATIONS`, delete the `query_coverage_heatmap` declaration and
+add the `query_area_coverage` one. The exact object is `QUERY_AREA_COVERAGE`
+in `runner_point_nodes.py`; as a `ToolDeclaration`:
 
 ```python
 ToolDeclaration(
     "query_area_coverage",
     "Fetch pre-outage coverage at every analysis grid location of one listed area through "
-    "the point API: for each location, every sample within the radius with its serving "
-    "sector and strongest neighbour cells and their RSRP.",
-    {"type": "object", "properties": {"area_id": {"type": "string"}},
-     "required": ["area_id"], "additionalProperties": False},
+    "the point API: for each location, every sample within the resolution radius with its "
+    "serving sector and strongest neighbour cells and their RSRP. resolution is the radius "
+    "in metres around each location and must be 4, 10 or 100.",
+    {"type": "object",
+     "properties": {"area_id": {"type": "string"},
+                    "resolution": {"type": "number", "enum": [4, 10, 100]}},
+     "required": ["area_id", "resolution"], "additionalProperties": False},
 )
 ```
 
-Keep the `query_coverage_heatmap` declaration in the client if other code
-uses it, but it must not reach the model: step 6 filters it out of `tools`.
+This declaration has no function behind it: `query_area_coverage` runs in the
+program, never through `client.call`. If your library pairs every declaration
+with a callable for the MCP server, give this one none.
+
+If the point API function `query_point_coverage` is registered in the same
+library, it must not reach the model. Step 6 filters it out of `tools`.
 
 ---
 
@@ -162,12 +164,14 @@ from outage_harness_langgraph.evidence_state import split_geography, apply_cover
 from outage_harness_langgraph.evidence_state import split_geography, apply_kpi
 from outage_harness_langgraph.point_coverage import PointQuery, inspect_point_coverage
 from outage_harness_langgraph.runner_point_nodes import (
-    POINT_RADIUS_M, QUERY_AREA_COVERAGE, execute_query_area_coverage, make_point_query,
+    execute_query_area_coverage, make_point_query,
     update_state_query_area_coverage, validate_query_area_coverage,
 )
 ```
 
-Delete the line `AREA_RESOLUTIONS = (100, 10, 4)` and its comment.
+Delete the line `AREA_RESOLUTIONS = (100, 10, 4)` and its comment. The same
+tuple now lives in `runner_point_nodes.py`, where
+`validate_query_area_coverage` checks it.
 
 **`build_investigation_graph` signature**: add the point query.
 
@@ -192,14 +196,15 @@ the `if fetch_landuse_before_decision:` block), add:
 ```
 
 Still in `initialize_node`, replace the clipped block that extends `tools`
-(original 174 to 181, the two `ToolDeclaration(...)` calls) with:
+(original 174 to 181, the two `ToolDeclaration(...)` calls) with the block
+below. `query_area_coverage` is already declared in the client after step 5,
+so it is not added here again. The filter removes the point API function
+if the library registers it; use the name the library gives it.
 
 ```python
-        tools = tuple(tool for tool in tools if tool.name != "query_coverage_heatmap")
+        tools = tuple(tool for tool in tools if tool.name != "query_point_coverage")
         if fetch_landuse_before_decision:
             tools = (*tools,
-                     ToolDeclaration(QUERY_AREA_COVERAGE["name"], QUERY_AREA_COVERAGE["description"],
-                                     QUERY_AREA_COVERAGE["input_schema"]),
                      ToolDeclaration("inspect_observation",
                                      "Inspect existing coverage rows without another API query.",
                                      {"type": "object",
@@ -231,7 +236,7 @@ and the inspection check:
                 if not all(isinstance(arguments[key], int) and not isinstance(arguments[key], bool) for key in ("offset", "limit")) or ...:
                     raise ValueError("Inspection needs offset >= 0 and limit between 1 and 100")
                 inspect_coverage(state["state"], arguments["observation_id"], arguments["area_id"], arguments["offset"], arguments["limit"])
-# new
+# new  (validate_query_area_coverage checks the area, the resolution and the budget)
             if action_name == "query_area_coverage":
                 validate_query_area_coverage(arguments, state["state"], state["output_dir"], guard)
             elif action_name == "inspect_observation":
@@ -279,8 +284,8 @@ two blocks stays as it is.
 **`update_state_node`** (original 424). Two edits.
 
 First, the `executed_parameters` lines: keep them. `resolved_parameters.json`
-now holds `area_id`, `radius_m` and `fetched`, which is what the provenance
-line should show.
+now holds `area_id`, `resolution`, `radius_m` and `fetched`, which is what the
+provenance line should show.
 
 Second, replace the coverage branch:
 
@@ -314,11 +319,9 @@ can pick a smaller area, and the rejection cap ends the run if it keeps trying.
 Build the point query once and pass it to the graph:
 
 ```python
-    import os
-    from outage_harness_langgraph.point_by_point_cover import query_point_coverage  # wherever the file lives
+    from outage_harness_langgraph.point_by_point_cover import TOKEN, query_point_coverage  # wherever the file lives
 
-    token = os.environ["COVERAGE_API_TOKEN"]          # choose the variable name you use
-    point_query = make_point_query(query_point_coverage, token, POINT_RADIUS_M)
+    point_query = make_point_query(query_point_coverage, TOKEN)   # TOKEN as set in point_by_point_cover.py
     graph = build_investigation_graph(
         model, client, point_query=point_query,
         fetch_landuse_before_decision=fetch_landuse_before_decision,
@@ -326,9 +329,9 @@ Build the point query once and pass it to the graph:
     )
 ```
 
-`POINT_RADIUS_M` and `POINT_WORKERS` live at the top of
-`runner_point_nodes.py`. Start with radius 50 m for a 100 m grid and 4 workers;
-see the open gaps in `WIRING_2026-10-13.md` before changing them.
+The radius of each point call is the model's `resolution` (4, 10 or 100 m),
+passed per call. `POINT_WORKERS` at the top of `runner_point_nodes.py` sets
+how many point calls run at once; start with 4.
 
 ---
 
@@ -339,8 +342,9 @@ the internal helpers (`_summarize`, `_update_state`, `ToolSuccess`,
 `ToolFailure`, `RunGuard`) copied from the photographed files, then runs the
 unchanged `gap_checks_partial.py` and the unchanged `completion_evidence_status`
 on the resulting State. It passes: coverage round, inspection round, repeated
-area rejected, cell-target gap rejected, overlap skipped, budget rejection with
-the cost, all-calls-failed path, context rendered after every round.
+area rejected, cell-target gap rejected, resolution outside 4/10/100 rejected,
+overlap skipped, budget rejection with the cost, all-calls-failed path, context
+rendered after every round.
 
 What that test cannot see, because the files are not here:
 
@@ -355,11 +359,12 @@ What that test cannot see, because the files are not here:
 In `investigation_skill.txt`, find the sentence that describes coverage
 queries (heatmap, bounding box, resolution). Replace it with:
 
-> A coverage query names one area. The program fetches every analysis grid
-> location of that area through the point API, one call per location, and
-> the cost is the number of locations fetched for the first time. Each sample
-> lists its serving sector and the strongest neighbour cells with RSRP; a cell
-> that is not listed is not shown to be absent.
+> A coverage query names one area and a resolution of 4, 10 or 100. The
+> program fetches every analysis grid location of that area through the point
+> API, one call per location with the resolution as the search radius in
+> metres, and the cost is the number of locations fetched for the first time.
+> Each sample lists its serving sector and the strongest neighbour cells with
+> RSRP; a cell that is not listed is not shown to be absent.
 
 Then run once with the fake API to check the wiring before any real call:
 
@@ -379,7 +384,7 @@ eligible backup cell". The state must have `coverage[grid_id]["samples"]`.
 ## Step 10. Switch to the real API
 
 1. Call `query_point_coverage` once by hand for the down site's own grid
-   location with the chosen radius. Count the samples and read one: confirm
+   location with r = 4, 10 and 100. Count the samples and read one: confirm
    `info.serving.sector_name`, `info.topN.rsrp` and the coordinates are where
    `sample_cells` in `point_coverage.py` expects them. If the keys differ,
    change `sample_cells` only.

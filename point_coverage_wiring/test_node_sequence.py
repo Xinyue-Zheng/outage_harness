@@ -230,7 +230,7 @@ def main() -> None:
 
     st: dict[str, Any] = {"state": state0, "output_dir": run_dir.as_posix(), "step_index": 1}
     print("round 1: coverage of S1")
-    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "S1"}, ["S1"],
+    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "S1", "resolution": 10}, ["S1"],
                                                     "Where do the outage sectors serve in S1?"))
     s1 = st["state"]["summaries"]["S1"]
     assert s1["queried"] == 30 and s1["down_cell_present"] > 0, s1
@@ -244,24 +244,28 @@ def main() -> None:
     assert len(st["state"]["inspection"]["rows"]) == 5
 
     print("round 3: coverage of S1 again (already fully queried) -> rejected")
-    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "S1"}, ["S1"], "S1 again?"))
+    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "S1", "resolution": 10}, ["S1"], "S1 again?"))
     assert "already fully queried" in st["error"] or "already answered" in st["error"], st["error"]
 
     print("round 4: gap targets a cell with a coverage query -> rejected by gap check")
     seen = st["state"]["cells_seen"][0]
-    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "road_H1"}, [seen], "Cell?"))
+    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "road_H1", "resolution": 10}, [seen], "Cell?"))
     assert "action_cannot_answer_gap" in st["error"], st["error"]
 
     print("round 5: coverage of road_H1 (overlap with S1 is skipped)")
-    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "road_H1"}, ["road_H1"],
+    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "road_H1", "resolution": 10}, ["road_H1"],
                                                     "Does the outage sector serve along the road?"))
     road = st["state"]["summaries"]["road_H1"]
     obs = next(o for o in st["state"]["observations"] if o.get("id") == "real_obs_05")
     assert obs["result"]["skipped_already_queried"] == 18 and road["queried"] == 60, obs["result"]
     assert st["state"]["query_budget"]["locations_spent"] == 72
 
+    print("round 6a: resolution outside 4/10/100 -> rejected before any API call")
+    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "F1", "resolution": 50}, ["F1"], "F1?"))
+    assert "resolution must be one of" in st["error"], st["error"]
+
     print("round 6: F1 does not fit the remaining budget -> rejected with the cost")
-    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "F1"}, ["F1"], "F1?"))
+    st = run_round(st, guard, point_query, decision("query_area_coverage", {"area_id": "F1", "resolution": 100}, ["F1"], "F1?"))
     assert "would fetch 54 locations" in st["error"], st["error"]
 
     print("round 7: every point call fails -> ToolFailure, nothing enters the table")
@@ -269,7 +273,7 @@ def main() -> None:
         raise ConnectionError("API down")
     before = dict(st["state"]["coverage"])
     st = run_round(st, RunGuard(RunLimits(max_query_locations=1000)), broken,
-                   decision("query_area_coverage", {"area_id": "S2"}, ["S2"], "S2?"))
+                   decision("query_area_coverage", {"area_id": "S2", "resolution": 4}, ["S2"], "S2?"))
     assert st["state"]["coverage"] == before
     assert st["state"]["summaries"]["S2"]["queried"] == 8  # the 8 S2 locations the road corridor covered earlier
 

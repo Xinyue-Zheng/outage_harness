@@ -319,15 +319,19 @@ can pick a smaller area, and the rejection cap ends the run if it keeps trying.
 Build the point query once and pass it to the graph:
 
 ```python
-    from outage_harness_langgraph.point_by_point_cover import TOKEN, query_point_coverage  # wherever the file lives
+    from outage_harness_langgraph.point_by_point_cover import query_point_coverage  # wherever the file lives
 
-    point_query = make_point_query(query_point_coverage, TOKEN)   # TOKEN as set in point_by_point_cover.py
+    point_query = make_point_query(query_point_coverage)   # the token default inside the function is used
     graph = build_investigation_graph(
         model, client, point_query=point_query,
         fetch_landuse_before_decision=fetch_landuse_before_decision,
         verifier=verifier, limits=limits,
     )
 ```
+
+`make_point_query` calls `query_point_coverage(lat, lon, r)` with three
+arguments, so the token must have a default in the function signature
+(`token: str = "..."`). If it has none, pass it: `make_point_query(query_point_coverage, token)`.
 
 The radius of each point call is the model's `resolution` (4, 10 or 100 m),
 passed per call. `POINT_WORKERS` at the top of `runner_point_nodes.py` sets

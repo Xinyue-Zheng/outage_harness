@@ -72,10 +72,17 @@ PARAMETERS_PATCH = {
 POINT_WORKERS = 4
 
 
-def make_point_query(query_point_coverage: Callable[..., list[dict[str, Any]]], token: str) -> PointQuery:
-    """Bind the API function to the token; the radius is passed per call."""
+def make_point_query(query_point_coverage: Callable[..., list[dict[str, Any]]],
+                     token: str | None = None) -> PointQuery:
+    """Bind the API function; the radius is passed per call.
+
+    With token None the function's own default token is used, for a
+    query_point_coverage whose token parameter has a default value.
+    """
 
     def query(lat: float, lon: float, r: float) -> list[dict[str, Any]]:
+        if token is None:
+            return query_point_coverage(str(lat), str(lon), str(int(r)))
         return query_point_coverage(str(lat), str(lon), str(int(r)), token)
 
     return query

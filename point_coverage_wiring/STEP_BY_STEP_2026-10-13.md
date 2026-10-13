@@ -390,6 +390,17 @@ eligible backup cell". The state must have `coverage[grid_id]["samples"]`.
 
 ---
 
+## Two dead mentions of the heatmap name
+
+After steps 3 to 7, the name `query_coverage_heatmap` survives in two places
+that no code path reaches. Deleting them is optional but recommended:
+
+- `runner.py`, `_update_state`, the branch `if action == "query_coverage_heatmap":`
+  that writes `coverage["latest"]`. If it ever ran it would put a non-grid key
+  into the coverage table, so delete the branch.
+- `gap_checks.py`, the `RESULT_KIND` entry
+  `"query_coverage_heatmap": "coverage_rows"`. A dead key; delete the line.
+
 ## What you do not touch
 
 - `evidence_state.py`: `apply_kpi`, `split_geography`, `_geometry`, `_record`

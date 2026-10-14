@@ -242,7 +242,18 @@ and add directly below it
 
 ```python
 from outage_harness_codex_state import context_builder_concat as concat
+from outage_harness_codex_state import runner_concat_nodes as rc
 from outage_harness_codex_state.transcript import Transcript
+```
+
+and make sure the import from `runner_point_nodes` (already there after the
+per-point steps) includes `AREA_RESOLUTIONS` and `new_locations`:
+
+```python
+from outage_harness_codex_state.runner_point_nodes import (
+    AREA_RESOLUTIONS, QUERY_AREA_COVERAGE, execute_query_area_coverage, make_point_query,
+    new_locations, update_state_query_area_coverage, validate_query_area_coverage,
+)
 ```
 
 **3b. The graph state.** Find the class `InvestigationState(TypedDict, total=False)`.
@@ -343,30 +354,66 @@ are kept separate.
 
 ### Step 5. `validate_node`
 
-Replace the body with:
+Replace the whole function with the one below. It is the complete node, no
+part left out: the rendered branch is the per-point version from
+`STEP_BY_STEP_2026-10-13.md`, step 7, unchanged; the concat branch is new.
+`new_locations` and `AREA_RESOLUTIONS` come from `runner_point_nodes` (import
+in 3a); `rc` is `runner_concat_nodes`.
 
 ```python
-try:
-    action_name, arguments = rc.validate_schema_only(
-        state["decision"], state["tools"], state["state"], state["output_dir"], AREA_RESOLUTIONS)
-    cap = guard.check(action_name, arguments)
-    if cap:
-        return {"end_reason": cap, "error": cap}
-    if action_name == "query_area_coverage":
-        cost = new_locations(state["state"], arguments["area_id"], state["output_dir"])
-        if guard.check_locations(cost):
-            return {"end_reason": "query_budget", "error": "query_budget"}
-    guard.record_validation(True)
-    ...write validation.json...
-    return {"action_name": action_name, "arguments": arguments, "error": None}
-except Exception as error:
-    guard.record_validation(False)
-    ...write validation.json...
-    return {"error": f"{type(error).__name__}: {error}"}
+    def validate_node(state: InvestigationState) -> dict[str, Any]:
+        step_dir = Path(state["output_dir"]) / "steps" / f"step_{state['step_index']:02d}"
+        try:
+            if concat_mode:
+                # Codex way: tool name known, parameters as declared, area id listed. Nothing about State.
+                action_name, arguments = rc.validate_schema_only(
+                    state["decision"], state["tools"], state["state"], state["output_dir"], AREA_RESOLUTIONS)
+                if action_name == "query_area_coverage":
+                    cost = new_locations(state["state"], arguments["area_id"], state["output_dir"])
+                    if guard.check_locations(cost):
+                        # The budget is a cap that ends the run, not feedback the model can act on.
+                        return {"end_reason": "query_budget", "error": "query_budget"}
+            else:
+                action_name, arguments = _validate_decision(state["decision"])
+                if action_name == "query_area_coverage":
+                    validate_query_area_coverage(arguments, state["state"], state["output_dir"], guard)
+                elif action_name == "inspect_observation":
+                    if (not all(isinstance(arguments[key], int) and not isinstance(arguments[key], bool)
+                                for key in ("offset", "limit"))
+                            or arguments["offset"] < 0 or not 1 <= arguments["limit"] <= 100):
+                        raise ValueError("Inspection needs offset >= 0 and limit between 1 and 100")
+                    inspect_point_coverage(state["state"], arguments["observation_id"], arguments["area_id"],
+                                           arguments["offset"], arguments["limit"])
+                elif action_name not in {"finish", "query_area_coverage", "inspect_observation"}:
+                    routing = state["decision"].get("routing")
+                    if routing and len(routing["calls"]) > 1:
+                        for call in routing["calls"]:
+                            validate_live_action(call["function"], {**arguments, "cell_ids": call["cell_ids"]},
+                                                 state["state"], state["output_dir"])
+                    else:
+                        validate_live_action(action_name, arguments, state["state"], state["output_dir"])
+                if fetch_landuse_before_decision:
+                    check_gap(state["decision"], action_name, arguments, state["state"])
+            cap = guard.check(action_name, arguments)
+            if cap:
+                return {"end_reason": cap, "error": cap}
+            guard.record_validation(True)
+            _write_json(step_dir / "validation.json",
+                        {"status": "accepted", "action_name": action_name, "arguments": arguments})
+            return {"action_name": action_name, "arguments": arguments, "error": None}
+        except Exception as error:
+            guard.record_validation(False)
+            message = f"{type(error).__name__}: {error}"
+            _write_json(step_dir / "validation.json", {"status": "rejected", "error": message})
+            return {"error": message}
 ```
 
-No `check_gap`. The budget is a cap that ends the run, not a message with a
-cost: Codex has no domain budget, so concat gets the cap and nothing else.
+What the concat branch does not do, on purpose: no `validate_live_action`
+(the KPI window and cell-id checks against State), no `check_gap`, no budget
+message with the cost. A rejected decision reaches the model as an error
+string appended to the transcript (step 9), which is how Codex returns a tool
+error. The KPI routing by id pattern still happens in `parse_node`, because it
+belongs to the tool library, not to the context.
 
 ### Step 6. `verifier_node`
 

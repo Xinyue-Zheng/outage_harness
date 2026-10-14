@@ -417,54 +417,259 @@ belongs to the tool library, not to the context.
 
 ### Step 6. `verifier_node`
 
-`if verifier is None or state.get("error") or concat_mode: return {}`. With 2c passing `verifier=None` for the concat condition this line is a second guard, not the only one.
+Find the first line of the body:
+
+```python
+        if verifier is None or state.get("error"):
+```
+
+Replace it with
+
+```python
+        if verifier is None or state.get("error") or concat_mode:
+```
+
+Step 2c already passes `verifier=None` under concat; this line is the second
+guard, so a verifier handed in by mistake still never runs.
 
 ### Step 7. `execute_tool_node`
 
+Replace the whole function with the one below. The inspection branch and
+the coverage branch are the per-point versions; the concat condition runs the
+same code, because the tools do not change. The KPI routing part after them
+is the original, unchanged. `POINT_WORKERS` comes from `runner_point_nodes`.
+
 ```python
-summary = rc.execute_concat(state["action_name"], state["arguments"], state["state"],
-                            state["output_dir"], state["step_index"], point_query, POINT_WORKERS)
-guard.record_locations(summary.get("details", {}).get("fetched", 0))
+    def execute_tool_node(state: InvestigationState) -> dict[str, Any]:
+        guard.record_tool_call(state["action_name"], state["arguments"])
+        step_dir = Path(state["output_dir"]) / "steps" / f"step_{state['step_index']:02d}"
+        if state["action_name"] == "inspect_observation":
+            arguments = state["arguments"]
+            rows = inspect_point_coverage(state["state"], arguments["observation_id"], arguments["area_id"],
+                                          arguments["offset"], arguments["limit"])
+            path = Path(state["output_dir"]) / "artifacts" / f"inspection_{state['step_index']:02d}.json"
+            _write_json(path, rows)
+            result = ToolSuccess("inspect_observation", str(path), len(rows), ("grid_id", "status", "cells"),
+                                 source="state", details={"rows": rows})
+            _write_json(step_dir / "tool_result.json", _summarize(result))
+            return {"tool_result": result}
+        if state["action_name"] == "query_area_coverage":
+            summary = execute_query_area_coverage(state["state"], state["arguments"], state["output_dir"],
+                                                  state["step_index"], point_query, guard)
+            if summary["status"] == "success":
+                result = ToolSuccess(summary["tool"], summary["output_file"], summary["row_count"],
+                                     tuple(summary["columns"]), source=summary["source"], details=summary["details"])
+            else:
+                result = ToolFailure(summary["tool"], "PointApiFailure", summary["error"])
+            return {"tool_result": result}
+        routing = state["decision"].get("routing")
+        if routing and len(routing["calls"]) > 1:
+            successes, calls = [], []
+            for call in routing["calls"]:
+                suffix = "nr" if call["function"] == "query_nr_rrc_prb" else "lte"
+                result = client.call(call["function"], {**state["arguments"], "cell_ids": call["cell_ids"]},
+                                     call_id=f"step_{state['step_index']:02d}_{suffix}")
+                calls.append({**call, **_summarize(result)})
+                if isinstance(result, ToolSuccess):
+                    successes.append(result)
+            if successes:
+                path = Path(state["output_dir"]) / "artifacts" / f"query_kpi_routed_step_{state['step_index']:02d}.csv"
+                row_count, columns = _merge_kpi_csvs(successes, path)
+                result = ToolSuccess(state["action_name"], str(path), row_count, columns,
+                                     source="routed_kpi", details={"routed_calls": calls})
+            else:
+                result = ToolFailure(state["action_name"], "RoutedKpiFailure", "; ".join(
+                    f"{call['function']}: {call.get('error', 'no result')}" for call in calls))
+            _write_json(step_dir / "tool_result.json", {**_summarize(result), "routed_calls": calls})
+            return {"tool_result": result}
+        result = client.call(state["action_name"], state["arguments"], call_id=f"step_{state['step_index']:02d}")
+        _write_json(step_dir / "tool_result.json", _summarize(result))
+        return {"tool_result": result}
 ```
 
-wrap into `ToolSuccess`/`ToolFailure` as in the rendered condition.
+`execute_query_area_coverage` already calls `guard.record_locations`, writes
+`resolved_parameters.json` and `tool_result.json`.
 
 ### Step 8. `update_state_node`
 
-After the observation dict is built:
+Replace the whole function with the one below. Two things differ from the
+per-point version: the coverage branch keeps the State in both conditions
+(under concat it is hidden, used for scoring), and the last statement before
+the files are written appends the round to the transcript under concat.
 
 ```python
-new_state = rc.update_hidden_state(state["state"], observation, state["output_dir"], guard)
-rc.append_round(state["transcript"], json.dumps(state["raw_response"]), state["action_name"],
-                summary, None, state["output_dir"])
+    def update_state_node(state: InvestigationState) -> dict[str, Any]:
+        index = state["step_index"]
+        summary = _summarize(state["tool_result"])
+        decision = state["decision"]
+        action = decision["action"]
+        executed_parameters = action["parameters"]
+        if state["action_name"] == "query_area_coverage":
+            executed_parameters = json.loads((Path(state["output_dir"]) / "steps" / f"step_{index:02d}"
+                                              / "resolved_parameters.json").read_text(encoding="utf-8"))
+            action = {**action, "parameters": executed_parameters,
+                      "requested_area_id": decision["action"]["parameters"]["area_id"]}
+        observation = {
+            "id": f"real_obs_{index:02d}",
+            "purpose": decision.get("purpose"),
+            "information_gaps": decision.get("information_gaps"),
+            "action": action,
+            "result": summary,
+        }
+        new_state = _update_state(state["state"], observation)
+        if isinstance(new_state.get("observations"), list):
+            new_state["observations"] = [*new_state["observations"], observation]
+        if state["action_name"] == "query_area_coverage" and summary["status"] == "success":
+            new_state = update_state_query_area_coverage(new_state, observation, state["output_dir"], guard)
+        if (state["action_name"] in {"query_nr_rrc_prb", "query_lte_rrc_prb"} and summary["status"] == "success"
+                and isinstance(state["state"].get("geography"), dict)):
+            new_state = apply_kpi(state["state"], observation, state["output_dir"])
+        if state["action_name"] == "inspect_observation" and summary["status"] == "success":
+            new_state["inspection"] = {"step_index": index, **state["arguments"], "rows": summary["details"]["rows"]}
+        if decision.get("routing"):
+            routes = "; ".join(f"{call['function']}: {','.join(call['cell_ids'])}" for call in decision["routing"]["calls"])
+            new_state["notes"] = [*new_state.get("notes", []), {
+                "kind": "rerouted", "step_index": index,
+                "text": f"{decision['routing']['requested_function']} cells were routed by ID pattern: {routes}"}]
+        new_state["id"] = f"state_{index:02d}"
+        if concat_mode:
+            # The model's own reply, then the raw tool output, appended in order. Nothing from new_state.
+            rc.append_round(state["transcript"], json.dumps(state["raw_response"]), state["action_name"],
+                            summary, None, state["output_dir"])
+        output_dir = Path(state["output_dir"])
+        _write_json(output_dir / f"observation_{index:02d}.json", observation)
+        step_dir = output_dir / "steps" / f"step_{index:02d}"
+        _write_json(step_dir / "observation.json", observation)
+        _write_json(step_dir / "tool_result.json", summary)
+        _write_json(step_dir / "state_after.json", new_state)
+        _write_json(output_dir / f"state_{index:02d}.json", new_state)
+        _write_json(step_dir / "step.json", {"step": index, "decision": decision, "result": summary})
+        steps = [*state["steps"], {"step": index, "decision": decision, "result": summary}]
+        observations = [*state["observations"], observation]
+        _write_json(output_dir / "steps.json", steps)
+        _write_json(output_dir / "state.json", new_state)
+        return {
+            "state": new_state,
+            "steps": steps,
+            "observations": observations,
+            "step_index": index + 1,
+            "tool_result": None,
+            "error": None,
+        }
 ```
+
+`update_state_query_area_coverage` is the per-point function; it already
+applies the coverage artifact, refreshes the summaries and the budget line.
+`rc.update_hidden_state` in `runner_concat_nodes.py` does the same for a
+runner without the per-point function; here the per-point one is used so
+both conditions run identical State code.
 
 ### Step 9. `record_error_node`
 
-Add one line so the model sees the rejection as a tool error:
+Find the line
 
 ```python
-rc.append_round(state["transcript"], json.dumps(state.get("raw_response", {})),
-                (state.get("decision", {}).get("action") or {}).get("function"), None, reason, state["output_dir"])
+        reason = state.get("error") or "Unknown decision error"
 ```
+
+and add directly below it
+
+```python
+        if concat_mode:
+            # The rejection reaches the model as a tool error appended to the transcript.
+            function = (state.get("decision", {}).get("action") or {}).get("function")
+            rc.append_round(state["transcript"], json.dumps(state.get("raw_response", {})),
+                            function, None, reason, state["output_dir"])
+```
+
+The rest of the node is unchanged: the note of kind `rejected` still goes
+into the hidden State, where it is scored but never rendered under concat.
 
 ### Step 10. `finish_check_node`
 
+Add one module-level constant next to the imports:
+
 ```python
-checks = completion_evidence_status(state["state"], radio_technology)   # scored, not enforced
-if concat_mode and COMPLETION_MODE == "model":
-    ...write finish.json with checks, run.json with end_reason "model_finish"...
-    return {"finished": True}
+COMPLETION_MODE = rc.COMPLETION_MODE_MODEL   # "model": finish accepted as proposed; "checks": refused until the checks pass
 ```
 
-Mode `checks` keeps the the rendered condition behaviour (refuse until the checks pass)
-and is the concat condition+ in the experiment.
+Replace the whole function with the one below. Under the rendered condition,
+and under concat with `COMPLETION_MODE == "checks"` (the concat+checks
+condition), it is the per-point `finish_check` from `completion_point.py`.
+Under concat with mode `model` the finish is accepted as proposed, the checks
+are computed and written, but they decide nothing.
+
+```python
+    def finish_check_node(state: InvestigationState) -> dict[str, Any]:
+        if not concat_mode or COMPLETION_MODE == rc.COMPLETION_MODE_CHECKS:
+            return finish_check(state, client, radio_technology, write_json=_write_json,
+                                model_name=getattr(model, "model", type(model).__name__))
+        checks = completion_evidence_status(state["state"], radio_technology)   # scored, not enforced
+        index = state["step_index"]
+        output_dir = Path(state["output_dir"])
+        final_state = {**state["state"], "completion_checks": checks}
+        finish_step = {"step": index, "decision": state["decision"], "status": "finished",
+                       "completion_checks": checks, "accepted_by": "model"}
+        steps = [*state["steps"], finish_step]
+        step_dir = output_dir / "steps" / f"step_{index:02d}"
+        _write_json(step_dir / "finish.json", {"status": "finished", "accepted_by": "model", "completion_checks": checks})
+        _write_json(step_dir / "state_after.json", final_state)
+        _write_json(step_dir / "step.json", finish_step)
+        _write_json(output_dir / f"state_{index:02d}.json", final_state)
+        _write_json(output_dir / "steps.json", steps)
+        _write_json(output_dir / "state.json", final_state)
+        _write_json(output_dir / "run.json", {
+            "case_state": state["case_state_path"], "model": getattr(model, "model", type(model).__name__),
+            "condition": "concat", "steps": len(steps), "finished": True, "end_reason": "model_finish",
+            "observations": len(state["observations"]), "tool_declaration_count": len(state["tools"]),
+            "orchestrator": "langgraph",
+        })
+        return {"state": final_state, "steps": steps, "finished": True, "error": None}
+```
+
+Imports this needs, next to the ones from step 3a:
+
+```python
+from outage_harness_codex_state.completion_point import completion_evidence_status, finish_check
+from outage_harness_codex_state.radio import radio_technology
+```
 
 ### Step 11. Scoring
 
-After every run, both conditions, write `score.json` from
-`rc.score_against_state(final_state, checks)`. The hidden State is computed
-by the same code in both conditions, so the numbers are comparable.
+Every run, both conditions, ends in one of two nodes: `finish_check_node`
+(the model proposed finish) or `write_cap_node` (a cap ended the run). Each
+writes `score.json` from the hidden State, so the two conditions are scored
+by the same code.
+
+In `finish_check_node`, in both return paths above, add before the `return`:
+
+```python
+        _write_json(output_dir / "score.json", rc.score_against_state(final_state, checks))
+```
+
+(In the `finish_check` path from `completion_point.py` the final State and
+the checks are the ones it computed; add the same line inside that function,
+before its `return`.)
+
+In `write_cap_node`, find
+
+```python
+        _write_json(out / "run.json", summary)
+```
+
+and add directly below it
+
+```python
+        _write_json(out / "score.json", rc.score_against_state(
+            state["state"], completion_evidence_status(state["state"], radio_technology)))
+        summary["condition"] = "concat" if concat_mode else "rendered"
+        _write_json(out / "run.json", summary)
+```
+
+`score.json` holds: locations queried and valid, down-cell locations, how
+many of them have a backup and how many have none, the outage cells and the
+backup candidates seen, the areas fully queried, and the completion checks.
+The comparison between conditions reads these files and `run.json` only.
 
 ## 4. The test
 

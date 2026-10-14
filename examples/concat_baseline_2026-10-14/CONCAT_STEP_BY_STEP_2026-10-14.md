@@ -2,11 +2,11 @@
 
 Purpose: answer "why is the Codex way, appending raw tool output to one
 transcript, not sufficient here" with a measurement, not an argument. This
-folder is a copy of `../wiring` (condition A, the harness) plus the pieces that
-turn it into condition B (append-only transcript). Nothing in `../wiring`
+folder is a copy of `../wiring` (the rendered condition, the harness) plus the pieces that
+turn it into the concat condition (append-only transcript). Nothing in `../wiring`
 changed.
 
-## 1. What condition B is, exactly
+## 1. What the concat condition is, exactly
 
 Codex CLI drives a model like this: a fixed system prompt (instructions plus
 AGENTS.md plus the tool list); then, for every turn, the model's reply and the
@@ -15,9 +15,9 @@ conversation is sent again on the next turn; outputs larger than a cap are
 truncated head and tail (10 KiB, 256 lines for shell output); the model
 decides when it is done.
 
-Condition B copies that and keeps everything else equal to condition A:
+The concat condition copies that and keeps everything else equal to the rendered condition:
 
-| | A: rendered State (`../wiring`) | B: concatenation (this folder) |
+| | rendered (`../wiring`) | concat (this folder) |
 |---|---|---|
 | system message | skill, task, geography, areas, actions, completion rules | skill (concat version), task, area list, tool declarations as JSON |
 | user message | rendered from State every round: counts per area, per-cell lines, unknowns, budget, provenance, feedback | the transcript so far: every reply and every raw tool output, in order |
@@ -28,7 +28,7 @@ Condition B copies that and keeps everything else equal to condition A:
 | verifier | advisory review | none |
 | tools, point API, artifacts, caps, State update | same | same (State hidden, used for scoring only) |
 
-Files that implement B: `transcript.py` (append-only messages, truncation,
+Files that implement concat: `transcript.py` (append-only messages, truncation,
 raw output formatting), `context_builder_concat.py` (the two messages),
 `investigation_skill_concat.txt` (the skill with the sentences that describe
 the rendered context removed), `runner_concat_nodes.py` (the node pieces),
@@ -38,10 +38,10 @@ decisions, no model).
 ## 2. What the demo already shows, before any model call
 
 `python run_demo_concat.py demo_concat` runs the same four scripted decisions
-under A and B on the synthetic case and writes the exact model input per round
-to `demo_concat/A/LLM_input_NN.txt` and `demo_concat/B/LLM_input_NN.txt`.
+under rendered and concat on the synthetic case and writes the exact model input per round
+to `demo_concat/rendered/LLM_input_NN.txt` and `demo_concat/concat/LLM_input_NN.txt`.
 
-| round | action | A input (chars) | B input (chars) | raw output (bytes) | shown after truncation | points in output | points visible to the model |
+| round | action | rendered input (chars) | concat input (chars) | raw output (bytes) | shown after truncation | points in output | points visible to the model |
 |---|---|---|---|---|---|---|---|
 | 1 | S1 | 10,644 | 12,296 | 32,644 | 4,964 | 30 | 5 |
 | 2 | road_H1 | 15,968 | 17,588 | 37,744 | 4,330 | 42 | 7 |
@@ -60,14 +60,14 @@ Two facts follow without running a model:
   would be about 390 KB, about 100,000 tokens, in the context on every round.
   The real study areas have 2,400 locations.
 
-Condition A's input stays at 17 KB after three areas and grows only by the
+The rendered condition's input stays at 17 KB after three areas and grows only by the
 lines the new area adds.
 
 So the question the live test answers is not "does concatenation work"; it
 is "when the model is given the raw data, in whatever amount fits, how far
 does it get, and what does it get wrong, compared with the rendered State".
 
-## 3. Wiring condition B into the internal runner
+## 3. Wiring the concat condition into the internal runner
 
 Start from a copy of the internal package after the per-point steps are done
 (`../wiring/STEP_BY_STEP_2026-10-13.md`). Then:
@@ -82,7 +82,7 @@ and `investigation_skill_concat.txt` into the package. Fix the two imports in
 
 ### Step 2. A condition switch
 
-The condition is one string, `"A"` or `"B"`, chosen when a run starts and
+The condition is one string, `"rendered"` or `"concat"`, chosen when a run starts and
 read inside the nodes. It travels through three places in
 `langgraph_runner.py`: the builder's signature, the builder's body, and the
 entry function. Nodes are closures inside `build_investigation_graph`, so
@@ -108,7 +108,7 @@ def build_investigation_graph(
     client: Any,
     *,
     point_query: PointQuery,
-    condition: str = "A",                         # "A": rendered State; "B": concatenation
+    condition: str = "rendered",                  # "rendered": context from State; "concat": transcript
     fetch_landuse_before_decision: bool = True,
     verifier: DecisionModel | None = None,
     limits: RunLimits | None = None,
@@ -119,13 +119,13 @@ def build_investigation_graph(
 (original line 152), before the first node is defined:
 
 ```python
-    if condition not in ("A", "B"):
-        raise ValueError(f"condition must be A or B, got {condition!r}")
-    concat_mode = condition == "B"
+    if condition not in ("rendered", "concat"):
+        raise ValueError(f"condition must be rendered or concat, got {condition!r}")
+    concat_mode = condition == "concat"
 ```
 
-Every node below tests `if concat_mode:` for its condition B branch. Steps 3
-to 10 show those branches. The condition A code stays as it is in the `else`
+Every node below tests `if concat_mode:` for its the concat condition branch. Steps 3
+to 10 show those branches. The the rendered condition code stays as it is in the `else`
 path, so one runner serves both conditions and the comparison is between two
 runs of the same file.
 
@@ -158,7 +158,7 @@ def run_case_langgraph(
     fetch_landuse_before_decision: bool = True,
     verifier: DecisionModel | None = None,
     limits: RunLimits | None = None,
-    condition: str = "A",
+    condition: str = "rendered",
 ) -> dict[str, Any]:
 ```
 
@@ -175,7 +175,7 @@ and in its body, the call at original line 702:
     graph = build_investigation_graph(
         model, client, point_query=point_query, condition=condition,
         fetch_landuse_before_decision=fetch_landuse_before_decision,
-        verifier=None if condition == "B" else verifier,
+        verifier=None if condition == "concat" else verifier,
         limits=limits,
     )
 ```
@@ -191,8 +191,8 @@ directory says which condition produced it (same line, original 701):
 it builds the arguments, add one option and pass it:
 
 ```python
-parser.add_argument("--condition", choices=("A", "B"), default="A",
-                    help="A: rendered State (the harness); B: append-only transcript (the Codex way)")
+parser.add_argument("--condition", choices=("rendered", "concat"), default="rendered",
+                    help="rendered: context rendered from State (the harness); concat: append-only transcript (the Codex way)")
 ...
 run_case_langgraph(model, client, task, output_dir, max_steps=args.max_steps,
                    verifier=verifier, limits=limits, condition=args.condition)
@@ -201,12 +201,12 @@ run_case_langgraph(model, client, task, output_dir, max_steps=args.max_steps,
 Then one run per condition is:
 
 ```
-python -m outage_harness_codex_state.langgraph_runner --condition A --output runs/case1_A ...
-python -m outage_harness_codex_state.langgraph_runner --condition B --output runs/case1_B ...
+python -m outage_harness_codex_state.langgraph_runner --the rendered condition --output runs/case1_A ...
+python -m outage_harness_codex_state.langgraph_runner --the concat condition --output runs/case1_B ...
 ```
 
-**Check after 2a to 2d.** Run condition A once with `max_steps=1`. Nothing in
-its output may differ from a run before step 2, because every condition B
+**Check after 2a to 2d.** Run the rendered condition once with `max_steps=1`. Nothing in
+its output may differ from a run before step 2, because every the concat condition
 branch is behind `concat_mode` and `concat_mode` is false.
 
 ### Step 3. `initialize_node`
@@ -259,11 +259,11 @@ except Exception as error:
 ```
 
 No `check_gap`. The budget is a cap that ends the run, not a message with a
-cost: Codex has no domain budget, so B gets the cap and nothing else.
+cost: Codex has no domain budget, so concat gets the cap and nothing else.
 
 ### Step 6. `verifier_node`
 
-`if verifier is None or state.get("error") or concat_mode: return {}`. With 2c passing `verifier=None` for condition B this line is a second guard, not the only one.
+`if verifier is None or state.get("error") or concat_mode: return {}`. With 2c passing `verifier=None` for the concat condition this line is a second guard, not the only one.
 
 ### Step 7. `execute_tool_node`
 
@@ -273,7 +273,7 @@ summary = rc.execute_concat(state["action_name"], state["arguments"], state["sta
 guard.record_locations(summary.get("details", {}).get("fetched", 0))
 ```
 
-wrap into `ToolSuccess`/`ToolFailure` as in condition A.
+wrap into `ToolSuccess`/`ToolFailure` as in the rendered condition.
 
 ### Step 8. `update_state_node`
 
@@ -303,8 +303,8 @@ if concat_mode and COMPLETION_MODE == "model":
     return {"finished": True}
 ```
 
-Mode `checks` keeps the condition A behaviour (refuse until the checks pass)
-and is condition B+ in the experiment.
+Mode `checks` keeps the the rendered condition behaviour (refuse until the checks pass)
+and is the concat condition+ in the experiment.
 
 ### Step 11. Scoring
 
@@ -323,12 +323,12 @@ the model is not deterministic.
 
 | id | input | validation | finish |
 |---|---|---|---|
-| A | rendered State | full | completion checks |
-| B | transcript, truncated as Codex | schema only | model |
-| B+ | transcript, truncated as Codex | schema only | completion checks |
-| B-full | transcript, no truncation, until the context window is full | schema only | model |
+| rendered | rendered State | full | completion checks |
+| concat | transcript, truncated as Codex | schema only | model |
+| concat+checks | transcript, truncated as Codex | schema only | completion checks |
+| concat-full | transcript, no truncation, until the context window is full | schema only | model |
 
-B is the Codex way. B+ isolates the input from the stopping rule. B-full
+concat is the Codex way. concat+checks isolates the input from the stopping rule. concat-full
 shows whether the problem is the cut or the raw form.
 
 **Metrics, all from the hidden State and the run record.**
@@ -340,15 +340,16 @@ shows whether the problem is the cut or the raw form.
    backup cells it names that are in `backup_candidates`, and how many it
    names that are not (invented or ineligible).
 4. Whether the completion checks pass at the end (scored in every condition,
-   enforced only in A and B+).
+   enforced only in rendered and concat+checks).
 5. Repeated or wasted queries: areas queried twice, areas fully queried
    before the query.
 6. Input size per round (chars) and the share of raw output the model saw.
 
-**What result justifies the design.** If B reaches the same completion rate
-and the same correctness as A at a comparable budget, rendering is prompt
-engineering and the paper has no system contribution. If B ends by caps or
-model finish with wrong or missing facts while A completes, and B+ does not
+**What result justifies the design.** If concat reaches the same completion rate
+and the same correctness as rendered at a comparable budget, rendering is prompt
+engineering and the paper has no system contribution. If concat ends by caps or
+model finish with wrong or missing facts while rendered completes,
+and concat+checks does not
 close the gap, then the program-owned State is doing work the transcript
 cannot: it is the thing to present. Report both outcomes honestly; the
 measurement is the contribution either way.

@@ -104,82 +104,31 @@ When the boundary check passes, the program produces the final report and the ru
 
 Investigation progress:
 Counts are per area; overlapping areas must not be added together.
-- study_area contains 400 analysis grid locations; 80 queried, 320 not queried.
-  57 queried locations have valid data; 23 have missing data.
-  Valid locations: 0 list no cell; 36 list an outage sector; 21 list other cells only.
-  Query boundary facing the unqueried interior: 43 locations (12 missing, 20 with an outage sector).
-- S1 contains 30 analysis grid locations; 30 queried, 0 not queried.
-  21 queried locations have valid data; 9 have missing data.
-  Valid locations: 0 list no cell; 21 list an outage sector; 0 list other cells only.
-  Query boundary facing the unqueried interior: 0 locations (0 missing, 0 with an outage sector).
-- S2 contains 16 analysis grid locations; 16 queried, 0 not queried.
-  12 queried locations have valid data; 4 have missing data.
-  Valid locations: 0 list no cell; 2 list an outage sector; 10 list other cells only.
-  Query boundary facing the unqueried interior: 0 locations (0 missing, 0 with an outage sector).
-- road_H1 contains 60 analysis grid locations; 60 queried, 0 not queried.
-  42 queried locations have valid data; 18 have missing data.
-  Valid locations: 0 list no cell; 26 list an outage sector; 16 list other cells only.
-  Query boundary facing the unqueried interior: 0 locations (0 missing, 0 with an outage sector).
-- Not queried yet, coverage unknown (analysis grid locations): F1 (54).
+- Not queried yet, coverage unknown (analysis grid locations): study_area (400), S1 (30), S2 (16), road_H1 (60), F1 (54).
 
 Coverage observations:
 Each queried location was fetched by one point call. Every returned sample lists its serving sector and the strongest neighbour cells with RSRP, so cells listed in one sample are observed together at one measurement. A cell that is not listed at a location is not shown to be absent there. A location with no sample has missing data.
-- S1: outage sectors CCL00001_aa_1, CCL00001_ab_1 are listed at 21 of the 21 valid locations.
-  Of those 21 locations, 6 also list an eligible backup cell (6 in the same sample as the outage sector) and 15 list no eligible backup.
-  CCL00001_aa_1 (outage sector): present at 15 valid locations, serving at 11, strongest at 11; RSRP -107.33 to -87.52 dBm, mean -97.28 over 34 samples.
-  CCL00001_ab_1 (outage sector): present at 14 valid locations, serving at 10, strongest at 10; RSRP -111.63 to -69.91 dBm, mean -96.65 over 26 samples.
-  CCSN000004_aa_1 (not an eligible backup: other technology): present at 9 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 9; RSRP -111.99 to -106.13 dBm, mean -110.14 over 17 samples.
-  CCL00002_aa_1: present at 4 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 4; RSRP -111.38 to -109.15 dBm, mean -110.65 over 5 samples.
-  CCL00003_ab_1: present at 2 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 2; RSRP -111.87 to -111.44 dBm, mean -111.66 over 2 samples.
-  Coverage at locations with missing data also remains unknown.
-- S2: outage sector CCL00001_aa_1 is listed at 2 of the 12 valid locations.
-  Of those 2 locations, 2 also list an eligible backup cell (2 in the same sample as the outage sector) and 0 list no eligible backup.
-  CCL00001_aa_1 (outage sector): present at 2 valid locations, serving at 0, strongest at 0; RSRP -111.47 to -108.79 dBm, mean -110.13 over 2 samples.
-  CCL00002_aa_1: present at 12 valid locations, serving at 12, strongest at 12, in the same sample as an outage sector at 2; RSRP -111.55 to -72.29 dBm, mean -92.37 over 26 samples.
-  Coverage at locations with missing data also remains unknown.
-- road_H1: outage sectors CCL00001_aa_1, CCL00001_ab_1 are listed at 26 of the 42 valid locations.
-  Of those 26 locations, 16 also list an eligible backup cell (16 in the same sample as the outage sector) and 10 list no eligible backup.
-  CCL00001_aa_1 (outage sector): present at 16 valid locations, serving at 10, strongest at 10; RSRP -111.47 to -87.52 dBm, mean -99.33 over 35 samples.
-  CCL00001_ab_1 (outage sector): present at 15 valid locations, serving at 12, strongest at 12; RSRP -111.64 to -69.91 dBm, mean -100.08 over 28 samples.
-  CCL00002_aa_1: present at 19 valid locations, serving at 14, strongest at 13, in the same sample as an outage sector at 9; RSRP -111.38 to -72.29 dBm, mean -100.49 over 38 samples.
-  CCL00003_ab_1: present at 13 valid locations, serving at 7, strongest at 7, in the same sample as an outage sector at 7; RSRP -111.9 to -107.62 dBm, mean -110.37 over 16 samples.
-  CCSN000004_aa_1 (not an eligible backup: other technology): present at 9 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 7; RSRP -111.99 to -108.39 dBm, mean -110.48 over 15 samples.
-  Coverage at locations with missing data also remains unknown.
-- study_area: outage sectors CCL00001_aa_1, CCL00001_ab_1 are listed at 36 of the 57 valid locations.
-  Of those 36 locations, 19 also list an eligible backup cell (19 in the same sample as the outage sector) and 17 list no eligible backup.
-  CCL00001_aa_1 (outage sector): present at 23 valid locations, serving at 15, strongest at 15; RSRP -111.47 to -87.52 dBm, mean -100.14 over 48 samples.
-  CCL00001_ab_1 (outage sector): present at 21 valid locations, serving at 16, strongest at 16; RSRP -111.64 to -69.91 dBm, mean -99.97 over 39 samples.
-  CCL00002_aa_1: present at 27 valid locations, serving at 20, strongest at 19, in the same sample as an outage sector at 12; RSRP -111.55 to -72.29 dBm, mean -99.42 over 54 samples.
-  CCSN000004_aa_1 (not an eligible backup: other technology): present at 14 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 12; RSRP -111.99 to -106.13 dBm, mean -110.09 over 24 samples.
-  CCL00003_ab_1: present at 13 valid locations, serving at 7, strongest at 7, in the same sample as an outage sector at 7; RSRP -111.9 to -107.62 dBm, mean -110.37 over 16 samples.
-  320 locations of study_area are not queried; coverage there remains unknown.
-  Coverage at locations with missing data also remains unknown.
+- No coverage has been queried yet.
 
 Impact and backup analysis:
-Outage sectors seen in valid coverage records (unavailable as backups): CCL00001_aa_1, CCL00001_ab_1.
-Backup candidates seen in valid coverage records (presence only; available load not verified): CCL00002_aa_1, CCL00003_ab_1.
+Outage sectors seen in valid coverage records (unavailable as backups): none yet.
+Backup candidates seen in valid coverage records (presence only; available load not verified): none yet.
 KPI records: none yet.
 KPI baseline: none yet.
 Impact estimate: not computed.
 
 Remaining unknowns:
-- Coverage at 320 unqueried analysis grid locations is unknown; 1 areas have no queried location.
-- Coverage at 23 queried locations with missing data is unknown.
-- A cell that is not listed at a location is not shown to be absent there: the point API lists the serving sector and only the strongest neighbours of each sample.
-- backup cells: Backup candidates are cells of the outage technology seen in valid samples; their load after the outage traffic moves is not verified.
 - Coverage beyond the study area is unknown.
 - Land-use labels do not establish population or complete network demand.
 - Unqueried and missing coverage are distinct; neither is evidence of absence.
 
 Completion checks: not yet evaluated; status unknown.
-Final report inputs (use exactly for final_step_report): run_dir demo_concat/A; case_state_path demo_concat/A/state.json.
+Final report inputs (use exactly for final_step_report): run_dir demo_concat/rendered; case_state_path demo_concat/rendered/state.json.
 
-Query budget: 80 of 600 locations used; 520 remain. A coverage query costs the locations it fetches for the first time.
+Query budget: 0 of 600 locations used; 600 remain. A coverage query costs the locations it fetches for the first time.
 
 Evidence provenance:
-- real_obs_01: query_area_coverage area S1 (area_id S1; resolution 10); success; 30 locations fetched; 21 valid; 9 missing; 0 failed, left unqueried; 0 already queried, skipped; file artifacts/step_01_S1.json.
-- real_obs_02: query_area_coverage area road_H1 (area_id road_H1; resolution 10); success; 42 locations fetched; 30 valid; 12 missing; 0 failed, left unqueried; 18 already queried, skipped; file artifacts/step_02_road_H1.json.
-- real_obs_03: query_area_coverage area S2 (area_id S2; resolution 10); success; 8 locations fetched; 6 valid; 2 missing; 0 failed, left unqueried; 8 already queried, skipped; file artifacts/step_03_S2.json.
+- None.
 The state coverage table keeps every queried location with each sample's cells and RSRP; inspect_observation shows those rows.
 
 Feedback from earlier rounds:

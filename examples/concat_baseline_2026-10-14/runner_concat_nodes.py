@@ -1,10 +1,10 @@
-"""Runner-side pieces for the concatenation baseline (condition B).
+"""Runner-side pieces for the concatenation baseline (the concat condition).
 
-Condition A is the harness as wired in ../wiring: the model reads a context
+The rendered condition is the harness as wired in ../wiring: the model reads a context
 rendered from State, the program validates gap targets and preconditions,
 and completion checks decide the end.
 
-Condition B keeps the same tools, the same State machinery (hidden, for
+The concat condition keeps the same tools, the same State machinery (hidden, for
 evaluation), the same caps, and changes four things to match how Codex CLI
 drives a model:
 
@@ -36,7 +36,7 @@ from point_coverage import apply_point_coverage, fetch_area_points, inspect_poin
 from transcript import Transcript, format_rejection, format_tool_output
 
 COMPLETION_MODE_MODEL = "model"      # finish accepted as proposed (Codex behaviour)
-COMPLETION_MODE_CHECKS = "checks"    # finish refused until the program checks pass (B+)
+COMPLETION_MODE_CHECKS = "checks"    # finish refused until the program checks pass (concat+checks)
 
 
 # validate_node ------------------------------------------------------------------
@@ -75,7 +75,7 @@ def validate_schema_only(decision: dict[str, Any], tools: list[Any], state: dict
 
 def execute_concat(name: str, arguments: dict[str, Any], state: dict[str, Any], run_dir: str | Path,
                    step_index: int, point_query: Any, workers: int) -> dict[str, Any]:
-    """Same execution as condition A; returns the result summary dict."""
+    """Same execution as the rendered condition; returns the result summary dict."""
     if name == "query_area_coverage":
         return fetch_area_points(state, arguments["area_id"], run_dir, point_query,
                                  radius_m=float(arguments["resolution"]), call_id=f"step_{step_index:02d}",
@@ -96,7 +96,7 @@ def execute_concat(name: str, arguments: dict[str, Any], state: dict[str, Any], 
 
 def update_hidden_state(state: dict[str, Any], observation: dict[str, Any], run_dir: str | Path,
                         guard: Any) -> dict[str, Any]:
-    """Condition B keeps State for scoring only. Same update as condition A."""
+    """The concat condition keeps State for scoring only. Same update as the rendered condition."""
     task = state["task"]
     name = observation["action"]["function"]
     if name == "query_area_coverage" and observation["result"]["status"] == "success":
@@ -115,7 +115,7 @@ def update_hidden_state(state: dict[str, Any], observation: dict[str, Any], run_
 
 def append_round(transcript: Transcript, raw_reply: str, name: str | None, result: dict[str, Any] | None,
                  rejection: str | None, run_dir: str | Path) -> None:
-    """What the model sees of one round in condition B: its reply, then the raw output."""
+    """What the model sees of one round in the concat condition: its reply, then the raw output."""
     transcript.assistant(raw_reply)
     if rejection is not None:
         transcript.tool(name or "decision", format_rejection(rejection))
@@ -128,7 +128,7 @@ def append_round(transcript: Transcript, raw_reply: str, name: str | None, resul
 
 
 def score_against_state(state: dict[str, Any], completion_status: dict[str, Any] | None) -> dict[str, Any]:
-    """The facts a run is scored on, from the hidden State. Same for A and B."""
+    """The facts a run is scored on, from the hidden State. Same for rendered and concat."""
     study = (state.get("summaries") or {}).get("study_area") or {}
     return {
         "locations_queried": study.get("queried"),

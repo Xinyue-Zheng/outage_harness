@@ -1,10 +1,10 @@
-"""Run the same scripted rounds under condition A (rendered State) and condition B
+"""Run the same scripted rounds under the rendered condition (context rendered from State) and the concat condition
 (append-only transcript), on the synthetic case, and compare what the model would
 have received.
 
     python run_demo_concat.py <output_dir>
 
-Writes <output_dir>/A and <output_dir>/B with LLM_input_NN.txt per round, the
+Writes <output_dir>/rendered and <output_dir>/concat with LLM_input_NN.txt per round, the
 hidden State per round, and <output_dir>/comparison.json with input size per
 round, bytes truncated away in B, and the scoring facts from the State.
 
@@ -66,7 +66,7 @@ def run_condition(condition: str, out: Path) -> dict:
     rows = []
     completion = None
     for index, decision in enumerate(DECISIONS, start=1):
-        if condition == "A":
+        if condition == "rendered":
             rendered = build_rendered(state, TOOL_DECLARATIONS)
         else:
             rendered = concat.build_context(transcript)
@@ -95,22 +95,22 @@ def run_condition(condition: str, out: Path) -> dict:
                      "input_chars": len(rendered.text), "raw_output_bytes": len(raw.encode()),
                      "shown_output_bytes": len(shown.encode()),
                      "points_in_output": result["details"]["fetched"],
-                     "points_visible_after_truncation": visible_points if condition == "B" else None})
+                     "points_visible_after_truncation": visible_points if condition == "concat" else None})
     return {"rounds": rows, "score": rc.score_against_state(state, completion),
             "final_input_chars": rows[-1]["input_chars"]}
 
 
 def main(output: Path) -> None:
     shutil.rmtree(output, ignore_errors=True)
-    results = {condition: run_condition(condition, output / condition) for condition in ("A", "B")}
+    results = {condition: run_condition(condition, output / condition) for condition in ("rendered", "concat")}
     comparison = {"output_cap_bytes": OUTPUT_CAP_BYTES, "conditions": results}
     (output / "comparison.json").write_text(json.dumps(comparison, indent=1) + "\n", encoding="utf-8")
-    print(f"{'round':>5} {'action':<28} {'A input chars':>14} {'B input chars':>14} {'raw out':>9} {'shown':>7} {'pts':>4} {'visible':>8}")
-    for a, b in zip(results["A"]["rounds"], results["B"]["rounds"]):
+    print(f"{'round':>5} {'action':<28} {'rendered chars':>14} {'concat chars':>14} {'raw out':>9} {'shown':>7} {'pts':>4} {'visible':>8}")
+    for a, b in zip(results["rendered"]["rounds"], results["concat"]["rounds"]):
         print(f"{a['round']:>5} {a['action']:<28} {a['input_chars']:>14} {b['input_chars']:>14} "
               f"{b.get('raw_output_bytes', ''):>9} {b.get('shown_output_bytes', ''):>7} "
               f"{b.get('points_in_output', ''):>4} {str(b.get('points_visible_after_truncation', '')):>8}")
-    print("score (hidden State, identical in A and B):", json.dumps(results["A"]["score"], indent=1))
+    print("score (hidden State, identical in rendered and concat):", json.dumps(results["rendered"]["score"], indent=1))
 
 
 if __name__ == "__main__":

@@ -199,7 +199,7 @@
   "locations_limit": 600
  },
  "final_report_inputs": {
-  "run_dir": "demo_concat/A",
-  "case_state_path": "demo_concat/A/state.json"
+  "run_dir": "demo_concat/rendered",
+  "case_state_path": "demo_concat/rendered/state.json"
  }
 }

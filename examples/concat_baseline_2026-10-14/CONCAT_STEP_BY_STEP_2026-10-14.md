@@ -82,8 +82,132 @@ and `investigation_skill_concat.txt` into the package. Fix the two imports in
 
 ### Step 2. A condition switch
 
-In `run_case_langgraph`, add `condition: str = "A"` and pass it to
-`build_investigation_graph`. Everything below is under `if condition == "B":`.
+The condition is one string, `"A"` or `"B"`, chosen when a run starts and
+read inside the nodes. It travels through three places in
+`langgraph_runner.py`: the builder's signature, the builder's body, and the
+entry function. Nodes are closures inside `build_investigation_graph`, so
+once the builder has `condition` every node can read it without any change
+to `InvestigationState`.
+
+**2a. The builder's signature** (original line 142, `def build_investigation_graph(`):
+
+```python
+# old
+def build_investigation_graph(
+    model: DecisionModel,
+    client: Any,
+    *,
+    point_query: PointQuery,
+    fetch_landuse_before_decision: bool = True,
+    verifier: DecisionModel | None = None,
+    limits: RunLimits | None = None,
+):
+# new
+def build_investigation_graph(
+    model: DecisionModel,
+    client: Any,
+    *,
+    point_query: PointQuery,
+    condition: str = "A",                         # "A": rendered State; "B": concatenation
+    fetch_landuse_before_decision: bool = True,
+    verifier: DecisionModel | None = None,
+    limits: RunLimits | None = None,
+):
+```
+
+**2b. The builder's body**, right after `guard = RunGuard(limits or RunLimits())`
+(original line 152), before the first node is defined:
+
+```python
+    if condition not in ("A", "B"):
+        raise ValueError(f"condition must be A or B, got {condition!r}")
+    concat_mode = condition == "B"
+```
+
+Every node below tests `if concat_mode:` for its condition B branch. Steps 3
+to 10 show those branches. The condition A code stays as it is in the `else`
+path, so one runner serves both conditions and the comparison is between two
+runs of the same file.
+
+**2c. The entry function** `run_case_langgraph` (original line 677): add the
+parameter and pass it through.
+
+```python
+# old
+def run_case_langgraph(
+    model: DecisionModel,
+    client: Any,
+    state_path: Path | dict[str, Any],
+    output_dir: Path,
+    *,
+    max_steps: int = 8,
+    case_evidence: dict[str, Any] | None = None,
+    fetch_landuse_before_decision: bool = True,
+    verifier: DecisionModel | None = None,
+    limits: RunLimits | None = None,
+) -> dict[str, Any]:
+# new
+def run_case_langgraph(
+    model: DecisionModel,
+    client: Any,
+    state_path: Path | dict[str, Any],
+    output_dir: Path,
+    *,
+    max_steps: int = 8,
+    case_evidence: dict[str, Any] | None = None,
+    fetch_landuse_before_decision: bool = True,
+    verifier: DecisionModel | None = None,
+    limits: RunLimits | None = None,
+    condition: str = "A",
+) -> dict[str, Any]:
+```
+
+and in its body, the call at original line 702:
+
+```python
+# old
+    graph = build_investigation_graph(
+        model, client, point_query=point_query,
+        fetch_landuse_before_decision=fetch_landuse_before_decision,
+        verifier=verifier, limits=limits,
+    )
+# new
+    graph = build_investigation_graph(
+        model, client, point_query=point_query, condition=condition,
+        fetch_landuse_before_decision=fetch_landuse_before_decision,
+        verifier=None if condition == "B" else verifier,
+        limits=limits,
+    )
+```
+
+Also write the condition into `task.json` next to the task, so a run
+directory says which condition produced it (same line, original 701):
+
+```python
+    _write_json(output_dir / "task.json", {**task, "condition": condition})
+```
+
+**2d. The command line.** `main()` is not in the photographed copy. Wherever
+it builds the arguments, add one option and pass it:
+
+```python
+parser.add_argument("--condition", choices=("A", "B"), default="A",
+                    help="A: rendered State (the harness); B: append-only transcript (the Codex way)")
+...
+run_case_langgraph(model, client, task, output_dir, max_steps=args.max_steps,
+                   verifier=verifier, limits=limits, condition=args.condition)
+```
+
+Then one run per condition is:
+
+```
+python -m outage_harness_codex_state.langgraph_runner --condition A --output runs/case1_A ...
+python -m outage_harness_codex_state.langgraph_runner --condition B --output runs/case1_B ...
+```
+
+**Check after 2a to 2d.** Run condition A once with `max_steps=1`. Nothing in
+its output may differ from a run before step 2, because every condition B
+branch is behind `concat_mode` and `concat_mode` is false.
 
 ### Step 3. `initialize_node`
 
@@ -139,7 +263,7 @@ cost: Codex has no domain budget, so B gets the cap and nothing else.
 
 ### Step 6. `verifier_node`
 
-`if verifier is None or state.get("error") or condition == "B": return {}`.
+`if verifier is None or state.get("error") or concat_mode: return {}`. With 2c passing `verifier=None` for condition B this line is a second guard, not the only one.
 
 ### Step 7. `execute_tool_node`
 
@@ -174,7 +298,7 @@ rc.append_round(state["transcript"], json.dumps(state.get("raw_response", {})),
 
 ```python
 checks = completion_evidence_status(state["state"], radio_technology)   # scored, not enforced
-if condition == "B" and COMPLETION_MODE == "model":
+if concat_mode and COMPLETION_MODE == "model":
     ...write finish.json with checks, run.json with end_reason "model_finish"...
     return {"finished": True}
 ```

@@ -357,7 +357,6 @@ def _action_note(name: str, state: Mapping[str, Any]) -> str:
         if "query_basic_information" in initialized else "",
         "query_osm_landuse": "Already run for the study area during initialization."
         if "query_osm_landuse" in initialized else "",
-        "final_step_report": "Use run_dir and case_state_path exactly as listed under Final report inputs.",
         "inspect_observation": "No API query and no API cost. Use an observation id from Evidence "
                                "provenance and an area id from Areas; offset >= 0, limit 1 to 100.",
     }
@@ -378,13 +377,17 @@ def _action_lines(state: Mapping[str, Any], tools: Iterable[Any]) -> list[str]:
 def _completion_lines() -> list[str]:
     return [
         "Completion checks, applied when you choose finish:",
-        "- report: final_step_report has produced the final report.",
-        "- boundary: for every observed outage sector, a fully queried settlement or road corridor "
-        "farther from the down site than its last observed service shows the sector absent.",
-        "- backup_load: verified evidence of backup-cell load after the outage traffic moves.",
-        "Backup-load evidence is not currently computed, so that check remains unknown. Only LTE cells "
-        "are backups for LTE outage sectors; only NR cells are backups for NR outage sectors. If both "
-        "technologies are explicitly listed as outage prefixes, assess each technology separately.",
+        "- boundary: for every observed outage sector, one settlement or road corridor farther from the "
+        "down site than the farthest area where the sector serves a sample is fully queried (every "
+        "location fetched; missing data does not count against it) and shows the sector never serving "
+        "and never the strongest cell. A sector listed only as a weak neighbour does not extend its "
+        "service distance.",
+        "- backup_load: reported, not required. Verified backup-cell load after the outage traffic moves "
+        "is not computed yet.",
+        "When the boundary check passes, the program produces the final report and the run ends; you do "
+        "not call a report action. Only LTE cells are backups for LTE outage sectors; only NR cells are "
+        "backups for NR outage sectors. If both technologies are explicitly listed as outage prefixes, "
+        "assess each technology separately.",
     ]
 
 

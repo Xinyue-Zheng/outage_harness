@@ -187,23 +187,41 @@ directory says which condition produced it (same line, original 701):
     _write_json(output_dir / "task.json", {**task, "condition": condition})
 ```
 
-**2d. The command line.** `main()` is not in the photographed copy. Wherever
-it builds the arguments, add one option and pass it:
+**2d. The run script.** `run_case.py` in this folder is the command line.
+Copy it into the package next to `langgraph_runner.py`. It builds the model,
+the verifier (rendered only), the tool client, the point query and the caps,
+and calls `run_case_langgraph(..., condition=..., point_query=...)`. Two
+constructors are yours to match: `_model` (your `llm.OpenAICompatLLM`) and
+`_client` (your `client.RealToolClient`); everything else is fixed.
+
+`run_case_langgraph` must accept `point_query` as a keyword and pass it to
+the builder (step 8 of `STEP_BY_STEP_2026-10-13.md` built it inside; move
+that line out so the script can inject the fake API):
 
 ```python
-parser.add_argument("--condition", choices=("rendered", "concat"), default="rendered",
-                    help="rendered: context rendered from State (the harness); concat: append-only transcript (the Codex way)")
-...
-run_case_langgraph(model, client, task, output_dir, max_steps=args.max_steps,
-                   verifier=verifier, limits=limits, condition=args.condition)
+def run_case_langgraph(model, client, state_path, output_dir, *, max_steps=8,
+                       case_evidence=None, fetch_landuse_before_decision=True,
+                       verifier=None, limits=None, condition="rendered", point_query=None):
+    if point_query is None:
+        raise ValueError("point_query is required: build it with make_point_query")
 ```
 
-Then one run per condition is:
+One run per condition:
 
 ```
-python -m outage_harness_codex_state.langgraph_runner --the rendered condition --output runs/case1_A ...
-python -m outage_harness_codex_state.langgraph_runner --the concat condition --output runs/case1_B ...
+python -m outage_harness_codex_state.run_case --condition rendered \
+    --down-cell CCL06069 --start-time 2026-02-10T09:00:00Z --end-time 2026-02-10T12:00:00Z \
+    --output runs/case1_rendered --base-url http://127.0.0.1:8012/v1 --model qwen2.5-32b \
+    --verifier-model qwen2.5-32b
+python -m outage_harness_codex_state.run_case --condition concat \
+    --down-cell CCL06069 --start-time 2026-02-10T09:00:00Z --end-time 2026-02-10T12:00:00Z \
+    --output runs/case1_concat --base-url http://127.0.0.1:8012/v1 --model qwen2.5-32b
 ```
+
+Add `--fake-point-api` to either command to drive the real model against
+the synthetic point API before the first real API call; the token is then
+not needed. The real API reads its token from `COVERAGE_API_TOKEN`
+(`--token-env` changes the name).
 
 **Check after 2a to 2d.** Run the rendered condition once with `max_steps=1`. Nothing in
 its output may differ from a run before step 2, because every the concat condition

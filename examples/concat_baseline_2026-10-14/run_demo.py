@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "test_support"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from outage_harness_langgraph.radio import eligible_backup_cells, is_outage_cell  # noqa: E402
+from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell  # noqa: E402
 
 from context_builder_point import build_context  # noqa: E402
 from point_coverage import apply_point_coverage, fetch_area_points, inspect_point_coverage  # noqa: E402

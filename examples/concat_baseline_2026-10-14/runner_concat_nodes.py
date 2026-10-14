@@ -30,7 +30,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from outage_harness_langgraph.radio import eligible_backup_cells, is_outage_cell
+from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell
 
 from point_coverage import apply_point_coverage, fetch_area_points, inspect_point_coverage, read_geometry
 from transcript import Transcript, format_rejection, format_tool_output

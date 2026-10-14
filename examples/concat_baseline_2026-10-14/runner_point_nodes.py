@@ -28,7 +28,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from outage_harness_langgraph.radio import eligible_backup_cells, is_outage_cell
+from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell
 
 from point_coverage import (
     PointQuery,

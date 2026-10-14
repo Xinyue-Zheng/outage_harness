@@ -77,8 +77,8 @@ Start from a copy of the internal package after the per-point steps are done
 Copy `transcript.py`, `context_builder_concat.py`, `runner_concat_nodes.py`
 and `investigation_skill_concat.txt` into the package. Fix the two imports in
 `runner_concat_nodes.py` and `context_builder_concat.py` to the package path
-(`from outage_harness_langgraph.point_coverage import ...`,
-`from outage_harness_langgraph.transcript import ...`).
+(`from outage_harness_codex_state.point_coverage import ...`,
+`from outage_harness_codex_state.transcript import ...`).
 
 ### Step 2. A condition switch
 

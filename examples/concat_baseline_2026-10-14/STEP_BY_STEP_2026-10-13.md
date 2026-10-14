@@ -5,19 +5,19 @@ function name and the original line numbers your photographed copies record),
 what to remove, and what to put there. After step 9 the run works with the fake
 API; step 10 switches to the real one.
 
-Package name below: `outage_harness_langgraph` (the internal package).
+Package name below: `outage_harness_codex_state` (the internal package).
 
 ---
 
 ## Step 1. Copy three modules into the package
 
-Copy from this folder into `outage_harness_langgraph/`:
+Copy from this folder into `outage_harness_codex_state/`:
 
 | Copy | As |
 |---|---|
-| `wiring/point_coverage.py` | `outage_harness_langgraph/point_coverage.py` |
-| `wiring/runner_point_nodes.py` | `outage_harness_langgraph/runner_point_nodes.py` |
-| `wiring/context_builder_point.py` | `outage_harness_langgraph/context_builder.py` (overwrite the old file; keep a copy of the old one as `context_builder_heatmap.py` if you want it) |
+| `wiring/point_coverage.py` | `outage_harness_codex_state/point_coverage.py` |
+| `wiring/runner_point_nodes.py` | `outage_harness_codex_state/runner_point_nodes.py` |
+| `wiring/context_builder_point.py` | `outage_harness_codex_state/context_builder.py` (overwrite the old file; keep a copy of the old one as `context_builder_heatmap.py` if you want it) |
 
 Then fix one import line in `runner_point_nodes.py`:
 
@@ -25,7 +25,7 @@ Then fix one import line in `runner_point_nodes.py`:
 # old
 from point_coverage import (
 # new
-from outage_harness_langgraph.point_coverage import (
+from outage_harness_codex_state.point_coverage import (
 ```
 
 `context_builder.py` and `runner_point_nodes.py` import `radio` from the
@@ -159,11 +159,11 @@ library, it must not reach the model. Step 6 filters it out of `tools`.
 
 ```python
 # old
-from outage_harness_langgraph.evidence_state import split_geography, apply_coverage, apply_kpi, inspect_coverage, _geometry
+from outage_harness_codex_state.evidence_state import split_geography, apply_coverage, apply_kpi, inspect_coverage, _geometry
 # new
-from outage_harness_langgraph.evidence_state import split_geography, apply_kpi
-from outage_harness_langgraph.point_coverage import PointQuery, inspect_point_coverage
-from outage_harness_langgraph.runner_point_nodes import (
+from outage_harness_codex_state.evidence_state import split_geography, apply_kpi
+from outage_harness_codex_state.point_coverage import PointQuery, inspect_point_coverage
+from outage_harness_codex_state.runner_point_nodes import (
     execute_query_area_coverage, make_point_query,
     update_state_query_area_coverage, validate_query_area_coverage,
 )
@@ -361,7 +361,7 @@ can pick a smaller area, and the rejection cap ends the run if it keeps trying.
 Build the point query once and pass it to the graph:
 
 ```python
-    from outage_harness_langgraph.point_by_point_cover import query_point_coverage  # wherever the file lives
+    from outage_harness_codex_state.point_by_point_cover import query_point_coverage  # wherever the file lives
 
     point_query = make_point_query(query_point_coverage)   # the token default inside the function is used
     graph = build_investigation_graph(
@@ -462,8 +462,8 @@ querying. Causes, all in the finish path:
 Copy `wiring/completion_point.py` into the package. Then:
 
 1. `langgraph_runner.py`, imports: add
-   `from outage_harness_langgraph.completion_point import finish_check` and
-   `from outage_harness_langgraph.radio import radio_technology`; remove
+   `from outage_harness_codex_state.completion_point import finish_check` and
+   `from outage_harness_codex_state.radio import radio_technology`; remove
    `completion_evidence_status` from the `policy` import.
 2. `langgraph_runner.py`, replace the whole `finish_check_node` with:
 

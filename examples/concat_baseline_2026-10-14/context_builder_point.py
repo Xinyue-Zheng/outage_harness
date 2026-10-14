@@ -31,7 +31,7 @@ from datetime import datetime
 from importlib.resources import files
 from typing import Any
 
-from outage_harness_langgraph.radio import eligible_backup_cells, is_outage_cell, outage_prefixes
+from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell, outage_prefixes
 
 
 @dataclass(frozen=True)
@@ -52,7 +52,7 @@ class Rendered:
 
 
 def load_skill() -> str:
-    return files("outage_harness_langgraph").joinpath("investigation_skill.txt").read_text(
+    return files("outage_harness_codex_state").joinpath("investigation_skill.txt").read_text(
         encoding="utf-8"
     )
 

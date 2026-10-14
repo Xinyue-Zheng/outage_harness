@@ -26,7 +26,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "test_support"))
 sys.path.insert(0, str(HERE))
 
-from outage_harness_langgraph.radio import eligible_backup_cells, is_outage_cell, radio_technology  # noqa: E402
+from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell, radio_technology  # noqa: E402
 
 import context_builder_concat as concat  # noqa: E402
 import runner_concat_nodes as rc  # noqa: E402

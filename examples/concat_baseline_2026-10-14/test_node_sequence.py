@@ -28,7 +28,7 @@ sys.path.insert(0, str(HERE / "test_support"))
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent))
 
-from outage_harness_langgraph.radio import radio_technology  # noqa: E402
+from outage_harness_codex_state.radio import radio_technology  # noqa: E402
 
 import gap_checks_partial as gap_checks  # noqa: E402  (internal module, unchanged)
 import runner_point_nodes as rp  # noqa: E402

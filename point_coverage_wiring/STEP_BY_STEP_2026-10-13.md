@@ -278,8 +278,15 @@ The rest of `validate_node` (the `elif action_name not in {...}` branch,
 ```
 
 `execute_query_area_coverage` already writes `resolved_parameters.json` and
-`tool_result.json` into the step directory. The KPI routing code after these
-two blocks stays as it is.
+`tool_result.json` into the step directory.
+
+The rest of the function must remain after these two blocks, at the same
+indentation as the two `if` lines: from `routing = state["decision"].get("routing")`
+through the routed KPI block to the final generic `client.call(...)` and its
+`return {"tool_result": result}` (original lines 389 to 422). Every action
+other than the two above (KPI, OSM, basic information, final report) runs
+through that tail. If it is missing, the node returns None for those actions
+and `update_state_node` fails with "'NoneType' object has no attribute 'name'".
 
 **`update_state_node`** (original 424). Two edits.
 

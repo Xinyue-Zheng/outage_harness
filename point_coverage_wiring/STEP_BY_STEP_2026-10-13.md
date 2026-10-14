@@ -441,6 +441,68 @@ eligible backup cell". The state must have `coverage[grid_id]["samples"]`.
 
 ---
 
+## Step 11. Make the run able to finish
+
+Symptoms this fixes: the model queries settlements outward, then inward, and
+the run ends by step cap; the final report is written while the model keeps
+querying. Causes, all in the finish path:
+
+- `finish_check_node` refused every finish: once the geography was
+  initialized it returned the unmet checks unconditionally, and `backup_load`
+  was always unknown, so no run could end as complete.
+- The boundary check required a far settlement with `valid == total` and
+  `missing == 0`. A point query almost always leaves some locations with
+  missing data, so no area ever qualified.
+- "Present" counted any listing of the outage sector. The point API lists a
+  sector as a weak neighbour far from its site, so every far query pushed the
+  "last service distance" outward and the model chased it.
+- The report was a model action that had to run before finish, so it was
+  written from an incomplete State.
+
+Copy `wiring/completion_point.py` into the package. Then:
+
+1. `langgraph_runner.py`, imports: add
+   `from outage_harness_langgraph.completion_point import finish_check` and
+   `from outage_harness_langgraph.radio import radio_technology`; remove
+   `completion_evidence_status` from the `policy` import.
+2. `langgraph_runner.py`, replace the whole `finish_check_node` with:
+
+   ```python
+       def finish_check_node(state: InvestigationState) -> dict[str, Any]:
+           return finish_check(state, client, radio_technology, write_json=_write_json,
+                               model_name=getattr(model, "model", type(model).__name__))
+   ```
+
+   The node now runs the checks first and, when they pass, calls
+   `final_step_report` through the client itself, writes the finish files and
+   `run.json` with `end_reason: complete`, and ends the run. When a required
+   check is unmet it returns the error as before, so `record_error` writes the
+   note and the loop continues.
+3. Remove `final_step_report` from the model's reach: delete it from
+   `DECISION_SCHEMA`'s function enum and from `PARAMETERS` in `runner.py`, and
+   from `TOOL_DECLARATIONS` in `client.py` (the `call()` branch for it stays;
+   the finish node uses it). In `runner.py` `_validate_decision`, the line
+   that exempts `final_step_report` from needing a target can stay or go.
+4. `context_builder.py`: the copied `context_builder_point.py` already has the
+   new completion text and no report note.
+5. `investigation_skill.txt`: in "Inspection and completion", replace the two
+   sentences about `final_step_report` and the boundary rule with:
+
+   > The boundary check passes for an outage sector when one settlement or
+   > road corridor farther from the down site than the farthest area where the
+   > sector serves a sample is fully queried and shows the sector never
+   > serving and never strongest. Missing data in a fully queried area does
+   > not block the check. A sector listed only as a weak neighbour in a far
+   > area does not extend its service distance, so do not query farther areas
+   > to chase such listings. When the check passes, the program writes the
+   > final report and ends the run; finish is the only step you take.
+
+What the rule now asks of the model: query outward from the site until one
+settlement or corridor beyond the served ones is fully fetched and shows the
+sector absent, then finish. The unmet message names the nearest areas beyond
+the served distance that are not fully queried, so a refused finish tells the
+model exactly which single query would close the check.
+
 ## Two dead mentions of the heatmap name
 
 After steps 3 to 7, the name `query_coverage_heatmap` survives in two places

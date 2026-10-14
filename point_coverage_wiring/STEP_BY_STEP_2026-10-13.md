@@ -251,10 +251,16 @@ and the inspection check:
 The rest of `validate_node` (the `elif action_name not in {...}` branch,
 `check_gap`, `guard.check`, the validation file) stays.
 
-**`execute_tool_node`** (original 358). Replace the inspection block and the
-`query_area_coverage` block. Delete the bounding-box code entirely.
+**`execute_tool_node`** (original 358). The function has three parts: the
+first line (keep), the two action blocks (replace), and the tail (keep). The
+complete function after the edit is below. Lines marked KEEP are the original
+text; the block marked NEW replaces the old inspection block and the old
+`query_area_coverage` block with its bounding-box code (original 360 to 388).
 
 ```python
+    def execute_tool_node(state: InvestigationState) -> dict[str, Any]:
+        guard.record_tool_call(state["action_name"], state["arguments"])                 # KEEP
+        # ---- NEW: the two program actions -------------------------------------------
         if state["action_name"] == "inspect_observation":
             arguments = state["arguments"]
             rows = inspect_point_coverage(state["state"], arguments["observation_id"], arguments["area_id"],
@@ -275,18 +281,47 @@ The rest of `validate_node` (the `elif action_name not in {...}` branch,
             else:
                 result = ToolFailure(summary["tool"], "PointApiFailure", summary["error"])
             return {"tool_result": result}
+        # ---- KEEP: every other action goes through the MCP client (original 389 to 422)
+        routing = state["decision"].get("routing")
+        if routing and len(routing["calls"]) > 1:
+            successes, calls = [], []
+            for call in routing["calls"]:
+                suffix = "nr" if call["function"] == "query_nr_rrc_prb" else "lte"
+                result = client.call(call["function"], {**state["arguments"], "cell_ids": call["cell_ids"]},
+                                     call_id=f"step_{state['step_index']:02d}_{suffix}")
+                calls.append({**call, **_summarize(result)})
+                if isinstance(result, ToolSuccess):
+                    successes.append(result)
+            if successes:
+                path = Path(state["output_dir"]) / "artifacts" / f"query_kpi_routed_step_{state['step_index']:02d}.csv"
+                row_count, columns = _merge_kpi_csvs(successes, path)
+                result = ToolSuccess(state["action_name"], str(path), row_count, columns,
+                                     source="routed_kpi", details={"routed_calls": calls})
+            else:
+                result = ToolFailure(state["action_name"], "RoutedKpiFailure", "; ".join(
+                    f"{call['function']}: {call.get('error', 'no result')}" for call in calls))
+            _write_json(Path(state["output_dir"]) / "steps" / f"step_{state['step_index']:02d}" / "tool_result.json",
+                        {**_summarize(result), "routed_calls": calls})
+            return {"tool_result": result}
+        result = client.call(
+            state["action_name"],
+            state["arguments"],
+            call_id=f"step_{state['step_index']:02d}",
+        )
+        _write_json(
+            Path(state["output_dir"]) / "steps" / f"step_{state['step_index']:02d}" / "tool_result.json",
+            _summarize(result),
+        )
+        return {"tool_result": result}
 ```
 
 `execute_query_area_coverage` already writes `resolved_parameters.json` and
-`tool_result.json` into the step directory.
+`tool_result.json` into the step directory, which is why the coverage block
+has no `_write_json` of its own.
 
-The rest of the function must remain after these two blocks, at the same
-indentation as the two `if` lines: from `routing = state["decision"].get("routing")`
-through the routed KPI block to the final generic `client.call(...)` and its
-`return {"tool_result": result}` (original lines 389 to 422). Every action
-other than the two above (KPI, OSM, basic information, final report) runs
-through that tail. If it is missing, the node returns None for those actions
-and `update_state_node` fails with "'NoneType' object has no attribute 'name'".
+If the tail is missing, the node returns None for KPI, OSM, basic information
+and the final report, and `update_state_node` fails with
+"'NoneType' object has no attribute 'name'".
 
 **`update_state_node`** (original 424). Two edits.
 

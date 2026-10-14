@@ -229,28 +229,117 @@ branch is behind `concat_mode` and `concat_mode` is false.
 
 ### Step 3. `initialize_node`
 
-After the State and tools exist:
+Four edits, each anchored on a line that exists in `langgraph_runner.py`.
+Find the line by its text, not by a number.
+
+**3a. Imports**, at the top of the file. Find
 
 ```python
-transcript = concat.new_transcript(case_state, tools)
-(output_dir / "system_prefix.txt").write_text(transcript.system, encoding="utf-8")
-return {..., "system_prompt": transcript.system, "transcript": transcript}
+from outage_harness_codex_state.context_builder import build_context, load_skill
 ```
 
-Add `transcript: Any` to `InvestigationState`.
+and add directly below it
+
+```python
+from outage_harness_codex_state import context_builder_concat as concat
+from outage_harness_codex_state.transcript import Transcript
+```
+
+**3b. The graph state.** Find the class `InvestigationState(TypedDict, total=False)`.
+Inside it, after the line
+
+```python
+    system_prompt: str
+```
+
+add
+
+```python
+    transcript: Transcript | None
+```
+
+**3c. The context the node builds.** Inside `initialize_node`, find these
+three consecutive lines (they come right after the `tools = ...` block):
+
+```python
+        rendered = build_context(case_state, tools)
+        (output_dir / "investigation_skill.txt").write_text(load_skill(), encoding="utf-8")
+        (output_dir / "system_prefix.txt").write_text(rendered.prefix, encoding="utf-8")
+```
+
+Replace them with
+
+```python
+        if concat_mode:
+            transcript = concat.new_transcript(case_state, tools)
+            system_prompt = transcript.system
+            (output_dir / "investigation_skill.txt").write_text(concat.load_skill(), encoding="utf-8")
+        else:
+            transcript = None
+            system_prompt = build_context(case_state, tools).prefix
+            (output_dir / "investigation_skill.txt").write_text(load_skill(), encoding="utf-8")
+        (output_dir / "system_prefix.txt").write_text(system_prompt, encoding="utf-8")
+```
+
+The skill file written into the run is now the one the condition uses, so
+the `skill_sha256` that `render_context_node` records stays correct.
+
+**3d. The node's return value.** At the end of `initialize_node`, find
+
+```python
+            "system_prompt": rendered.prefix,
+```
+
+in the returned dict and replace it with
+
+```python
+            "system_prompt": system_prompt,
+            "transcript": transcript,
+```
+
+Nothing else in `initialize_node` changes: State 0, `geography.json`,
+`state_00.json`, `tool_declarations.json` and `query_budget` are written the
+same way in both conditions.
 
 ### Step 4. `render_context_node`
 
+One edit. Inside `render_context_node`, find the first two lines of the body:
+
 ```python
-rendered = concat.build_context(state["transcript"])
-context = rendered.variable
+        rendered = build_context(state["state"], state["tools"])
+        context = rendered.variable
 ```
 
-The rest of the node (writing `context_NN.txt`, `LLM_input.txt`,
-`llm_input.json`, `state_before.json`) is unchanged: the two messages are
-still system plus user. If your LLM client accepts a messages list, send
-`state["transcript"].as_messages()` instead of the flattened user string; the
-content is the same, split into the original turns.
+Replace them with
+
+```python
+        if concat_mode:
+            transcript = state["transcript"]
+            if transcript is None:
+                raise ValueError("concat condition without a transcript")
+            context = concat.build_context(transcript).variable
+        else:
+            context = build_context(state["state"], state["tools"]).variable
+```
+
+Everything after these two lines stays: `full_context`, `context_NN.txt`,
+`steps/step_NN/context.txt`, `messages`, `llm_input.json`, `LLM_input.txt`
+and `state_before.json` are written from `state["system_prompt"]` and
+`context` exactly as before. In the concat condition `context` is the whole
+transcript flattened to one user string, so `LLM_input.txt` shows what the
+model receives.
+
+If your LLM client takes a messages list rather than (system, user), build
+the list from the transcript instead of the two strings, in the same node:
+
+```python
+        messages = (state["transcript"].as_messages() if concat_mode else
+                    [{"role": "system", "content": state["system_prompt"]},
+                     {"role": "user", "content": context}])
+```
+
+and send `messages` in `llm_call_node`. The content is the same; the turns
+are kept separate.
 
 ### Step 5. `validate_node`
 

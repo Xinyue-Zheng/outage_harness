@@ -1,0 +1,178 @@
+Fixed investigation skill
+
+Purpose
+Investigate the impact of a cell outage from text that the program renders from
+structured State. Separate mapped geography from measured coverage. Pre-outage
+coverage of the down cell identifies potentially affected locations; the down
+cell cannot be an available backup after its outage.
+
+Evidence rules
+Only queried locations with valid records provide coverage evidence. An unqueried
+location and a queried location with missing data both have unknown coverage, but
+their query progress differs. A valid empty cell list means no cell coverage.
+A valid nonempty list without the down cell is a different observation. Do not
+invent signal measurements for absent cells. Population and complete demand cannot
+be inferred from residential land-use tags. Other land-use types do not imply zero
+demand. Known geographic boundaries do not imply known coverage inside them.
+
+Spatial interpretation
+Use the stated coordinate units and the listed areas. A road centerline is not an
+area: query a road corridor through its buffer area. The query boundary of an area
+is the set of queried locations that share an edge with an unqueried location of
+the same area; it does not depend on signal values. Missing data on the query
+boundary does not show that coverage of the down cell ends there. Counts from
+overlapping areas cannot be summed as disjoint areas.
+
+Actions
+Use only the listed actions and only the listed area ids, cell ids and
+observation ids; do not invent coordinates or ids. coverage.query returns
+coverage for up to four areas in one call and spends query budget: each location
+it queries for the first time costs one unit. Backup candidates are the cells
+other than the down cell that valid coverage records list. For every area, State
+reports each listed cell: where it is present, where it is the strongest cell,
+where it overlaps the down cell, and its RSRP range. kpi.query returns
+their pre-outage KPI, one row per indicator; impact.estimate needs both
+indicators for every backup candidate. impact.estimate estimates synthetic
+traffic transfer and load under the stated thresholds, scope and formula. Keep
+location share distinct from traffic share, and report unserved demand and
+excluded unknown locations. Do not read a demonstration formula as a calibrated
+network model. inspect_observation shows the rows of one observation when the
+counts are not enough. finish proposes to end the investigation; its gap targets list
+the key areas left unqueried and its question gives the reason. The program ends
+the run only when the completion checks listed with the actions pass, and
+otherwise reports what is unmet.
+
+Feedback
+The program validates every decision before it runs. A rejection, an unmet
+completion check, a failed query or a reviewer concern comes back in the Feedback
+section as a fact about the investigation. Read it before the next decision.
+
+Decision format
+Reply with exactly these three lines and nothing else:
+action: <action name>
+parameters: <JSON object with the action's parameters>
+gap: <JSON object with "targets" (list of the area or cell ids the question is about; for finish, the key areas you leave unqueried, empty when there are none) and "question" (one sentence; for finish, the reason)>
+The gap names the information the action should provide. Its targets are the
+areas or cells the question is about. Example:
+action: coverage.query
+parameters: {"areas": ["S9"], "epoch": "pre_outage"}
+gap: {"targets": ["S9"], "question": "Is the down cell present in settlement S9?"}
+
+Limits
+State describes current known facts and remaining unknowns; it does not prescribe
+an action. Maps are for people; decide from the text only. Do not infer unknown
+coverage, future results, or a complete outage impact from partial observations.
+
+Task:
+Investigate the impact of the planned outage of EnodeB CCL00001. The ID has no dash, so the whole EnodeB is down: every sector whose ID starts with CCL00001 is an outage cell, and none of them can be a backup.
+Planned outage interval: 2026-02-10T09:00:00Z through 2026-02-10T12:00:00Z (UTC).
+The interval covers Tuesday 09:00 to 12:00.
+The interval is a plan; it is not evidence that the outage happened.
+Coverage evidence describes the network before the outage. KPI queries must end strictly before 2026-02-10T09:00:00Z; a baseline compares the same weekday and hours in prior weeks.
+Analysis objective: Find where the outage sectors serve users and which cells can take over.
+Site of CCL00001: site name Synthetic site.
+Study area: square of side 2000 m centred on the site (2 km square centred on the site).
+The down site lies inside areas: study_area, S1, road_H1.
+
+Known geography:
+Coordinate system: WGS84 longitude/latitude geometries; local metre grid; analysis grid of 20 x 20 locations with 100 m spacing. Coordinates are not shown; refer to areas by id.
+Source: query_basic_information observation init_obs_00_cell, query_osm_landuse observation init_obs_00_osm.
+- study_area is a study area. Synthetic 2 km square around the down site.
+- settlement_S1 is a settlement named S1 (village). Synthetic village around the down site. Its settlement area is S1.
+- settlement_S2 is a settlement named S2 (hamlet). Synthetic hamlet east of the site. Its settlement area is S2.
+- road_H1 is a road (primary). Synthetic primary road crossing the study area. It is a centerline, not an area; its query corridor is area road_H1.
+- road_H1 intersects S1. Spatial evidence: Polyline and polygon intersect in WGS84.
+Land-use labels are mapped types, not measured demand: settlements and commercial or industrial land usually hold most users; farmland, grassland, forest and water usually hold few or none.
+
+Areas (overlapping areas share analysis grid locations; their counts are not additive):
+- study_area (study_area): The whole study area. Resolves to 400 analysis grid locations. Contains the down site.
+- S1 (settlement): S1 (village) settlement area. Resolves to 30 analysis grid locations. Contains the down site.
+- S2 (settlement): S2 (hamlet) settlement area. Resolves to 16 analysis grid locations. Nearest point 0.7 km from the down site; centre 0.8 km to the east.
+- road_H1 (road_corridor): 300 m corridor around the primary road H1. Resolves to 60 analysis grid locations. Contains the down site.
+- F1 (landuse): Farmland in the north-west; demand is not inferred from land use. Resolves to 54 analysis grid locations. Nearest point 0.5 km from the down site; centre 0.9 km to the west.
+
+Available actions:
+- inspect_observation(observation_id: string; area_id: string; offset: integer; limit: integer). Inspect existing coverage rows without another API query. No API query and no API cost. Use an observation id from Evidence provenance and an area id from Areas; offset >= 0, limit 1 to 100.
+- query_area_coverage(area_id: string; resolution: one of 4, 10, 100). Fetch pre-outage coverage at every analysis grid location of one listed area through the point API: for each location, every sample within the resolution radius with its serving sector and strongest neighbour cells and their RSRP. resolution is the radius in metres around each location and must be 4, 10 or 100. One point call per analysis grid location of the area that is not queried yet; the cost is that number of locations, counted against the query budget.
+- query_lte_rrc_prb(cell_ids: list of string; start_time: string; end_time: string). Hourly RRC and PRB KPI rows of LTE cells over a time window. For LTE cells. Hourly rows. end_time must be strictly before 2026-02-10T09:00:00Z. Take start_time and end_time from the KPI windows; explain in purpose why if you use any other window. Longer windows and more cells increase cost. Cells are routed by ID: four letters + six digits (CCSN003553...) to query_nr_rrc_prb, three letters + five digits (CCL06069...) to query_lte_rrc_prb; a mixed list is split into both queries.
+- finish(). Propose to end the investigation. The run ends only when the completion checks pass; otherwise the unmet checks come back as feedback.
+
+Completion checks, applied when you choose finish:
+- boundary: for every observed outage sector, one settlement or road corridor farther from the down site than the farthest area where the sector serves a sample is fully queried (every location fetched; missing data does not count against it) and shows the sector never serving and never the strongest cell. A sector listed only as a weak neighbour does not extend its service distance.
+- backup_load: reported, not required. Verified backup-cell load after the outage traffic moves is not computed yet.
+When the boundary check passes, the program produces the final report and the run ends; you do not call a report action. Only LTE cells are backups for LTE outage sectors; only NR cells are backups for NR outage sectors. If both technologies are explicitly listed as outage prefixes, assess each technology separately.
+
+Investigation progress:
+Counts are per area; overlapping areas must not be added together.
+- study_area contains 400 analysis grid locations; 30 queried, 370 not queried.
+  21 queried locations have valid data; 9 have missing data.
+  Valid locations: 0 list no cell; 21 list an outage sector; 0 list other cells only.
+  Query boundary facing the unqueried interior: 18 locations (4 missing, 14 with an outage sector).
+- S1 contains 30 analysis grid locations; 30 queried, 0 not queried.
+  21 queried locations have valid data; 9 have missing data.
+  Valid locations: 0 list no cell; 21 list an outage sector; 0 list other cells only.
+  Query boundary facing the unqueried interior: 0 locations (0 missing, 0 with an outage sector).
+- road_H1 contains 60 analysis grid locations; 18 queried, 42 not queried.
+  12 queried locations have valid data; 6 have missing data.
+  Valid locations: 0 list no cell; 12 list an outage sector; 0 list other cells only.
+  Query boundary facing the unqueried interior: 5 locations (1 missing, 4 with an outage sector).
+- Not queried yet, coverage unknown (analysis grid locations): S2 (16), F1 (54).
+
+Coverage observations:
+Each queried location was fetched by one point call. Every returned sample lists its serving sector and the strongest neighbour cells with RSRP, so cells listed in one sample are observed together at one measurement. A cell that is not listed at a location is not shown to be absent there. A location with no sample has missing data.
+- S1: outage sectors CCL00001_aa_1, CCL00001_ab_1 are listed at 21 of the 21 valid locations.
+  Of those 21 locations, 6 also list an eligible backup cell (6 in the same sample as the outage sector) and 15 list no eligible backup.
+  CCL00001_aa_1 (outage sector): present at 15 valid locations, serving at 11, strongest at 11; RSRP -107.33 to -87.52 dBm, mean -97.28 over 34 samples.
+  CCL00001_ab_1 (outage sector): present at 14 valid locations, serving at 10, strongest at 10; RSRP -111.63 to -69.91 dBm, mean -96.65 over 26 samples.
+  CCSN000004_aa_1 (not an eligible backup: other technology): present at 9 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 9; RSRP -111.99 to -106.13 dBm, mean -110.14 over 17 samples.
+  CCL00002_aa_1: present at 4 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 4; RSRP -111.38 to -109.15 dBm, mean -110.65 over 5 samples.
+  CCL00003_ab_1: present at 2 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 2; RSRP -111.87 to -111.44 dBm, mean -111.66 over 2 samples.
+  Coverage at locations with missing data also remains unknown.
+- road_H1: outage sectors CCL00001_aa_1, CCL00001_ab_1 are listed at 12 of the 12 valid locations.
+  Of those 12 locations, 4 also list an eligible backup cell (4 in the same sample as the outage sector) and 8 list no eligible backup.
+  CCL00001_aa_1 (outage sector): present at 9 valid locations, serving at 6, strongest at 6; RSRP -107.33 to -87.52 dBm, mean -94.83 over 22 samples.
+  CCL00001_ab_1 (outage sector): present at 8 valid locations, serving at 6, strongest at 6; RSRP -111.63 to -69.91 dBm, mean -94.43 over 15 samples.
+  CCSN000004_aa_1 (not an eligible backup: other technology): present at 4 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 4; RSRP -111.99 to -109.98 dBm, mean -110.95 over 8 samples.
+  CCL00002_aa_1: present at 2 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 2; RSRP -111.38 to -109.15 dBm, mean -110.42 over 3 samples.
+  CCL00003_ab_1: present at 2 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 2; RSRP -111.87 to -111.44 dBm, mean -111.66 over 2 samples.
+  42 locations of road_H1 are not queried; coverage there remains unknown.
+  Coverage at locations with missing data also remains unknown.
+- study_area: outage sectors CCL00001_aa_1, CCL00001_ab_1 are listed at 21 of the 21 valid locations.
+  Of those 21 locations, 6 also list an eligible backup cell (6 in the same sample as the outage sector) and 15 list no eligible backup.
+  CCL00001_aa_1 (outage sector): present at 15 valid locations, serving at 11, strongest at 11; RSRP -107.33 to -87.52 dBm, mean -97.28 over 34 samples.
+  CCL00001_ab_1 (outage sector): present at 14 valid locations, serving at 10, strongest at 10; RSRP -111.63 to -69.91 dBm, mean -96.65 over 26 samples.
+  CCSN000004_aa_1 (not an eligible backup: other technology): present at 9 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 9; RSRP -111.99 to -106.13 dBm, mean -110.14 over 17 samples.
+  CCL00002_aa_1: present at 4 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 4; RSRP -111.38 to -109.15 dBm, mean -110.65 over 5 samples.
+  CCL00003_ab_1: present at 2 valid locations, serving at 0, strongest at 0, in the same sample as an outage sector at 2; RSRP -111.87 to -111.44 dBm, mean -111.66 over 2 samples.
+  370 locations of study_area are not queried; coverage there remains unknown.
+  Coverage at locations with missing data also remains unknown.
+
+Impact and backup analysis:
+Outage sectors seen in valid coverage records (unavailable as backups): CCL00001_aa_1, CCL00001_ab_1.
+Backup candidates seen in valid coverage records (presence only; available load not verified): CCL00002_aa_1, CCL00003_ab_1.
+KPI records: none yet.
+KPI baseline: none yet.
+Impact estimate: not computed.
+
+Remaining unknowns:
+- Coverage at 370 unqueried analysis grid locations is unknown; 2 areas have no queried location.
+- Coverage at 9 queried locations with missing data is unknown.
+- A cell that is not listed at a location is not shown to be absent there: the point API lists the serving sector and only the strongest neighbours of each sample.
+- backup cells: Backup candidates are cells of the outage technology seen in valid samples; their load after the outage traffic moves is not verified.
+- Coverage beyond the study area is unknown.
+- Land-use labels do not establish population or complete network demand.
+- Unqueried and missing coverage are distinct; neither is evidence of absence.
+
+Completion checks: not yet evaluated; status unknown.
+Final report inputs (use exactly for final_step_report): run_dir demo_concat/A; case_state_path demo_concat/A/state.json.
+
+Query budget: 30 of 600 locations used; 570 remain. A coverage query costs the locations it fetches for the first time.
+
+Evidence provenance:
+- real_obs_01: query_area_coverage area S1 (area_id S1; resolution 10); success; 30 locations fetched; 21 valid; 9 missing; 0 failed, left unqueried; 0 already queried, skipped; file artifacts/step_01_S1.json.
+The state coverage table keeps every queried location with each sample's cells and RSRP; inspect_observation shows those rows.
+
+Feedback from earlier rounds:
+- None.
+
+Reply with your next decision as one JSON object in the decision format of the skill.

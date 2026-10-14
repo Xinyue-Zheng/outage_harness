@@ -1,0 +1,149 @@
+{
+ "output_cap_bytes": 10240,
+ "conditions": {
+  "A": {
+   "rounds": [
+    {
+     "round": 1,
+     "action": "query_area_coverage S1",
+     "input_chars": 10644,
+     "raw_output_bytes": 32644,
+     "shown_output_bytes": 4964,
+     "points_in_output": 30,
+     "points_visible_after_truncation": null
+    },
+    {
+     "round": 2,
+     "action": "query_area_coverage road_H1",
+     "input_chars": 15968,
+     "raw_output_bytes": 37744,
+     "shown_output_bytes": 4330,
+     "points_in_output": 42,
+     "points_visible_after_truncation": null
+    },
+    {
+     "round": 3,
+     "action": "query_area_coverage S2",
+     "input_chars": 17123,
+     "raw_output_bytes": 8225,
+     "shown_output_bytes": 4965,
+     "points_in_output": 8,
+     "points_visible_after_truncation": null
+    },
+    {
+     "round": 4,
+     "action": "finish",
+     "input_chars": 17270
+    }
+   ],
+   "score": {
+    "locations_queried": 80,
+    "locations_valid": 57,
+    "down_cell_present": 36,
+    "down_cell_with_backup": 19,
+    "down_cell_without_backup": 17,
+    "outage_cells": [
+     "CCL00001_aa_1",
+     "CCL00001_ab_1"
+    ],
+    "backup_candidates": [
+     "CCL00002_aa_1",
+     "CCL00003_ab_1"
+    ],
+    "areas_fully_queried": [
+     "S1",
+     "S2",
+     "road_H1"
+    ],
+    "completion": {
+     "boundary": {
+      "status": "complete",
+      "reason": "Every observed outage sector has a fully queried settlement or road corridor farther from the site than its last served area where it never serves and is never strongest",
+      "outage_cells": [
+       "CCL00001_aa_1",
+       "CCL00001_ab_1"
+      ]
+     },
+     "backup_load": {
+      "status": "unknown",
+      "required": false,
+      "reason": "No verified backup-load computation exists yet; reported, not required"
+     }
+    }
+   },
+   "final_input_chars": 17270
+  },
+  "B": {
+   "rounds": [
+    {
+     "round": 1,
+     "action": "query_area_coverage S1",
+     "input_chars": 12296,
+     "raw_output_bytes": 32644,
+     "shown_output_bytes": 4964,
+     "points_in_output": 30,
+     "points_visible_after_truncation": 5
+    },
+    {
+     "round": 2,
+     "action": "query_area_coverage road_H1",
+     "input_chars": 17588,
+     "raw_output_bytes": 37744,
+     "shown_output_bytes": 4330,
+     "points_in_output": 42,
+     "points_visible_after_truncation": 7
+    },
+    {
+     "round": 3,
+     "action": "query_area_coverage S2",
+     "input_chars": 22237,
+     "raw_output_bytes": 8225,
+     "shown_output_bytes": 4965,
+     "points_in_output": 8,
+     "points_visible_after_truncation": 6
+    },
+    {
+     "round": 4,
+     "action": "finish",
+     "input_chars": 27529
+    }
+   ],
+   "score": {
+    "locations_queried": 80,
+    "locations_valid": 57,
+    "down_cell_present": 36,
+    "down_cell_with_backup": 19,
+    "down_cell_without_backup": 17,
+    "outage_cells": [
+     "CCL00001_aa_1",
+     "CCL00001_ab_1"
+    ],
+    "backup_candidates": [
+     "CCL00002_aa_1",
+     "CCL00003_ab_1"
+    ],
+    "areas_fully_queried": [
+     "S1",
+     "S2",
+     "road_H1"
+    ],
+    "completion": {
+     "boundary": {
+      "status": "complete",
+      "reason": "Every observed outage sector has a fully queried settlement or road corridor farther from the site than its last served area where it never serves and is never strongest",
+      "outage_cells": [
+       "CCL00001_aa_1",
+       "CCL00001_ab_1"
+      ]
+     },
+     "backup_load": {
+      "status": "unknown",
+      "required": false,
+      "reason": "No verified backup-load computation exists yet; reported, not required"
+     }
+    }
+   },
+   "final_input_chars": 27529
+  }
+ }
+}

@@ -96,7 +96,7 @@ def run_condition(condition: str, out: Path) -> dict:
                      "shown_output_bytes": len(shown.encode()),
                      "points_in_output": result["details"]["fetched"],
                      "points_visible_after_truncation": visible_points if condition == "concat" else None})
-    return {"rounds": rows, "score": rc.score_against_state(state, completion),
+    return {"rounds": rows, "final_state_summary": rc.score_against_state(state, completion),
             "final_input_chars": rows[-1]["input_chars"]}
 
 
@@ -110,7 +110,7 @@ def main(output: Path) -> None:
         print(f"{a['round']:>5} {a['action']:<28} {a['input_chars']:>14} {b['input_chars']:>14} "
               f"{b.get('raw_output_bytes', ''):>9} {b.get('shown_output_bytes', ''):>7} "
               f"{b.get('points_in_output', ''):>4} {str(b.get('points_visible_after_truncation', '')):>8}")
-    print("score (hidden State, identical in rendered and concat):", json.dumps(results["rendered"]["score"], indent=1))
+    print("final hidden State (identical in rendered and concat):", json.dumps(results["rendered"]["final_state_summary"], indent=1))
 
 
 if __name__ == "__main__":

@@ -1,14 +1,20 @@
-"""Run one case under one condition.
+"""Run one case with the package this file lives in.
 
     python -m outage_harness_codex_state.run_case \
-        --condition concat \
         --down-cell CCL06069 --start-time 2026-02-10T09:00:00Z --end-time 2026-02-10T12:00:00Z \
         --output runs/case1_concat --max-steps 8 \
-        --base-url http://127.0.0.1:8012/v1 --model qwen2.5-32b
+        --base-url http://127.0.0.1:8012/v1 --model qwen2.5-32b \
+        --ca-bundle /path/to/certificate.pem
 
-Place this file in the package next to langgraph_runner.py. It builds the
-decision model, the verifier (rendered only), the tool client, the point
-query, the caps, and calls run_case_langgraph with the condition.
+Place a copy of this file in each package next to langgraph_runner.py and
+change PACKAGE below to the package name. The package decides the condition
+(its langgraph_runner.CONDITION); this script builds the decision model, the
+verifier (used only by a package whose graph has a verifier node), the tool
+client, the point query and the caps, and calls run_case_langgraph.
+
+The certificate for the internal endpoints is set with --ca-bundle or with
+the environment variables REQUESTS_CA_BUNDLE (requests) and SSL_CERT_FILE
+(httpx, urllib) before any client is built.
 
 Two constructions depend on files that are only inside: the LLM client
 (llm.OpenAICompatLLM) and the tool client (client.RealToolClient). They are
@@ -23,25 +29,28 @@ before the first real API call.
 from __future__ import annotations
 
 import argparse
+import importlib
 import os
 from pathlib import Path
 from typing import Any
 
-from llm import OpenAICompatLLM
+PACKAGE = "outage_harness_codex_state"   # "outage_harness_langgraph" in the rendered package
 
-from outage_harness_codex_state.client import RealToolClient
-from outage_harness_codex_state.langgraph_runner import run_case_langgraph
-from outage_harness_codex_state.policy import RunLimits
-from outage_harness_codex_state.runner_point_nodes import make_point_query
 
-CONDITIONS = ("rendered", "concat")
+def _set_certificate(path: str | None) -> None:
+    """Point every HTTP client at the internal certificate before any is imported."""
+    if path is None:
+        return
+    if not Path(path).is_file():
+        raise SystemExit(f"--ca-bundle {path} is not a file")
+    os.environ["REQUESTS_CA_BUNDLE"] = path
+    os.environ["SSL_CERT_FILE"] = path
 
 
 def _arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="One investigation run under one condition.")
-    parser.add_argument("--condition", choices=CONDITIONS, default="rendered",
-                        help="rendered: context rendered from State (the harness); "
-                             "concat: append-only transcript (the Codex way)")
+    parser = argparse.ArgumentParser(description="One investigation run with this package.")
+    parser.add_argument("--ca-bundle", default=None,
+                        help="Certificate file for the internal endpoints; sets REQUESTS_CA_BUNDLE and SSL_CERT_FILE")
     parser.add_argument("--down-cell", required=True, help="EnodeB id or sector id of the outage")
     parser.add_argument("--start-time", required=True, help="Planned outage start, ISO 8601 UTC")
     parser.add_argument("--end-time", required=True, help="Planned outage end, ISO 8601 UTC")
@@ -72,6 +81,8 @@ def _arguments() -> argparse.Namespace:
 
 def _model(arguments: argparse.Namespace, name: str) -> Any:
     """The chat client. Match the constructor to llm.OpenAICompatLLM."""
+    from llm import OpenAICompatLLM
+
     api_key = os.environ.get(arguments.api_key_env) if arguments.api_key_env else None
     return OpenAICompatLLM(base_url=arguments.base_url, model=name, api_key=api_key,
                            max_tokens=arguments.max_tokens)
@@ -79,16 +90,15 @@ def _model(arguments: argparse.Namespace, name: str) -> Any:
 
 def _client() -> Any:
     """The tool client over the tool library. Match the constructor to client.RealToolClient."""
-    return RealToolClient()
+    return importlib.import_module(f"{PACKAGE}.client").RealToolClient()
 
 
 def _point_query(arguments: argparse.Namespace) -> Any:
     if arguments.fake_point_api:
-        from outage_harness_codex_state.synthetic_case import fake_point_api
-
+        fake_point_api = importlib.import_module(f"{PACKAGE}.synthetic_case").fake_point_api
         return lambda lat, lon, r: fake_point_api(lat, lon, r)
-    from outage_harness_codex_state.point_by_point_cover import query_point_coverage
-
+    query_point_coverage = importlib.import_module(f"{PACKAGE}.point_by_point_cover").query_point_coverage
+    make_point_query = importlib.import_module(f"{PACKAGE}.runner_point_nodes").make_point_query
     token = os.environ.get(arguments.token_env)
     if not token:
         raise SystemExit(f"{arguments.token_env} is not set; export the point API token or use --fake-point-api")
@@ -97,6 +107,10 @@ def _point_query(arguments: argparse.Namespace) -> Any:
 
 def main() -> int:
     arguments = _arguments()
+    _set_certificate(arguments.ca_bundle)
+    runner = importlib.import_module(f"{PACKAGE}.langgraph_runner")
+    RunLimits = importlib.import_module(f"{PACKAGE}.policy").RunLimits
+    condition = getattr(runner, "CONDITION", "rendered")
     if arguments.output.exists() and any(arguments.output.iterdir()):
         raise SystemExit(f"Output directory is not empty: {arguments.output}")
     task = {"down_cell_id": arguments.down_cell, "start_time": arguments.start_time,
@@ -110,10 +124,8 @@ def main() -> int:
         max_identical_queries=arguments.repeat_cap,
         max_query_locations=arguments.query_budget,
     )
-    verifier = None
-    if arguments.verifier_model and arguments.condition == "rendered":
-        verifier = _model(arguments, arguments.verifier_model)
-    summary = run_case_langgraph(
+    verifier = _model(arguments, arguments.verifier_model) if arguments.verifier_model else None
+    summary = runner.run_case_langgraph(
         _model(arguments, arguments.model),
         _client(),
         task,
@@ -121,10 +133,9 @@ def main() -> int:
         max_steps=arguments.max_steps,
         verifier=verifier,
         limits=limits,
-        condition=arguments.condition,
         point_query=_point_query(arguments),
     )
-    print(f"{arguments.condition}: end_reason {summary.get('end_reason', 'complete' if summary.get('finished') else '?')}, "
+    print(f"{condition}: end_reason {summary.get('end_reason', 'complete' if summary.get('finished') else '?')}, "
           f"steps {summary.get('steps')}, observations {summary.get('observations')}; "
           f"run.json, steps.json, state.json and trace.txt in {arguments.output}")
     return 0

@@ -128,7 +128,8 @@ def append_round(transcript: Transcript, raw_reply: str, name: str | None, resul
 
 
 def score_against_state(state: dict[str, Any], completion_status: dict[str, Any] | None) -> dict[str, Any]:
-    """The facts a run is scored on, from the hidden State. Same for rendered and concat."""
+    """A summary of the final hidden State for the demo printout. Not a score: what a run
+    is judged by is not decided; scoring is a separate script over run directories."""
     study = (state.get("summaries") or {}).get("study_area") or {}
     return {
         "locations_queried": study.get("queried"),

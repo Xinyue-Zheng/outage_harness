@@ -67,170 +67,83 @@ So the question the live test answers is not "does concatenation work"; it
 is "when the model is given the raw data, in whatever amount fits, how far
 does it get, and what does it get wrong, compared with the rendered State".
 
-## 3. Wiring the concat condition into the internal runner
+## 3. Wiring the concat package
 
-Start from a copy of the internal package after the per-point steps are done
-(`../wiring/STEP_BY_STEP_2026-10-13.md`). Then:
+Two packages, one per condition. `outage_harness_langgraph` is the rendered
+harness and stays as it is (its own fixes are listed in
+`FAIR_COMPARISON_2026-10-15.md`). `outage_harness_codex_state` is a full
+copy of it, taken after the per-point steps of `STEP_BY_STEP_2026-10-13.md`
+were applied, and then changed as below so that it is concat and nothing
+else. There is no condition switch: every edit replaces the rendered
+behaviour in this copy. Find lines by their text, not by number.
 
 ### Step 1. Copy
 
 Copy `transcript.py`, `context_builder_concat.py`, `runner_concat_nodes.py`
-and `investigation_skill_concat.txt` into the package. Fix the two imports in
-`runner_concat_nodes.py` and `context_builder_concat.py` to the package path
-(`from outage_harness_codex_state.point_coverage import ...`,
-`from outage_harness_codex_state.transcript import ...`).
+and `investigation_skill_concat.txt` into the package. In
+`runner_concat_nodes.py` and `context_builder_concat.py` the imports already
+name `outage_harness_codex_state`.
 
-### Step 2. A condition switch
+### Step 2. The run script
 
-The condition is one string, `"rendered"` or `"concat"`, chosen when a run starts and
-read inside the nodes. It travels through three places in
-`langgraph_runner.py`: the builder's signature, the builder's body, and the
-entry function. Nodes are closures inside `build_investigation_graph`, so
-once the builder has `condition` every node can read it without any change
-to `InvestigationState`.
+`run_case.py` in this folder is the command line for both packages: copy it
+into each package next to `langgraph_runner.py`. It builds the model, the
+tool client, the point query and the caps, and calls `run_case_langgraph`.
+Two constructors are yours to match: `_model` (your `llm.OpenAICompatLLM`)
+and `_client` (your `client.RealToolClient`). The script reads the module
+constant `CONDITION` from the package's `langgraph_runner` and writes it into
+`task.json` and `run.json`, so a run directory says which package produced
+it.
 
-**2a. The builder's signature** (original line 142, `def build_investigation_graph(`):
-
-```python
-# old
-def build_investigation_graph(
-    model: DecisionModel,
-    client: Any,
-    *,
-    point_query: PointQuery,
-    fetch_landuse_before_decision: bool = True,
-    verifier: DecisionModel | None = None,
-    limits: RunLimits | None = None,
-):
-# new
-def build_investigation_graph(
-    model: DecisionModel,
-    client: Any,
-    *,
-    point_query: PointQuery,
-    condition: str = "rendered",                  # "rendered": context from State; "concat": transcript
-    fetch_landuse_before_decision: bool = True,
-    verifier: DecisionModel | None = None,
-    limits: RunLimits | None = None,
-):
-```
-
-**2b. The builder's body**, right after `guard = RunGuard(limits or RunLimits())`
-(original line 152), before the first node is defined:
+In this package, add at the top of `langgraph_runner.py`, next to the
+imports:
 
 ```python
-    if condition not in ("rendered", "concat"):
-        raise ValueError(f"condition must be rendered or concat, got {condition!r}")
-    concat_mode = condition == "concat"
+CONDITION = "concat"
 ```
 
-Every node below tests `if concat_mode:` for its the concat condition branch. Steps 3
-to 10 show those branches. The the rendered condition code stays as it is in the `else`
-path, so one runner serves both conditions and the comparison is between two
-runs of the same file.
-
-**2c. The entry function** `run_case_langgraph` (original line 677): add the
-parameter and pass it through.
-
-```python
-# old
-def run_case_langgraph(
-    model: DecisionModel,
-    client: Any,
-    state_path: Path | dict[str, Any],
-    output_dir: Path,
-    *,
-    max_steps: int = 8,
-    case_evidence: dict[str, Any] | None = None,
-    fetch_landuse_before_decision: bool = True,
-    verifier: DecisionModel | None = None,
-    limits: RunLimits | None = None,
-) -> dict[str, Any]:
-# new
-def run_case_langgraph(
-    model: DecisionModel,
-    client: Any,
-    state_path: Path | dict[str, Any],
-    output_dir: Path,
-    *,
-    max_steps: int = 8,
-    case_evidence: dict[str, Any] | None = None,
-    fetch_landuse_before_decision: bool = True,
-    verifier: DecisionModel | None = None,
-    limits: RunLimits | None = None,
-    condition: str = "rendered",
-) -> dict[str, Any]:
-```
-
-and in its body, the call at original line 702:
-
-```python
-# old
-    graph = build_investigation_graph(
-        model, client, point_query=point_query,
-        fetch_landuse_before_decision=fetch_landuse_before_decision,
-        verifier=verifier, limits=limits,
-    )
-# new
-    graph = build_investigation_graph(
-        model, client, point_query=point_query, condition=condition,
-        fetch_landuse_before_decision=fetch_landuse_before_decision,
-        verifier=None if condition == "concat" else verifier,
-        limits=limits,
-    )
-```
-
-Also write the condition into `task.json` next to the task, so a run
-directory says which condition produced it (same line, original 701):
-
-```python
-    _write_json(output_dir / "task.json", {**task, "condition": condition})
-```
-
-**2d. The run script.** `run_case.py` in this folder is the command line.
-Copy it into the package next to `langgraph_runner.py`. It builds the model,
-the verifier (rendered only), the tool client, the point query and the caps,
-and calls `run_case_langgraph(..., condition=..., point_query=...)`. Two
-constructors are yours to match: `_model` (your `llm.OpenAICompatLLM`) and
-`_client` (your `client.RealToolClient`); everything else is fixed.
+(in the rendered package: `CONDITION = "rendered"`).
 
 `run_case_langgraph` must accept `point_query` as a keyword and pass it to
-the builder (step 8 of `STEP_BY_STEP_2026-10-13.md` built it inside; move
-that line out so the script can inject the fake API):
+the builder; step 8 of `STEP_BY_STEP_2026-10-13.md` built it inside. Move
+that out:
 
 ```python
 def run_case_langgraph(model, client, state_path, output_dir, *, max_steps=8,
                        case_evidence=None, fetch_landuse_before_decision=True,
-                       verifier=None, limits=None, condition="rendered", point_query=None):
+                       verifier=None, limits=None, point_query=None):
     if point_query is None:
         raise ValueError("point_query is required: build it with make_point_query")
 ```
 
-One run per condition:
+and in its body pass `point_query=point_query` to `build_investigation_graph`,
+and write the condition into the task file:
+
+```python
+    _write_json(output_dir / "task.json", {**task, "condition": CONDITION})
+```
+
+One run per package, same arguments:
 
 ```
-python -m outage_harness_codex_state.run_case --condition rendered \
+export REQUESTS_CA_BUNDLE=/path/to/your/certificate.pem
+export SSL_CERT_FILE=/path/to/your/certificate.pem
+export COVERAGE_API_TOKEN=...
+python -m outage_harness_langgraph.run_case \
     --down-cell CCL06069 --start-time 2026-02-10T09:00:00Z --end-time 2026-02-10T12:00:00Z \
     --output runs/case1_rendered --base-url http://127.0.0.1:8012/v1 --model qwen2.5-32b \
     --verifier-model qwen2.5-32b
-python -m outage_harness_codex_state.run_case --condition concat \
+python -m outage_harness_codex_state.run_case \
     --down-cell CCL06069 --start-time 2026-02-10T09:00:00Z --end-time 2026-02-10T12:00:00Z \
     --output runs/case1_concat --base-url http://127.0.0.1:8012/v1 --model qwen2.5-32b
 ```
 
-Add `--fake-point-api` to either command to drive the real model against
-the synthetic point API before the first real API call; the token is then
-not needed. The real API reads its token from `COVERAGE_API_TOKEN`
-(`--token-env` changes the name).
-
-**Check after 2a to 2d.** Run the rendered condition once with `max_steps=1`. Nothing in
-its output may differ from a run before step 2, because every the concat condition
-branch is behind `concat_mode` and `concat_mode` is false.
+`--ca-bundle /path/to/certificate.pem` sets both variables from inside the
+script instead of the two exports. `--fake-point-api` drives the real model
+against the synthetic point API before any real API call; the token is then
+not needed.
 
 ### Step 3. `initialize_node`
-
-Four edits, each anchored on a line that exists in `langgraph_runner.py`.
-Find the line by its text, not by a number.
 
 **3a. Imports**, at the top of the file. Find
 
@@ -238,7 +151,7 @@ Find the line by its text, not by a number.
 from outage_harness_codex_state.context_builder import build_context, load_skill
 ```
 
-and add directly below it
+and replace it with
 
 ```python
 from outage_harness_codex_state import context_builder_concat as concat
@@ -246,18 +159,17 @@ from outage_harness_codex_state import runner_concat_nodes as rc
 from outage_harness_codex_state.transcript import Transcript
 ```
 
-and make sure the import from `runner_point_nodes` (already there after the
-per-point steps) includes `AREA_RESOLUTIONS` and `new_locations`:
+Make sure the import from `runner_point_nodes` includes `AREA_RESOLUTIONS`
+and `new_locations`:
 
 ```python
 from outage_harness_codex_state.runner_point_nodes import (
     AREA_RESOLUTIONS, QUERY_AREA_COVERAGE, execute_query_area_coverage, make_point_query,
-    new_locations, update_state_query_area_coverage, validate_query_area_coverage,
+    new_locations, update_state_query_area_coverage,
 )
 ```
 
-**3b. The graph state.** Find the class `InvestigationState(TypedDict, total=False)`.
-Inside it, after the line
+**3b. The graph state.** In `InvestigationState`, after
 
 ```python
     system_prompt: str
@@ -266,11 +178,11 @@ Inside it, after the line
 add
 
 ```python
-    transcript: Transcript | None
+    transcript: Transcript
 ```
 
-**3c. The context the node builds.** Inside `initialize_node`, find these
-three consecutive lines (they come right after the `tools = ...` block):
+**3c. The context the node builds.** Inside `initialize_node`, find the
+three consecutive lines
 
 ```python
         rendered = build_context(case_state, tools)
@@ -278,122 +190,64 @@ three consecutive lines (they come right after the `tools = ...` block):
         (output_dir / "system_prefix.txt").write_text(rendered.prefix, encoding="utf-8")
 ```
 
-Replace them with
+and replace them with
 
 ```python
-        if concat_mode:
-            transcript = concat.new_transcript(case_state, tools)
-            system_prompt = transcript.system
-            (output_dir / "investigation_skill.txt").write_text(concat.load_skill(), encoding="utf-8")
-        else:
-            transcript = None
-            system_prompt = build_context(case_state, tools).prefix
-            (output_dir / "investigation_skill.txt").write_text(load_skill(), encoding="utf-8")
-        (output_dir / "system_prefix.txt").write_text(system_prompt, encoding="utf-8")
+        transcript = concat.new_transcript(case_state, tools)
+        (output_dir / "investigation_skill.txt").write_text(concat.load_skill(), encoding="utf-8")
+        (output_dir / "system_prefix.txt").write_text(transcript.system, encoding="utf-8")
 ```
 
-The skill file written into the run is now the one the condition uses, so
-the `skill_sha256` that `render_context_node` records stays correct.
-
-**3d. The node's return value.** At the end of `initialize_node`, find
+**3d. The node's return value.** In the returned dict, replace
 
 ```python
             "system_prompt": rendered.prefix,
 ```
 
-in the returned dict and replace it with
+with
 
 ```python
-            "system_prompt": system_prompt,
+            "system_prompt": transcript.system,
             "transcript": transcript,
 ```
 
-Nothing else in `initialize_node` changes: State 0, `geography.json`,
-`state_00.json`, `tool_declarations.json` and `query_budget` are written the
-same way in both conditions.
-
 ### Step 4. `render_context_node`
 
-One edit. Inside `render_context_node`, find the first two lines of the body:
+Find the first two lines of the body
 
 ```python
         rendered = build_context(state["state"], state["tools"])
         context = rendered.variable
 ```
 
-Replace them with
+and replace them with
 
 ```python
-        if concat_mode:
-            transcript = state["transcript"]
-            if transcript is None:
-                raise ValueError("concat condition without a transcript")
-            context = concat.build_context(transcript).variable
-        else:
-            context = build_context(state["state"], state["tools"]).variable
+        context = concat.build_context(state["transcript"]).variable
 ```
 
-Everything after these two lines stays: `full_context`, `context_NN.txt`,
-`steps/step_NN/context.txt`, `messages`, `llm_input.json`, `LLM_input.txt`
-and `state_before.json` are written from `state["system_prompt"]` and
-`context` exactly as before. In the concat condition `context` is the whole
-transcript flattened to one user string, so `LLM_input.txt` shows what the
-model receives.
-
-If your LLM client takes a messages list rather than (system, user), build
-the list from the transcript instead of the two strings, in the same node:
-
-```python
-        messages = (state["transcript"].as_messages() if concat_mode else
-                    [{"role": "system", "content": state["system_prompt"]},
-                     {"role": "user", "content": context}])
-```
-
-and send `messages` in `llm_call_node`. The content is the same; the turns
-are kept separate.
+Everything after them stays. `context` is the whole transcript flattened to
+one user string, so `LLM_input.txt` shows what the model receives. If your
+LLM client takes a messages list, build it as
+`state["transcript"].as_messages()` in the same node and send that from
+`llm_call_node`; the content is the same, the turns stay separate.
 
 ### Step 5. `validate_node`
 
-Replace the whole function with the one below. It is the complete node, no
-part left out: the rendered branch is the per-point version from
-`STEP_BY_STEP_2026-10-13.md`, step 7, unchanged; the concat branch is new.
-`new_locations` and `AREA_RESOLUTIONS` come from `runner_point_nodes` (import
-in 3a); `rc` is `runner_concat_nodes`.
+Replace the whole function with:
 
 ```python
     def validate_node(state: InvestigationState) -> dict[str, Any]:
         step_dir = Path(state["output_dir"]) / "steps" / f"step_{state['step_index']:02d}"
         try:
-            if concat_mode:
-                # Codex way: tool name known, parameters as declared, area id listed. Nothing about State.
-                action_name, arguments = rc.validate_schema_only(
-                    state["decision"], state["tools"], state["state"], state["output_dir"], AREA_RESOLUTIONS)
-                if action_name == "query_area_coverage":
-                    cost = new_locations(state["state"], arguments["area_id"], state["output_dir"])
-                    if guard.check_locations(cost):
-                        # The budget is a cap that ends the run, not feedback the model can act on.
-                        return {"end_reason": "query_budget", "error": "query_budget"}
-            else:
-                action_name, arguments = _validate_decision(state["decision"])
-                if action_name == "query_area_coverage":
-                    validate_query_area_coverage(arguments, state["state"], state["output_dir"], guard)
-                elif action_name == "inspect_observation":
-                    if (not all(isinstance(arguments[key], int) and not isinstance(arguments[key], bool)
-                                for key in ("offset", "limit"))
-                            or arguments["offset"] < 0 or not 1 <= arguments["limit"] <= 100):
-                        raise ValueError("Inspection needs offset >= 0 and limit between 1 and 100")
-                    inspect_point_coverage(state["state"], arguments["observation_id"], arguments["area_id"],
-                                           arguments["offset"], arguments["limit"])
-                elif action_name not in {"finish", "query_area_coverage", "inspect_observation"}:
-                    routing = state["decision"].get("routing")
-                    if routing and len(routing["calls"]) > 1:
-                        for call in routing["calls"]:
-                            validate_live_action(call["function"], {**arguments, "cell_ids": call["cell_ids"]},
-                                                 state["state"], state["output_dir"])
-                    else:
-                        validate_live_action(action_name, arguments, state["state"], state["output_dir"])
-                if fetch_landuse_before_decision:
-                    check_gap(state["decision"], action_name, arguments, state["state"])
+            # Codex way: tool name known, parameters as declared, area id listed. Nothing about State.
+            action_name, arguments = rc.validate_schema_only(
+                state["decision"], state["tools"], state["state"], state["output_dir"], AREA_RESOLUTIONS)
+            if action_name == "query_area_coverage":
+                cost = new_locations(state["state"], arguments["area_id"], state["output_dir"])
+                if guard.check_locations(cost):
+                    # The budget is a cap that ends the run, not feedback the model can act on.
+                    return {"end_reason": "query_budget", "error": "query_budget"}
             cap = guard.check(action_name, arguments)
             if cap:
                 return {"end_reason": cap, "error": cap}
@@ -408,165 +262,68 @@ in 3a); `rc` is `runner_concat_nodes`.
             return {"error": message}
 ```
 
-What the concat branch does not do, on purpose: no `validate_live_action`
-(the KPI window and cell-id checks against State), no `check_gap`, no budget
-message with the cost. A rejected decision reaches the model as an error
-string appended to the transcript (step 9), which is how Codex returns a tool
-error. The KPI routing by id pattern still happens in `parse_node`, because it
-belongs to the tool library, not to the context.
+Gone on purpose: `validate_live_action`, `check_gap`, the budget message
+with the cost, `inspect_coverage` and `validate_query_area_coverage`. A
+rejected decision reaches the model as an error string appended to the
+transcript (step 9). The KPI routing by id pattern still happens in
+`parse_node`, because it belongs to the tool library.
 
 ### Step 6. `verifier_node`
 
-Find the first line of the body:
+Delete the node and its edges. Find
 
 ```python
-        if verifier is None or state.get("error"):
+    graph.add_node("verifier", verifier_node)
 ```
 
-Replace it with
+and delete it; find
 
 ```python
-        if verifier is None or state.get("error") or concat_mode:
+    graph.add_edge("validate", "verifier")
+    graph.add_conditional_edges(
+        "verifier",
+        route_after_validation,
 ```
 
-Step 2c already passes `verifier=None` under concat; this line is the second
-guard, so a verifier handed in by mistake still never runs.
+and replace the two lines with
+
+```python
+    graph.add_conditional_edges(
+        "validate",
+        route_after_validation,
+```
+
+Delete the `def verifier_node` function. In `build_investigation_graph`,
+the `verifier` parameter stays in the signature and is ignored.
 
 ### Step 7. `execute_tool_node`
 
-Replace the whole function with the one below. The inspection branch and
-the coverage branch are the per-point versions; the concat condition runs the
-same code, because the tools do not change. The KPI routing part after them
-is the original, unchanged. `POINT_WORKERS` comes from `runner_point_nodes`.
-
-```python
-    def execute_tool_node(state: InvestigationState) -> dict[str, Any]:
-        guard.record_tool_call(state["action_name"], state["arguments"])
-        step_dir = Path(state["output_dir"]) / "steps" / f"step_{state['step_index']:02d}"
-        if state["action_name"] == "inspect_observation":
-            arguments = state["arguments"]
-            rows = inspect_point_coverage(state["state"], arguments["observation_id"], arguments["area_id"],
-                                          arguments["offset"], arguments["limit"])
-            path = Path(state["output_dir"]) / "artifacts" / f"inspection_{state['step_index']:02d}.json"
-            _write_json(path, rows)
-            result = ToolSuccess("inspect_observation", str(path), len(rows), ("grid_id", "status", "cells"),
-                                 source="state", details={"rows": rows})
-            _write_json(step_dir / "tool_result.json", _summarize(result))
-            return {"tool_result": result}
-        if state["action_name"] == "query_area_coverage":
-            summary = execute_query_area_coverage(state["state"], state["arguments"], state["output_dir"],
-                                                  state["step_index"], point_query, guard)
-            if summary["status"] == "success":
-                result = ToolSuccess(summary["tool"], summary["output_file"], summary["row_count"],
-                                     tuple(summary["columns"]), source=summary["source"], details=summary["details"])
-            else:
-                result = ToolFailure(summary["tool"], "PointApiFailure", summary["error"])
-            return {"tool_result": result}
-        routing = state["decision"].get("routing")
-        if routing and len(routing["calls"]) > 1:
-            successes, calls = [], []
-            for call in routing["calls"]:
-                suffix = "nr" if call["function"] == "query_nr_rrc_prb" else "lte"
-                result = client.call(call["function"], {**state["arguments"], "cell_ids": call["cell_ids"]},
-                                     call_id=f"step_{state['step_index']:02d}_{suffix}")
-                calls.append({**call, **_summarize(result)})
-                if isinstance(result, ToolSuccess):
-                    successes.append(result)
-            if successes:
-                path = Path(state["output_dir"]) / "artifacts" / f"query_kpi_routed_step_{state['step_index']:02d}.csv"
-                row_count, columns = _merge_kpi_csvs(successes, path)
-                result = ToolSuccess(state["action_name"], str(path), row_count, columns,
-                                     source="routed_kpi", details={"routed_calls": calls})
-            else:
-                result = ToolFailure(state["action_name"], "RoutedKpiFailure", "; ".join(
-                    f"{call['function']}: {call.get('error', 'no result')}" for call in calls))
-            _write_json(step_dir / "tool_result.json", {**_summarize(result), "routed_calls": calls})
-            return {"tool_result": result}
-        result = client.call(state["action_name"], state["arguments"], call_id=f"step_{state['step_index']:02d}")
-        _write_json(step_dir / "tool_result.json", _summarize(result))
-        return {"tool_result": result}
-```
-
-`execute_query_area_coverage` already calls `guard.record_locations`, writes
-`resolved_parameters.json` and `tool_result.json`.
+No change. The per-point version from `STEP_BY_STEP_2026-10-13.md`, step 7,
+runs the same tools in both packages.
 
 ### Step 8. `update_state_node`
 
-Replace the whole function with the one below. Two things differ from the
-per-point version: the coverage branch keeps the State in both conditions
-(under concat it is hidden, used for scoring), and the last statement before
-the files are written appends the round to the transcript under concat.
+The per-point version from `STEP_BY_STEP_2026-10-13.md`, step 7, with one
+addition. Find
 
 ```python
-    def update_state_node(state: InvestigationState) -> dict[str, Any]:
-        index = state["step_index"]
-        summary = _summarize(state["tool_result"])
-        decision = state["decision"]
-        action = decision["action"]
-        executed_parameters = action["parameters"]
-        if state["action_name"] == "query_area_coverage":
-            executed_parameters = json.loads((Path(state["output_dir"]) / "steps" / f"step_{index:02d}"
-                                              / "resolved_parameters.json").read_text(encoding="utf-8"))
-            action = {**action, "parameters": executed_parameters,
-                      "requested_area_id": decision["action"]["parameters"]["area_id"]}
-        observation = {
-            "id": f"real_obs_{index:02d}",
-            "purpose": decision.get("purpose"),
-            "information_gaps": decision.get("information_gaps"),
-            "action": action,
-            "result": summary,
-        }
-        new_state = _update_state(state["state"], observation)
-        if isinstance(new_state.get("observations"), list):
-            new_state["observations"] = [*new_state["observations"], observation]
-        if state["action_name"] == "query_area_coverage" and summary["status"] == "success":
-            new_state = update_state_query_area_coverage(new_state, observation, state["output_dir"], guard)
-        if (state["action_name"] in {"query_nr_rrc_prb", "query_lte_rrc_prb"} and summary["status"] == "success"
-                and isinstance(state["state"].get("geography"), dict)):
-            new_state = apply_kpi(state["state"], observation, state["output_dir"])
-        if state["action_name"] == "inspect_observation" and summary["status"] == "success":
-            new_state["inspection"] = {"step_index": index, **state["arguments"], "rows": summary["details"]["rows"]}
-        if decision.get("routing"):
-            routes = "; ".join(f"{call['function']}: {','.join(call['cell_ids'])}" for call in decision["routing"]["calls"])
-            new_state["notes"] = [*new_state.get("notes", []), {
-                "kind": "rerouted", "step_index": index,
-                "text": f"{decision['routing']['requested_function']} cells were routed by ID pattern: {routes}"}]
         new_state["id"] = f"state_{index:02d}"
-        if concat_mode:
-            # The model's own reply, then the raw tool output, appended in order. Nothing from new_state.
-            rc.append_round(state["transcript"], json.dumps(state["raw_response"]), state["action_name"],
-                            summary, None, state["output_dir"])
-        output_dir = Path(state["output_dir"])
-        _write_json(output_dir / f"observation_{index:02d}.json", observation)
-        step_dir = output_dir / "steps" / f"step_{index:02d}"
-        _write_json(step_dir / "observation.json", observation)
-        _write_json(step_dir / "tool_result.json", summary)
-        _write_json(step_dir / "state_after.json", new_state)
-        _write_json(output_dir / f"state_{index:02d}.json", new_state)
-        _write_json(step_dir / "step.json", {"step": index, "decision": decision, "result": summary})
-        steps = [*state["steps"], {"step": index, "decision": decision, "result": summary}]
-        observations = [*state["observations"], observation]
-        _write_json(output_dir / "steps.json", steps)
-        _write_json(output_dir / "state.json", new_state)
-        return {
-            "state": new_state,
-            "steps": steps,
-            "observations": observations,
-            "step_index": index + 1,
-            "tool_result": None,
-            "error": None,
-        }
 ```
 
-`update_state_query_area_coverage` is the per-point function; it already
-applies the coverage artifact, refreshes the summaries and the budget line.
-`rc.update_hidden_state` in `runner_concat_nodes.py` does the same for a
-runner without the per-point function; here the per-point one is used so
-both conditions run identical State code.
+and add directly below it
+
+```python
+        # The model's own reply, then the raw tool output, appended in order. Nothing from new_state.
+        rc.append_round(state["transcript"], json.dumps(state["raw_response"]), state["action_name"],
+                        summary, None, state["output_dir"])
+```
+
+The State keeps being updated by the same code as in the rendered package;
+here it is hidden from the model and kept for the comparison.
 
 ### Step 9. `record_error_node`
 
-Find the line
+Find
 
 ```python
         reason = state.get("error") or "Unknown decision error"
@@ -575,15 +332,11 @@ Find the line
 and add directly below it
 
 ```python
-        if concat_mode:
-            # The rejection reaches the model as a tool error appended to the transcript.
-            function = (state.get("decision", {}).get("action") or {}).get("function")
-            rc.append_round(state["transcript"], json.dumps(state.get("raw_response", {})),
-                            function, None, reason, state["output_dir"])
+        # The rejection reaches the model as a tool error appended to the transcript.
+        function = (state.get("decision", {}).get("action") or {}).get("function")
+        rc.append_round(state["transcript"], json.dumps(state.get("raw_response", {})),
+                        function, None, reason, state["output_dir"])
 ```
-
-The rest of the node is unchanged: the note of kind `rejected` still goes
-into the hidden State, where it is scored but never rendered under concat.
 
 ### Step 10. `finish_check_node`
 
@@ -593,18 +346,15 @@ Add one module-level constant next to the imports:
 COMPLETION_MODE = rc.COMPLETION_MODE_MODEL   # "model": finish accepted as proposed; "checks": refused until the checks pass
 ```
 
-Replace the whole function with the one below. Under the rendered condition,
-and under concat with `COMPLETION_MODE == "checks"` (the concat+checks
-condition), it is the per-point `finish_check` from `completion_point.py`.
-Under concat with mode `model` the finish is accepted as proposed, the checks
-are computed and written, but they decide nothing.
+Replace the whole function with:
 
 ```python
     def finish_check_node(state: InvestigationState) -> dict[str, Any]:
-        if not concat_mode or COMPLETION_MODE == rc.COMPLETION_MODE_CHECKS:
+        if COMPLETION_MODE == rc.COMPLETION_MODE_CHECKS:
+            # The concat+checks condition: the same completion rule as the rendered package.
             return finish_check(state, client, radio_technology, write_json=_write_json,
                                 model_name=getattr(model, "model", type(model).__name__))
-        checks = completion_evidence_status(state["state"], radio_technology)   # scored, not enforced
+        checks = completion_evidence_status(state["state"], radio_technology)   # recorded, not enforced
         index = state["step_index"]
         output_dir = Path(state["output_dir"])
         final_state = {**state["state"], "completion_checks": checks}
@@ -620,7 +370,7 @@ are computed and written, but they decide nothing.
         _write_json(output_dir / "state.json", final_state)
         _write_json(output_dir / "run.json", {
             "case_state": state["case_state_path"], "model": getattr(model, "model", type(model).__name__),
-            "condition": "concat", "steps": len(steps), "finished": True, "end_reason": "model_finish",
+            "condition": CONDITION, "steps": len(steps), "finished": True, "end_reason": "model_finish",
             "observations": len(state["observations"]), "tool_declaration_count": len(state["tools"]),
             "orchestrator": "langgraph",
         })
@@ -634,44 +384,20 @@ from outage_harness_codex_state.completion_point import completion_evidence_stat
 from outage_harness_codex_state.radio import radio_technology
 ```
 
-### Step 11. Scoring
+The completion rule in `completion_point.py` is provisional and is the same
+file in both packages, so whatever rule is settled later replaces one file
+in each. In `write_cap_node`, add `"condition": CONDITION` to the `summary`
+dict so every `run.json` carries it.
 
-Every run, both conditions, ends in one of two nodes: `finish_check_node`
-(the model proposed finish) or `write_cap_node` (a cap ended the run). Each
-writes `score.json` from the hidden State, so the two conditions are scored
-by the same code.
-
-In `finish_check_node`, in both return paths above, add before the `return`:
-
-```python
-        _write_json(output_dir / "score.json", rc.score_against_state(final_state, checks))
-```
-
-(In the `finish_check` path from `completion_point.py` the final State and
-the checks are the ones it computed; add the same line inside that function,
-before its `return`.)
-
-In `write_cap_node`, find
-
-```python
-        _write_json(out / "run.json", summary)
-```
-
-and add directly below it
-
-```python
-        _write_json(out / "score.json", rc.score_against_state(
-            state["state"], completion_evidence_status(state["state"], radio_technology)))
-        summary["condition"] = "concat" if concat_mode else "rendered"
-        _write_json(out / "run.json", summary)
-```
-
-`score.json` holds: locations queried and valid, down-cell locations, how
-many of them have a backup and how many have none, the outage cells and the
-backup candidates seen, the areas fully queried, and the completion checks.
-The comparison between conditions reads these files and `run.json` only.
+Scoring is not part of the runner. What a run is judged by is still to be
+agreed; when it is, it is a separate script over the run directories, which
+hold `run.json`, every `state_NN.json`, and every step's model input and
+output in both packages.
 
 ## 4. The test
+
+[The metrics below are proposals. What a run is judged by is to be agreed
+before any of them is implemented; none is computed by the runner.]
 
 **Cases.** The synthetic case here, plus the two or three real cases you can
 run internally. Same task input, same tools, same caps, same model and
@@ -698,8 +424,8 @@ shows whether the problem is the cut or the raw form.
    report names correctly (where the outage sectors serve), and how many
    backup cells it names that are in `backup_candidates`, and how many it
    names that are not (invented or ineligible).
-4. Whether the completion checks pass at the end (scored in every condition,
-   enforced only in rendered and concat+checks).
+4. Whether the completion checks pass at the end (computed and written in
+   every condition, enforced only in rendered and concat+checks).
 5. Repeated or wasted queries: areas queried twice, areas fully queried
    before the query.
 6. Input size per round (chars) and the share of raw output the model saw.

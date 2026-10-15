@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import inspect
 import os
 from pathlib import Path
 from typing import Any
@@ -49,6 +50,10 @@ def _set_certificate(path: str | None) -> None:
 
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="One investigation run with this package.")
+    parser.add_argument("--condition", choices=("rendered", "concat"), default="concat",
+                        help="rendered: context rendered from State; concat: append-only transcript. "
+                             "Passed to run_case_langgraph when the runner has a condition switch; "
+                             "otherwise the package's CONDITION decides and this must agree with it")
     parser.add_argument("--ca-bundle", default=None,
                         help="Certificate file for the internal endpoints; sets REQUESTS_CA_BUNDLE and SSL_CERT_FILE")
     parser.add_argument("--down-cell", required=True, help="EnodeB id or sector id of the outage")
@@ -110,7 +115,11 @@ def main() -> int:
     _set_certificate(arguments.ca_bundle)
     runner = importlib.import_module(f"{PACKAGE}.langgraph_runner")
     RunLimits = importlib.import_module(f"{PACKAGE}.policy").RunLimits
-    condition = getattr(runner, "CONDITION", "rendered")
+    condition = arguments.condition
+    package_condition = getattr(runner, "CONDITION", None)
+    if package_condition is not None and package_condition != condition:
+        raise SystemExit(f"{PACKAGE} is the {package_condition} package; --condition {condition} does not apply")
+    switch = "condition" in inspect.signature(runner.run_case_langgraph).parameters
     if arguments.output.exists() and any(arguments.output.iterdir()):
         raise SystemExit(f"Output directory is not empty: {arguments.output}")
     task = {"down_cell_id": arguments.down_cell, "start_time": arguments.start_time,
@@ -124,7 +133,9 @@ def main() -> int:
         max_identical_queries=arguments.repeat_cap,
         max_query_locations=arguments.query_budget,
     )
-    verifier = _model(arguments, arguments.verifier_model) if arguments.verifier_model else None
+    verifier = None
+    if arguments.verifier_model and condition == "rendered":
+        verifier = _model(arguments, arguments.verifier_model)
     summary = runner.run_case_langgraph(
         _model(arguments, arguments.model),
         _client(),
@@ -134,6 +145,7 @@ def main() -> int:
         verifier=verifier,
         limits=limits,
         point_query=_point_query(arguments),
+        **({"condition": condition} if switch else {}),
     )
     print(f"{condition}: end_reason {summary.get('end_reason', 'complete' if summary.get('finished') else '?')}, "
           f"steps {summary.get('steps')}, observations {summary.get('observations')}; "

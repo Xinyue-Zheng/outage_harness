@@ -1,0 +1,215 @@
+{
+ "id": "state_00",
+ "task": {
+  "down_cell_id": "CCL00001",
+  "start_time": "2026-02-10T09:00:00Z",
+  "end_time": "2026-02-10T12:00:00Z",
+  "objective": "Find where the outage sectors serve users and which cells can take over."
+ },
+ "coordinate_system": "WGS84 longitude/latitude geometries; local metre grid",
+ "grid": {
+  "spacing_m": 100.0,
+  "rows": 20,
+  "columns": 20
+ },
+ "site": {
+  "metadata": {
+   "site_name": "Synthetic site"
+  }
+ },
+ "study_area": {
+  "side_m": 2000.0,
+  "rule": "2 km square centred on the site"
+ },
+ "geography": {
+  "source": {
+   "query_basic_information": "init_obs_00_cell",
+   "query_osm_landuse": "init_obs_00_osm"
+  },
+  "geometry": {
+   "path": "geography.json",
+   "sha256": "8247236d70c6d8328e7a801725562b075b3df6cfefef0f42250d9b7cfc511ba1"
+  },
+  "objects": {
+   "study_area": {
+    "kind": "study_area",
+    "description": "Synthetic 2 km square around the down site."
+   },
+   "settlement_S1": {
+    "kind": "settlement",
+    "name": "S1",
+    "tags": {
+     "place": "village",
+     "name": "S1"
+    },
+    "description": "Synthetic village around the down site."
+   },
+   "settlement_S2": {
+    "kind": "settlement",
+    "name": "S2",
+    "tags": {
+     "place": "hamlet",
+     "name": "S2"
+    },
+    "description": "Synthetic hamlet east of the site."
+   },
+   "road_H1": {
+    "kind": "road",
+    "geometry_kind": "polyline",
+    "tags": {
+     "highway": "primary"
+    },
+    "description": "Synthetic primary road crossing the study area."
+   }
+  },
+  "areas": {
+   "study_area": {
+    "id": "study_area",
+    "kind": "study_area",
+    "description": "The whole study area.",
+    "name": "study_area",
+    "grid_count": 400,
+    "locations": 400,
+    "contains_site": true,
+    "nearest_distance_from_site_m": 71,
+    "center_distance_from_site_m": 0,
+    "center_direction_from_site": "west"
+   },
+   "S1": {
+    "id": "S1",
+    "kind": "settlement",
+    "description": "S1 (village) settlement area.",
+    "name": "Ashford village",
+    "grid_count": 30,
+    "locations": 30,
+    "contains_site": true,
+    "nearest_distance_from_site_m": 71,
+    "center_distance_from_site_m": 50,
+    "center_direction_from_site": "west"
+   },
+   "S2": {
+    "id": "S2",
+    "kind": "settlement",
+    "description": "S2 (hamlet) settlement area.",
+    "name": "Bramble hamlet",
+    "grid_count": 16,
+    "locations": 16,
+    "contains_site": false,
+    "nearest_distance_from_site_m": 652,
+    "center_distance_from_site_m": 806,
+    "center_direction_from_site": "east"
+   },
+   "road_H1": {
+    "id": "road_H1",
+    "kind": "road_corridor",
+    "description": "300 m corridor around the primary road H1.",
+    "name": "primary road H1",
+    "grid_count": 60,
+    "locations": 60,
+    "contains_site": true,
+    "nearest_distance_from_site_m": 71,
+    "center_distance_from_site_m": 75,
+    "center_direction_from_site": "west"
+   },
+   "F1": {
+    "id": "F1",
+    "kind": "landuse",
+    "description": "Farmland in the north-west; demand is not inferred from land use.",
+    "name": "F1",
+    "grid_count": 54,
+    "locations": 54,
+    "contains_site": false,
+    "nearest_distance_from_site_m": 474,
+    "center_distance_from_site_m": 890,
+    "center_direction_from_site": "west"
+   }
+  },
+  "relations": [
+   {
+    "subject": "road_H1",
+    "predicate": "intersects",
+    "object": "S1",
+    "evidence": "Polyline and polygon intersect in WGS84"
+   }
+  ]
+ },
+ "areas": [
+  {
+   "id": "study_area",
+   "kind": "study_area",
+   "description": "The whole study area.",
+   "name": "study_area",
+   "grid_count": 400,
+   "locations": 400,
+   "contains_site": true,
+   "nearest_distance_from_site_m": 71,
+   "center_distance_from_site_m": 0,
+   "center_direction_from_site": "west"
+  },
+  {
+   "id": "S1",
+   "kind": "settlement",
+   "description": "S1 (village) settlement area.",
+   "name": "Ashford village",
+   "grid_count": 30,
+   "locations": 30,
+   "contains_site": true,
+   "nearest_distance_from_site_m": 71,
+   "center_distance_from_site_m": 50,
+   "center_direction_from_site": "west"
+  },
+  {
+   "id": "S2",
+   "kind": "settlement",
+   "description": "S2 (hamlet) settlement area.",
+   "name": "Bramble hamlet",
+   "grid_count": 16,
+   "locations": 16,
+   "contains_site": false,
+   "nearest_distance_from_site_m": 652,
+   "center_distance_from_site_m": 806,
+   "center_direction_from_site": "east"
+  },
+  {
+   "id": "road_H1",
+   "kind": "road_corridor",
+   "description": "300 m corridor around the primary road H1.",
+   "name": "primary road H1",
+   "grid_count": 60,
+   "locations": 60,
+   "contains_site": true,
+   "nearest_distance_from_site_m": 71,
+   "center_distance_from_site_m": 75,
+   "center_direction_from_site": "west"
+  },
+  {
+   "id": "F1",
+   "kind": "landuse",
+   "description": "Farmland in the north-west; demand is not inferred from land use.",
+   "name": "F1",
+   "grid_count": 54,
+   "locations": 54,
+   "contains_site": false,
+   "nearest_distance_from_site_m": 474,
+   "center_distance_from_site_m": 890,
+   "center_direction_from_site": "west"
+  }
+ ],
+ "coverage": {},
+ "coverage_artifacts": {},
+ "cells_seen": [],
+ "outage_cells": [],
+ "backup_candidates": [],
+ "observations": [],
+ "kpis": [],
+ "notes": [],
+ "unknowns": {},
+ "query_budget": {
+  "locations_spent": 0,
+  "locations_limit": 600
+ },
+ "final_report_inputs": {
+  "run_dir": "demo_concat/concat",
+  "case_state_path": "demo_concat/concat/state.json"
+ }
+}

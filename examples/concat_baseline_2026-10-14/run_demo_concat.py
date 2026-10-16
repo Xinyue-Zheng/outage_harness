@@ -73,7 +73,7 @@ def run_condition(condition: str, out: Path) -> dict:
         (out / f"LLM_input_{index:02d}.txt").write_text(rendered.text, encoding="utf-8")
         name = decision["action"]["function"]
         if name == "finish":
-            completion = completion_evidence_status(state, run_dir, is_outage)
+            completion = completion_evidence_status(state, out, lambda c: is_outage_cell(c, task))
             rows.append({"round": index, "action": "finish", "input_chars": len(rendered.text)})
             break
         result = fetch_area_points(state, decision["action"]["parameters"]["area_id"], out, fake_point_api,

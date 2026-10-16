@@ -1,0 +1,875 @@
+{
+ "output_cap_bytes": 10240,
+ "conditions": {
+  "rendered": {
+   "rounds": [
+    {
+     "round": 1,
+     "action": "query_area_coverage S1",
+     "input_chars": 10801,
+     "raw_output_bytes": 32598,
+     "shown_output_bytes": 4958,
+     "points_in_output": 30,
+     "points_visible_after_truncation": null
+    },
+    {
+     "round": 2,
+     "action": "query_area_coverage road_H1",
+     "input_chars": 16125,
+     "raw_output_bytes": 37719,
+     "shown_output_bytes": 4330,
+     "points_in_output": 42,
+     "points_visible_after_truncation": null
+    },
+    {
+     "round": 3,
+     "action": "query_area_coverage S2",
+     "input_chars": 17280,
+     "raw_output_bytes": 8225,
+     "shown_output_bytes": 4965,
+     "points_in_output": 8,
+     "points_visible_after_truncation": null
+    },
+    {
+     "round": 4,
+     "action": "finish",
+     "input_chars": 17427
+    }
+   ],
+   "final_state_summary": {
+    "locations_queried": 80,
+    "locations_valid": 57,
+    "down_cell_present": 36,
+    "down_cell_with_backup": 19,
+    "down_cell_without_backup": 17,
+    "outage_cells": [
+     "CCL00001_aa_1",
+     "CCL00001_ab_1"
+    ],
+    "backup_candidates": [
+     "CCL00002_aa_1",
+     "CCL00003_ab_1"
+    ],
+    "areas_fully_queried": [
+     "S1",
+     "S2",
+     "road_H1"
+    ],
+    "completion": {
+     "boundary": {
+      "status": "complete",
+      "reason": "Every observed outage sector is closed in every checked direction",
+      "coverage_rsrp_dbm": -110.0,
+      "bin_degrees": 30.0,
+      "margin_bins": 1,
+      "sectors": {
+       "CCL00001_aa_1": {
+        "checked_bins": 12,
+        "closed": 6,
+        "open": 0,
+        "open_at_edge": 6,
+        "bins": {
+         "0": {
+          "bin": 0,
+          "label": "north 0-30 deg",
+          "active": true,
+          "reach_m": 255,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "1": {
+          "bin": 1,
+          "label": "north-east 30-60 deg",
+          "active": true,
+          "reach_m": 354,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "2": {
+          "bin": 2,
+          "label": "north-east 60-90 deg",
+          "active": true,
+          "reach_m": 667,
+          "reach_areas": [
+           "S1",
+           "S2",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "S2",
+          "closing_distance_m": 696,
+          "closing_unfetched": 0,
+          "closing_sampled": 7,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S2 shows CCL00001_aa_1 absent at 7 sampled locations"
+         },
+         "3": {
+          "bin": 3,
+          "label": "east 90-120 deg",
+          "active": true,
+          "reach_m": 552,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "road_H1",
+          "closing_distance_m": 570,
+          "closing_unfetched": 0,
+          "closing_sampled": 9,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "road_H1 shows CCL00001_aa_1 absent at 9 sampled locations"
+         },
+         "4": {
+          "bin": 4,
+          "label": "south-east 120-150 deg",
+          "active": true,
+          "reach_m": 292,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "5": {
+          "bin": 5,
+          "label": "south-east 150-180 deg",
+          "active": true,
+          "reach_m": 158,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "6": {
+          "bin": 6,
+          "label": "south 180-210 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [
+           "S1"
+          ],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "7": {
+          "bin": 7,
+          "label": "south-west 210-240 deg",
+          "active": true,
+          "reach_m": 71,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 212,
+          "closing_unfetched": 0,
+          "closing_sampled": 2,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_aa_1 absent at 2 sampled locations"
+         },
+         "8": {
+          "bin": 8,
+          "label": "south-west 240-270 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 158,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_aa_1 absent at 1 sampled locations"
+         },
+         "9": {
+          "bin": 9,
+          "label": "west 270-300 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 158,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_aa_1 absent at 1 sampled locations"
+         },
+         "10": {
+          "bin": 10,
+          "label": "north-west 300-330 deg",
+          "active": true,
+          "reach_m": 212,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 292,
+          "closing_unfetched": 0,
+          "closing_sampled": 2,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_aa_1 absent at 2 sampled locations"
+         },
+         "11": {
+          "bin": 11,
+          "label": "north-west 330-360 deg",
+          "active": true,
+          "reach_m": 255,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         }
+        }
+       },
+       "CCL00001_ab_1": {
+        "checked_bins": 10,
+        "closed": 5,
+        "open": 0,
+        "open_at_edge": 5,
+        "bins": {
+         "0": {
+          "bin": 0,
+          "label": "north 0-30 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 158,
+          "closing_unfetched": 0,
+          "closing_sampled": 2,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_ab_1 absent at 2 sampled locations"
+         },
+         "3": {
+          "bin": 3,
+          "label": "east 90-120 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 158,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_ab_1 absent at 1 sampled locations"
+         },
+         "4": {
+          "bin": 4,
+          "label": "south-east 120-150 deg",
+          "active": true,
+          "reach_m": 212,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 292,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_ab_1 absent at 1 sampled locations"
+         },
+         "5": {
+          "bin": 5,
+          "label": "south-east 150-180 deg",
+          "active": true,
+          "reach_m": 158,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "6": {
+          "bin": 6,
+          "label": "south 180-210 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [
+           "S1"
+          ],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "7": {
+          "bin": 7,
+          "label": "south-west 210-240 deg",
+          "active": true,
+          "reach_m": 292,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "8": {
+          "bin": 8,
+          "label": "south-west 240-270 deg",
+          "active": true,
+          "reach_m": 255,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "9": {
+          "bin": 9,
+          "label": "west 270-300 deg",
+          "active": true,
+          "reach_m": 570,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "road_H1",
+          "closing_distance_m": 604,
+          "closing_unfetched": 0,
+          "closing_sampled": 5,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "road_H1 shows CCL00001_ab_1 absent at 5 sampled locations"
+         },
+         "10": {
+          "bin": 10,
+          "label": "north-west 300-330 deg",
+          "active": true,
+          "reach_m": 354,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "road_H1",
+          "closing_distance_m": 430,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "road_H1 shows CCL00001_ab_1 absent at 1 sampled locations"
+         },
+         "11": {
+          "bin": 11,
+          "label": "north-west 330-360 deg",
+          "active": true,
+          "reach_m": 255,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         }
+        }
+       }
+      },
+      "unresolved": {}
+     },
+     "backup_load": {
+      "status": "unknown",
+      "required": false,
+      "reason": "No transfer and load estimate was computed; reported, not required"
+     }
+    }
+   },
+   "final_input_chars": 17427
+  },
+  "concat": {
+   "rounds": [
+    {
+     "round": 1,
+     "action": "query_area_coverage S1",
+     "input_chars": 12296,
+     "raw_output_bytes": 32598,
+     "shown_output_bytes": 4958,
+     "points_in_output": 30,
+     "points_visible_after_truncation": 5
+    },
+    {
+     "round": 2,
+     "action": "query_area_coverage road_H1",
+     "input_chars": 17582,
+     "raw_output_bytes": 37719,
+     "shown_output_bytes": 4330,
+     "points_in_output": 42,
+     "points_visible_after_truncation": 7
+    },
+    {
+     "round": 3,
+     "action": "query_area_coverage S2",
+     "input_chars": 22231,
+     "raw_output_bytes": 8225,
+     "shown_output_bytes": 4965,
+     "points_in_output": 8,
+     "points_visible_after_truncation": 6
+    },
+    {
+     "round": 4,
+     "action": "finish",
+     "input_chars": 27523
+    }
+   ],
+   "final_state_summary": {
+    "locations_queried": 80,
+    "locations_valid": 57,
+    "down_cell_present": 36,
+    "down_cell_with_backup": 19,
+    "down_cell_without_backup": 17,
+    "outage_cells": [
+     "CCL00001_aa_1",
+     "CCL00001_ab_1"
+    ],
+    "backup_candidates": [
+     "CCL00002_aa_1",
+     "CCL00003_ab_1"
+    ],
+    "areas_fully_queried": [
+     "S1",
+     "S2",
+     "road_H1"
+    ],
+    "completion": {
+     "boundary": {
+      "status": "complete",
+      "reason": "Every observed outage sector is closed in every checked direction",
+      "coverage_rsrp_dbm": -110.0,
+      "bin_degrees": 30.0,
+      "margin_bins": 1,
+      "sectors": {
+       "CCL00001_aa_1": {
+        "checked_bins": 12,
+        "closed": 6,
+        "open": 0,
+        "open_at_edge": 6,
+        "bins": {
+         "0": {
+          "bin": 0,
+          "label": "north 0-30 deg",
+          "active": true,
+          "reach_m": 255,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "1": {
+          "bin": 1,
+          "label": "north-east 30-60 deg",
+          "active": true,
+          "reach_m": 354,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "2": {
+          "bin": 2,
+          "label": "north-east 60-90 deg",
+          "active": true,
+          "reach_m": 667,
+          "reach_areas": [
+           "S1",
+           "S2",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "S2",
+          "closing_distance_m": 696,
+          "closing_unfetched": 0,
+          "closing_sampled": 7,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S2 shows CCL00001_aa_1 absent at 7 sampled locations"
+         },
+         "3": {
+          "bin": 3,
+          "label": "east 90-120 deg",
+          "active": true,
+          "reach_m": 552,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "road_H1",
+          "closing_distance_m": 570,
+          "closing_unfetched": 0,
+          "closing_sampled": 9,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "road_H1 shows CCL00001_aa_1 absent at 9 sampled locations"
+         },
+         "4": {
+          "bin": 4,
+          "label": "south-east 120-150 deg",
+          "active": true,
+          "reach_m": 292,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "5": {
+          "bin": 5,
+          "label": "south-east 150-180 deg",
+          "active": true,
+          "reach_m": 158,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "6": {
+          "bin": 6,
+          "label": "south 180-210 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [
+           "S1"
+          ],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "7": {
+          "bin": 7,
+          "label": "south-west 210-240 deg",
+          "active": true,
+          "reach_m": 71,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 212,
+          "closing_unfetched": 0,
+          "closing_sampled": 2,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_aa_1 absent at 2 sampled locations"
+         },
+         "8": {
+          "bin": 8,
+          "label": "south-west 240-270 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 158,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_aa_1 absent at 1 sampled locations"
+         },
+         "9": {
+          "bin": 9,
+          "label": "west 270-300 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 158,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_aa_1 absent at 1 sampled locations"
+         },
+         "10": {
+          "bin": 10,
+          "label": "north-west 300-330 deg",
+          "active": true,
+          "reach_m": 212,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 292,
+          "closing_unfetched": 0,
+          "closing_sampled": 2,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_aa_1 absent at 2 sampled locations"
+         },
+         "11": {
+          "bin": 11,
+          "label": "north-west 330-360 deg",
+          "active": true,
+          "reach_m": 255,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         }
+        }
+       },
+       "CCL00001_ab_1": {
+        "checked_bins": 10,
+        "closed": 5,
+        "open": 0,
+        "open_at_edge": 5,
+        "bins": {
+         "0": {
+          "bin": 0,
+          "label": "north 0-30 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 158,
+          "closing_unfetched": 0,
+          "closing_sampled": 2,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_ab_1 absent at 2 sampled locations"
+         },
+         "3": {
+          "bin": 3,
+          "label": "east 90-120 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 158,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_ab_1 absent at 1 sampled locations"
+         },
+         "4": {
+          "bin": 4,
+          "label": "south-east 120-150 deg",
+          "active": true,
+          "reach_m": 212,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "S1",
+          "closing_distance_m": 292,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "S1 shows CCL00001_ab_1 absent at 1 sampled locations"
+         },
+         "5": {
+          "bin": 5,
+          "label": "south-east 150-180 deg",
+          "active": true,
+          "reach_m": 158,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "6": {
+          "bin": 6,
+          "label": "south 180-210 deg",
+          "active": false,
+          "reach_m": 0,
+          "reach_areas": [],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [
+           "S1"
+          ],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "7": {
+          "bin": 7,
+          "label": "south-west 210-240 deg",
+          "active": true,
+          "reach_m": 292,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "8": {
+          "bin": 8,
+          "label": "south-west 240-270 deg",
+          "active": true,
+          "reach_m": 255,
+          "reach_areas": [
+           "S1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         },
+         "9": {
+          "bin": 9,
+          "label": "west 270-300 deg",
+          "active": true,
+          "reach_m": 570,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "road_H1",
+          "closing_distance_m": 604,
+          "closing_unfetched": 0,
+          "closing_sampled": 5,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "road_H1 shows CCL00001_ab_1 absent at 5 sampled locations"
+         },
+         "10": {
+          "bin": 10,
+          "label": "north-west 300-330 deg",
+          "active": true,
+          "reach_m": 354,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "closing_area": "road_H1",
+          "closing_distance_m": 430,
+          "closing_unfetched": 0,
+          "closing_sampled": 1,
+          "closing_covered": 0,
+          "status": "closed",
+          "reason": "road_H1 shows CCL00001_ab_1 absent at 1 sampled locations"
+         },
+         "11": {
+          "bin": 11,
+          "label": "north-west 330-360 deg",
+          "active": true,
+          "reach_m": 255,
+          "reach_areas": [
+           "S1",
+           "road_H1"
+          ],
+          "unfetched_within_reach": 0,
+          "status": "open_at_edge",
+          "closing_area": null,
+          "no_sample_areas": [],
+          "reason": "no activity location with a sample beyond the reach inside the study area"
+         }
+        }
+       }
+      },
+      "unresolved": {}
+     },
+     "backup_load": {
+      "status": "unknown",
+      "required": false,
+      "reason": "No transfer and load estimate was computed; reported, not required"
+     }
+    }
+   },
+   "final_input_chars": 27523
+  }
+ }
+}

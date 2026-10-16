@@ -298,8 +298,38 @@ the `verifier` parameter stays in the signature and is ignored.
 
 ### Step 7. `execute_tool_node`
 
-No change. The per-point version from `STEP_BY_STEP_2026-10-13.md`, step 7,
-runs the same tools in both packages.
+The per-point version from `STEP_BY_STEP_2026-10-13.md`, step 7, with one
+change in the inspection branch. Under concat the validation is schema only,
+so an `inspect_observation` with a wrong id (a cell id as `area_id`, an
+unknown observation) reaches execution. The Codex way is a tool error back
+to the model, not a crash. Find
+
+```python
+        if state["action_name"] == "inspect_observation":
+            arguments = state["arguments"]
+            rows = inspect_point_coverage(state["state"], arguments["observation_id"], arguments["area_id"],
+                                          arguments["offset"], arguments["limit"])
+```
+
+and replace those lines with
+
+```python
+        if state["action_name"] == "inspect_observation":
+            arguments = state["arguments"]
+            try:
+                rows = inspect_point_coverage(state["state"], arguments["observation_id"], arguments["area_id"],
+                                              arguments["offset"], arguments["limit"])
+            except ValueError as error:
+                result = ToolFailure("inspect_observation", "InvalidArguments", str(error))
+                _write_json(step_dir / "tool_result.json", _summarize(result))
+                return {"tool_result": result}
+```
+
+The rest of the branch stays. Under rendered this branch is never reached
+with a wrong id, because `validate_node` calls `inspect_point_coverage`
+first and turns the error into a rejection. The failure then goes through
+`update_state_node` as a result with `status: error`, and `rc.append_round`
+puts the error text into the transcript.
 
 ### Step 8. `update_state_node`
 

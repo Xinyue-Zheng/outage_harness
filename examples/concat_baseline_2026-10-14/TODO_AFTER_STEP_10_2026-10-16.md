@@ -9,6 +9,20 @@ order; each item names the file and the exact change.
 Package names below: `outage_harness_langgraph` (rendered) and
 `outage_harness_codex_state` (concat). "Both" means do it in each.
 
+## Check first
+
+`check_package.py` in this folder reads the package files and prints one
+line per edit of parts A to E: `OK`, or `MISSING` with the part that fixes
+it. Copy it next to the packages and run it from the directory that contains
+them:
+
+```
+python check_package.py outage_harness_codex_state
+python check_package.py outage_harness_langgraph
+```
+
+Fix every `MISSING` line, rerun until all pass, then go to part F.
+
 ## A. Copy the changed modules (both)
 
 The modules live in the `harness/` folder of each example directory

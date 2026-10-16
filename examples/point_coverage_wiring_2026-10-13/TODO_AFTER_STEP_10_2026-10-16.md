@@ -92,11 +92,119 @@ the readers now use your key `kpi_baselines` and the metric `MEAN_PRB_USED`.
 
 ## E. The run script (both)
 
-Copy `run_case.py` into each package next to `langgraph_runner.py`; set
-`PACKAGE` at its top. In `langgraph_runner.py`, `run_case_langgraph` takes
-`point_query` as a keyword (the script passes it) and writes
-`{**task, "condition": condition}` to `task.json`. The script's `_model` and
-`_client` must match your `llm.py` and `client.py` constructors.
+Five edits. E1 and E2 are in `langgraph_runner.py`; E3 to E5 are in the
+copied `run_case.py`. Do them in each package.
+
+**E1. `run_case_langgraph` takes `point_query`.** Find the signature
+(original line 677):
+
+```python
+def run_case_langgraph(
+    model: DecisionModel,
+    client: Any,
+    state_path: Path | dict[str, Any],
+    output_dir: Path,
+    *,
+    max_steps: int = 8,
+    case_evidence: dict[str, Any] | None = None,
+    fetch_landuse_before_decision: bool = True,
+    verifier: DecisionModel | None = None,
+    limits: RunLimits | None = None,
+) -> dict[str, Any]:
+```
+
+Add two keywords at the end of the parameter list (after `limits`):
+
+```python
+    limits: RunLimits | None = None,
+    condition: str = "rendered",
+    point_query: PointQuery | None = None,
+) -> dict[str, Any]:
+```
+
+(`condition` is already there if you added it in step 2c of the concat note;
+then add only `point_query`.) `PointQuery` comes from
+`outage_harness_<pkg>.point_coverage`; add it to that import line.
+
+Then, as the first statement of the body, before the `isinstance(state_path, Path)` check:
+
+```python
+    if point_query is None:
+        raise ValueError("point_query is required: build it with make_point_query")
+```
+
+**E2. Pass it to the graph and record the condition.** In the same function,
+find
+
+```python
+    _write_json(output_dir / "task.json", task)
+    graph = build_investigation_graph(
+        model, client,
+```
+
+and change the two statements to
+
+```python
+    _write_json(output_dir / "task.json", {**task, "condition": condition})
+    graph = build_investigation_graph(
+        model, client, point_query=point_query, condition=condition,
+```
+
+keeping the rest of the `build_investigation_graph(...)` call as it is. If
+the per-point steps already built `point_query` inside this function (the
+`make_point_query(query_point_coverage, ...)` lines from step 8 of
+`STEP_BY_STEP_2026-10-13.md`), delete those lines: the script builds it now.
+
+If your `build_investigation_graph` has no `condition` parameter (the
+rendered package, unless you added the switch there too), drop
+`condition=condition` from the call; the script still records the condition
+in `task.json`.
+
+**E3. Copy `run_case.py`** from the example folder into the package, next to
+`langgraph_runner.py`. Set the one constant at its top:
+
+```python
+PACKAGE = "outage_harness_langgraph"      # rendered package
+PACKAGE = "outage_harness_codex_state"    # concat package
+```
+
+**E4. Match `_model` to your `llm.py`.** The function is
+
+```python
+def _model(arguments: argparse.Namespace, name: str) -> Any:
+    from llm import OpenAICompatLLM
+
+    api_key = os.environ.get(arguments.api_key_env) if arguments.api_key_env else None
+    return OpenAICompatLLM(base_url=arguments.base_url, model=name, api_key=api_key,
+                           max_tokens=arguments.max_tokens)
+```
+
+Open `debug_live.py`, find the line that constructs `OpenAICompatLLM(...)`,
+and make the `return` line use the same keyword names and the same extra
+arguments (temperature, timeout, headers, whatever it takes). The values
+come from the script's arguments: `arguments.base_url`, `name`,
+`arguments.max_tokens`; anything `debug_live.py` hard-codes, hard-code here
+the same way.
+
+**E5. Match `_client` to your `client.py`.** The function is
+
+```python
+def _client() -> Any:
+    return importlib.import_module(f"{PACKAGE}.client").RealToolClient()
+```
+
+If `debug_live.py` constructs `RealToolClient(...)` with arguments (a tool
+library, a configuration, an MCP endpoint), put the same arguments here.
+
+**Check.** From the directory that contains the package (where
+`debug_live.py` runs):
+
+```
+python -m outage_harness_langgraph.run_case --help
+```
+
+prints the option list. If it fails on an import, the message names the
+module: `llm` means E4, `client` means E5, `langgraph_runner` means E1 or E2.
 
 ## F. First runs
 

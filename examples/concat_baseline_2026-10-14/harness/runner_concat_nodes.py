@@ -81,8 +81,13 @@ def execute_concat(name: str, arguments: dict[str, Any], state: dict[str, Any], 
                                  radius_m=float(arguments["resolution"]), call_id=f"step_{step_index:02d}",
                                  workers=workers)
     if name == "inspect_observation":
-        rows = inspect_point_coverage(state, arguments["observation_id"], arguments["area_id"],
-                                      arguments["offset"], arguments["limit"])
+        # Schema-only validation lets a wrong id through; as in Codex, the tool returns the error.
+        try:
+            rows = inspect_point_coverage(state, arguments["observation_id"], arguments["area_id"],
+                                          arguments["offset"], arguments["limit"])
+        except ValueError as error:
+            return {"status": "error", "tool": name, "error": str(error), "output_file": None,
+                    "row_count": 0, "columns": [], "source": "state", "details": {}}
         path = Path(run_dir) / "artifacts" / f"inspection_{step_index:02d}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(rows, indent=1) + "\n", encoding="utf-8")

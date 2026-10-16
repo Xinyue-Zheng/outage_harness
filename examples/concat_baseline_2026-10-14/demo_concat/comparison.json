@@ -7,8 +7,8 @@
      "round": 1,
      "action": "query_area_coverage S1",
      "input_chars": 16817,
-     "raw_output_bytes": 32644,
-     "shown_output_bytes": 4964,
+     "raw_output_bytes": 32637,
+     "shown_output_bytes": 4963,
      "points_in_output": 30,
      "points_visible_after_truncation": null
     },
@@ -16,8 +16,8 @@
      "round": 2,
      "action": "query_area_coverage road_H1",
      "input_chars": 22141,
-     "raw_output_bytes": 37744,
-     "shown_output_bytes": 4330,
+     "raw_output_bytes": 37657,
+     "shown_output_bytes": 4321,
      "points_in_output": 42,
      "points_visible_after_truncation": null
     },
@@ -25,8 +25,8 @@
      "round": 3,
      "action": "query_area_coverage S2",
      "input_chars": 23296,
-     "raw_output_bytes": 8225,
-     "shown_output_bytes": 4965,
+     "raw_output_bytes": 8197,
+     "shown_output_bytes": 4950,
      "points_in_output": 8,
      "points_visible_after_truncation": null
     },
@@ -442,33 +442,33 @@
      "round": 1,
      "action": "query_area_coverage S1",
      "input_chars": 12416,
-     "raw_output_bytes": 32644,
-     "shown_output_bytes": 4964,
+     "raw_output_bytes": 32637,
+     "shown_output_bytes": 4963,
      "points_in_output": 30,
      "points_visible_after_truncation": 5
     },
     {
      "round": 2,
      "action": "query_area_coverage road_H1",
-     "input_chars": 17708,
-     "raw_output_bytes": 37744,
-     "shown_output_bytes": 4330,
+     "input_chars": 17707,
+     "raw_output_bytes": 37657,
+     "shown_output_bytes": 4321,
      "points_in_output": 42,
      "points_visible_after_truncation": 7
     },
     {
      "round": 3,
      "action": "query_area_coverage S2",
-     "input_chars": 22357,
-     "raw_output_bytes": 8225,
-     "shown_output_bytes": 4965,
+     "input_chars": 22347,
+     "raw_output_bytes": 8197,
+     "shown_output_bytes": 4950,
      "points_in_output": 8,
      "points_visible_after_truncation": 6
     },
     {
      "round": 4,
      "action": "finish",
-     "input_chars": 27649
+     "input_chars": 27624
     }
    ],
    "final_state_summary": {
@@ -869,7 +869,7 @@
      }
     }
    },
-   "final_input_chars": 27649
+   "final_input_chars": 27624
   }
  }
 }

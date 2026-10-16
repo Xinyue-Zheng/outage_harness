@@ -51,6 +51,7 @@ ACCEPT_EDGE_OPEN = True
 SIGNAL_MARGIN_DB = 10.0      # backup weaker than the outage sector by more than this: degrade by signal
 SERVICE_RSRP_DBM = COVERAGE_RSRP_DBM   # a backup below this does not count as adequate
 LOAD_LIMIT_PERCENT = 80.0    # estimated PRB above this: degrade by capacity
+PRB_METRIC = "MEAN_PRB_USED"   # the KPI column apply_kpi keeps as the PRB utilisation metric, in percent
 REQUIRED_CHECKS = ("boundary",)
 
 COMPASS = ("north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west")
@@ -281,7 +282,7 @@ def classify_locations(state: dict[str, Any], rows: dict[str, dict[str, Any]], i
     table = state.get("coverage") or {}
     impact = state.get("impact") or {}
     loads = {b["cell_id"]: b for b in impact.get("backup_loads", [])} if impact else {}
-    baselines = ((state.get("kpi_baseline") or {}).get("cells") or {})
+    baselines = ((state.get("kpi_baselines") or {}).get("cells") or {})
     out: dict[str, dict[str, Any]] = {}
     for g, row in rows.items():
         if not any(row["covered"].values()):
@@ -306,7 +307,7 @@ def classify_locations(state: dict[str, Any], rows: dict[str, dict[str, Any]], i
             capacity_bad = float(loads[backup].get("estimated_prb_percent", 0.0)) > LOAD_LIMIT_PERCENT
             capacity_known = True
         else:
-            capacity_known = backup in baselines and bool(impact)
+            capacity_known = bool(impact) and PRB_METRIC in (baselines.get(backup) or {})
             capacity_bad = False
         if signal_bad and capacity_bad:
             cls = "degrade_both"
@@ -394,7 +395,7 @@ def final_report(state: dict[str, Any], run_dir: str | Path, is_outage: IsOutage
     lines += ["", "2. Why: per backup cell"]
     impact = state.get("impact") or {}
     loads = {b["cell_id"]: b for b in impact.get("backup_loads", [])} if impact else {}
-    baselines = ((state.get("kpi_baseline") or {}).get("cells") or {})
+    baselines = ((state.get("kpi_baselines") or {}).get("cells") or {})
     by_backup: dict[str, list[str]] = {}
     for g, c in classes.items():
         if c.get("backup"):
@@ -412,8 +413,9 @@ def final_report(state: dict[str, Any], run_dir: str | Path, is_outage: IsOutage
             b = loads[backup]
             text += (f" Load: baseline PRB {b.get('baseline_prb_percent'):g}%, estimated after transfer {b.get('estimated_prb_percent'):g}%; "
                      f"limit {LOAD_LIMIT_PERCENT:g}%: {'exceeded' if float(b.get('estimated_prb_percent', 0)) > LOAD_LIMIT_PERCENT else 'within limit'}.")
-        elif backup in baselines:
-            text += " Load: baseline present; no transfer estimate was computed, so capacity is not assessed."
+        elif PRB_METRIC in (baselines.get(backup) or {}):
+            text += (f" Load: baseline PRB {baselines[backup][PRB_METRIC].get('mean'):g}% present; no transfer estimate "
+                     "was computed, so capacity is not assessed.")
         else:
             text += (f" Load: whether service degrades cannot be assessed because the historical load data of {backup} is missing.")
         lines.append(text)

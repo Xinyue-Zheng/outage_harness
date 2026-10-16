@@ -42,10 +42,10 @@ def main(run_dir: Path) -> None:
         for line in completion_context_lines(checks):
             print("  " + line)
     # What the KPI tool and the transfer tool would leave in State (synthetic values).
-    state["kpi_baseline"] = {"selection": "same weekday and hours, 4 prior weeks", "reference_time": task["start_time"],
-                             "cells": {"CCL00002_aa_1": {"prb_utilization": {"mean": 41.0, "prior_week_count": 4, "sample_count": 12}},
-                                       "CCL00001_aa_1": {"prb_utilization": {"mean": 35.0, "prior_week_count": 4, "sample_count": 12}},
-                                       "CCL00001_ab_1": {"prb_utilization": {"mean": 28.0, "prior_week_count": 4, "sample_count": 12}}}}
+    state["kpi_baselines"] = {"selection": "same weekday and hours, 4 prior weeks", "reference_time": task["start_time"],
+                             "cells": {"CCL00002_aa_1": {"MEAN_PRB_USED": {"mean": 41.0, "prior_week_count": 4, "sample_count": 12}},
+                                       "CCL00001_aa_1": {"MEAN_PRB_USED": {"mean": 35.0, "prior_week_count": 4, "sample_count": 12}},
+                                       "CCL00001_ab_1": {"MEAN_PRB_USED": {"mean": 28.0, "prior_week_count": 4, "sample_count": 12}}}}
     state["impact"] = {"source": "transfer_tool", "backup_loads": [
         {"cell_id": "CCL00002_aa_1", "assigned_locations": 0, "baseline_prb_percent": 41.0, "estimated_prb_percent": 86.0}]}
     checks = completion_evidence_status(state, run_dir, is_outage)

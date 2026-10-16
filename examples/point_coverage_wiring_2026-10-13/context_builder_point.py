@@ -580,7 +580,7 @@ def _impact_lines(state: Mapping[str, Any], summaries: dict, down: str) -> list[
         lines.append(text)
     else:
         lines.append("KPI records: none yet.")
-    baseline = state.get("kpi_baseline", state.get("KPI_baseline"))
+    baseline = state.get("kpi_baselines")
     covered = set()
     if isinstance(baseline, Mapping) and isinstance(baseline.get("cells"), Mapping) and baseline["cells"]:
         lines.append(f"KPI baseline ({baseline.get('selection', 'selection unknown')}; reference "

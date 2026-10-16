@@ -3465,26 +3465,26 @@
    }
   }
  ],
- "kpi_baseline": {
+ "kpi_baselines": {
   "selection": "same weekday and hours, 4 prior weeks",
   "reference_time": "2026-02-10T09:00:00Z",
   "cells": {
    "CCL00002_aa_1": {
-    "prb_utilization": {
+    "MEAN_PRB_USED": {
      "mean": 41.0,
      "prior_week_count": 4,
      "sample_count": 12
     }
    },
    "CCL00001_aa_1": {
-    "prb_utilization": {
+    "MEAN_PRB_USED": {
      "mean": 35.0,
      "prior_week_count": 4,
      "sample_count": 12
     }
    },
    "CCL00001_ab_1": {
-    "prb_utilization": {
+    "MEAN_PRB_USED": {
      "mean": 28.0,
      "prior_week_count": 4,
      "sample_count": 12

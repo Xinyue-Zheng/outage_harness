@@ -41,7 +41,7 @@ def _task_window(task: dict[str, Any]) -> tuple[str, str]:
 
 
 def _kpi_lines(state: dict[str, Any]) -> list[str]:
-    baseline = state.get("kpi_baseline") or {}
+    baseline = state.get("kpi_baselines") or {}
     cells = baseline.get("cells") or {}
     if not cells:
         return ["No KPI baseline in State: no backup cell's load before the outage is known."]
@@ -92,7 +92,7 @@ def build_report(state: dict[str, Any], run_dir: Path) -> tuple[str, dict[str, A
               "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
               "case": {"down_cell_id": task.get("down_cell_id"), "outage_cell_ids": task.get("outage_cell_ids"),
                        "start_time": start, "end_time": end, "objective": task.get("objective")},
-              **data, "kpi_baseline": state.get("kpi_baseline"), "provenance": _provenance(state)}
+              **data, "kpi_baselines": state.get("kpi_baselines"), "provenance": _provenance(state)}
     return "\n".join(body), report
 
 

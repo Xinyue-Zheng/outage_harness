@@ -2,7 +2,7 @@
 
 - Outage window: 2026-02-10T09:00:00Z to 2026-02-10T12:00:00Z (planned; not evidence that it happened)
 - Objective: Find where the outage sectors serve users and which cells can take over.
-- Generated: 2026-10-15T20:32:01-04:00
+- Generated: 2026-10-16T04:08:48-04:00
 - Program-generated from the run's State after the completion check; the model wrote none of it.
 
 ```
@@ -54,9 +54,9 @@ Evidence: 80 locations fetched, 57 with samples; coverage threshold -110 dBm; si
 ## KPI baseline
 
 KPI baseline (same weekday and hours, 4 prior weeks):
-- CCL00001_aa_1: prb_utilization mean 35 over 4 prior weeks (12 samples)
-- CCL00001_ab_1: prb_utilization mean 28 over 4 prior weeks (12 samples)
-- CCL00002_aa_1: prb_utilization mean 41 over 4 prior weeks (12 samples)
+- CCL00001_aa_1: MEAN_PRB_USED mean 35 over 4 prior weeks (12 samples)
+- CCL00001_ab_1: MEAN_PRB_USED mean 28 over 4 prior weeks (12 samples)
+- CCL00002_aa_1: MEAN_PRB_USED mean 41 over 4 prior weeks (12 samples)
 
 ## Provenance
 

@@ -1,6 +1,6 @@
 {
   "report_type": "final_outage_investigation_report",
-  "generated_at": "2026-10-15T20:32:18-04:00",
+  "generated_at": "2026-10-16T04:08:48-04:00",
   "case": {
     "down_cell_id": "CCL00001",
     "outage_cell_ids": null,
@@ -791,26 +791,26 @@
     "service_rsrp_dbm": -110.0,
     "load_limit_percent": 80.0
   },
-  "kpi_baseline": {
+  "kpi_baselines": {
     "selection": "same weekday and hours, 4 prior weeks",
     "reference_time": "2026-02-10T09:00:00Z",
     "cells": {
       "CCL00002_aa_1": {
-        "prb_utilization": {
+        "MEAN_PRB_USED": {
           "mean": 41.0,
           "prior_week_count": 4,
           "sample_count": 12
         }
       },
       "CCL00001_aa_1": {
-        "prb_utilization": {
+        "MEAN_PRB_USED": {
           "mean": 35.0,
           "prior_week_count": 4,
           "sample_count": 12
         }
       },
       "CCL00001_ab_1": {
-        "prb_utilization": {
+        "MEAN_PRB_USED": {
           "mean": 28.0,
           "prior_week_count": 4,
           "sample_count": 12

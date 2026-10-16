@@ -144,44 +144,14 @@ PACKAGE = "outage_harness_codex_state"    # concat package
 PACKAGE = "outage_harness_langgraph"      # rendered package
 ```
 
-### E4. Make `_model` build your LLM client
+### E4 and E5. `_model` and `_client`: done
 
-In `run_case.py`, find `def _model(`. Its body is
-
-```python
-    from llm import OpenAICompatLLM
-
-    api_key = os.environ.get(arguments.api_key_env) if arguments.api_key_env else None
-    return OpenAICompatLLM(base_url=arguments.base_url, model=name, api_key=api_key,
-                           max_tokens=arguments.max_tokens)
-```
-
-Open `debug_live.py` and find its `OpenAICompatLLM(` call. Copy that call
-over the `return` line above, then replace the values it passes:
-
-| in `debug_live.py` | write here |
-|---|---|
-| the base URL string | `arguments.base_url` |
-| the model name string | `name` |
-| the API key | `api_key` |
-| the max tokens number | `arguments.max_tokens` |
-| anything else (temperature, timeout, headers, verify) | keep the value from `debug_live.py` |
-
-If `debug_live.py` builds the client with a function other than
-`OpenAICompatLLM`, import and call that function instead.
-
-### E5. Make `_client` build your tool client
-
-In `run_case.py`, find `def _client(`. Its body is
-
-```python
-    return importlib.import_module(f"{PACKAGE}.client").RealToolClient()
-```
-
-Open `debug_live.py` and find its `RealToolClient(` call. If it passes
-arguments (a tool library, a configuration object, an MCP endpoint), put
-the same arguments inside the parentheses above, building them the same way
-`debug_live.py` does. If it passes nothing, leave the line as it is.
+`run_case.py` already builds them as `debug_live.py` does:
+`OpenAICompatLLM()` with no arguments, and
+`RealToolClient(<run directory>/artifacts)`. `--base-url` and `--model` are
+accepted and ignored, because `OpenAICompatLLM` reads its own configuration.
+The verifier is a second `OpenAICompatLLM()` under the rendered condition
+unless `--no-verifier` is given; the concat condition never has one.
 
 ### E6. Check
 
@@ -195,8 +165,8 @@ prints the option list. An error names what is wrong:
 
 | error mentions | fix in |
 |---|---|
-| `llm` | E4 |
-| `client` | E5 |
+| `llm` | `llm.py` is not importable from this directory; run from where `debug_live.py` runs |
+| `client` | `RealToolClient` takes something other than the artifacts directory; edit `_client` in `run_case.py` |
 | `langgraph_runner`, `PointQuery` | E1 |
 | `run_case_langgraph`, `point_query`, `condition` | E2 |
 | `No module named outage_harness_...` | E3, the `PACKAGE` constant, or run from the wrong directory |
@@ -211,7 +181,7 @@ Repeat with `outage_harness_langgraph` for the rendered package.
 python -m outage_harness_langgraph.run_case --condition rendered --fake-point-api \
     --down-cell CCL00001 --start-time 2026-02-10T09:00:00Z --end-time 2026-02-10T12:00:00Z \
     --output runs/fake_rendered --max-steps 8 --query-budget 300 \
-    --base-url <your /v1 url> --model <name> --verifier-model <name> --ca-bundle <cert.pem>
+    --ca-bundle <cert.pem>
 ```
 
    Expect: the context's "Completion checks" section shows the direction

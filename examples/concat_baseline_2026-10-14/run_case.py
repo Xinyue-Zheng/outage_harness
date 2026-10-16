@@ -64,8 +64,10 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--output", required=True, type=Path, help="New, empty run directory")
     parser.add_argument("--max-steps", type=int, default=8)
     # Model.
-    parser.add_argument("--base-url", required=True, help="OpenAI-compatible /v1 URL")
-    parser.add_argument("--model", required=True, help="Decision model name")
+    parser.add_argument("--no-verifier", action="store_true",
+                        help="Run the rendered condition without the verifier model (concat never has one)")
+    parser.add_argument("--base-url", default=None, help="Unused: llm.OpenAICompatLLM reads its own configuration")
+    parser.add_argument("--model", default=None, help="Unused: llm.OpenAICompatLLM reads its own configuration")
     parser.add_argument("--verifier-model", default=None,
                         help="Verifier model name; omitted: no verifier. Ignored under concat")
     parser.add_argument("--api-key-env", default=None, help="Variable that holds the API key, if any")
@@ -84,18 +86,16 @@ def _arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _model(arguments: argparse.Namespace, name: str) -> Any:
-    """The chat client. Match the constructor to llm.OpenAICompatLLM."""
+def _model(arguments: argparse.Namespace, name: str | None) -> Any:
+    """The chat client, as debug_live.py builds it: OpenAICompatLLM() with no arguments."""
     from llm import OpenAICompatLLM
 
-    api_key = os.environ.get(arguments.api_key_env) if arguments.api_key_env else None
-    return OpenAICompatLLM(base_url=arguments.base_url, model=name, api_key=api_key,
-                           max_tokens=arguments.max_tokens)
+    return OpenAICompatLLM()
 
 
-def _client() -> Any:
-    """The tool client over the tool library. Match the constructor to client.RealToolClient."""
-    return importlib.import_module(f"{PACKAGE}.client").RealToolClient()
+def _client(arguments: argparse.Namespace) -> Any:
+    """The tool client, as debug_live.py builds it: RealToolClient(<run directory>/artifacts)."""
+    return importlib.import_module(f"{PACKAGE}.client").RealToolClient(arguments.output / "artifacts")
 
 
 def _point_query(arguments: argparse.Namespace) -> Any:
@@ -134,11 +134,11 @@ def main() -> int:
         max_query_locations=arguments.query_budget,
     )
     verifier = None
-    if arguments.verifier_model and condition == "rendered":
+    if condition == "rendered" and not arguments.no_verifier:
         verifier = _model(arguments, arguments.verifier_model)
     summary = runner.run_case_langgraph(
         _model(arguments, arguments.model),
-        _client(),
+        _client(arguments),
         task,
         arguments.output,
         max_steps=arguments.max_steps,

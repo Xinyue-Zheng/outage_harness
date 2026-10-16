@@ -37,7 +37,7 @@ Inspection and completion
 Use an observation inspection action only if it is actually declared. Inspection notes and reviewer concerns are evidence or questions, not substituted decisions.
 Use current final_report_inputs exactly for final_step_report when available.
 A generated report does not prove that boundary or backup-load checks passed.
-The boundary check is satisfied for each observed outage sector only when fully queried, valid coverage in a settlement or road corridor farther from the down site than the farthest settlement/road area where that sector was observed shows the sector absent. Do not query farther settlements or roads once this evidence exists. Distance is an ordering proxy from the down site, not a propagation contour. Backup-load evidence remains unknown until a verified computation is implemented.
+An outage sector covers a location when a sample lists it at or above -110 dBm, serving or not. The boundary check works per direction from the down site, in the directions where the sector covers something: the settlement and road-corridor locations nearer than the farthest covered one must be fetched, and the nearest settlement or road-corridor locations beyond it must show the sector below the threshold or not listed. Directions open at the study-area edge are reported and do not block. Do not query farther settlements or roads in a direction that is closed. Backup load is reported, not required.
 finish is a control proposal with empty parameters, not a data tool. Explain any remaining gaps, unknown coverage, unsupported estimates, and excluded locations.
 Choose finish when the evidence answers the task.
 Do not present synthetic formulas or uncomputed predictions as calibrated results.
@@ -220,14 +220,14 @@ Investigate the outage with the tools. Each tool output is appended below as ret
       "rsrq": -9.06,
       "rssi": -71.07,
       "serving": {
-       "id": 95418,
+       "id": 92310,
        "latitude": 41.807641,
        "longitude": -72.290999,
        "rsrp": -97.82,
        "sector_name": "CCL00001_ab_1"
       },
       "top1": {
-       "id": 95418,
+       "id": 92310,
        "latitude": 41.807641,
        "longitude": -72.290999,
        "rsrp": -97.82,
@@ -242,21 +242,21 @@ Investigate the outage with the tools. Each tool output is appended below as ret
       "rsrq": -9.18,
       "rssi": -74.93,
       "serving": {
-       "id": 95418,
+       "id": 92310,
        "latitude": 41.807644,
        "longitude": -72.291044,
        "rsrp": -97.81,
        "sector_name": "CCL00001_ab_1"
       },
       "top1": {
-       "id": 95418,
+       "id": 92310,
        "latitude": 41.807644,
        "longitude": -72.291044,
        "rsrp": -97.81,
        "sector_name": "CCL00001_ab_1"
       },
       "top2": {
-       "id": 26733,
+       "id": 14157,
        "latitude": 41.807644,
        "longitude": -72.291044,
        "rsrp": -111.99,
@@ -271,21 +271,21 @@ Investigate the outage with the tools. Each tool output is appended below as ret
       "rsrq": -10.83,
       "rssi": -79.88,
       "serving": {
-       "id": 95418,
+       "id": 92310,
        "latitude": 41.807684,
        "longitude": -72.290944,
        "rsrp": -97.89,
        "sector_name": "CCL00001_ab_1"
       },
       "top1": {
-       "id": 95418,
+       "id": 92310,
        "latitude": 41.807684,
        "longitude": -72.290944,
        "rsrp": -97.89,
        "sector_name": "CCL00001_ab_1"
       },
       "top2": {
-       "id": 26733,
+       "id": 14157,
        "latitude": 41.807684,
        "longitude": -72.290944,
        "rsrp": -111.08,
@@ -320,14 +320,14 @@ Investigate the outage with the tools. Each tool output is appended below as ret
       "rsrq": -12.11,
       "rssi": -69.19,
       "serving": {
-       "id": 37590,
+       "id": 43961,
        "latitude": 41.81128,
        "longitude": -72.287328,
        "rsrp": -101.07,
        "sector_name": "CCL00001_aa_1"
       },
       "top1": {
-       "id": 37590,
+       "id": 43961,
        "latitude": 41.81128,
        "longitude": -72.287328,
        "rsrp": -101.07,
@@ -342,14 +342,14 @@ Investigate the outage with the tools. Each tool output is appended below as ret
       "rsrq": -9.66,
       "rssi": -68.38,
       "serving": {
-       "id": 37590,
+       "id": 43961,
        "latitude": 41.811175,
        "longitude": -72.28741,
        "rsrp": -97.78,
        "sector_name": "CCL00001_aa_1"
       },
       "top1": {
-       "id": 37590,
+       "id": 43961,
        "latitude": 41.811175,
        "longitude": -72.28741,
        "rsrp": -97.78,
@@ -379,21 +379,21 @@ Investigate the outage with the tools. Each tool output is appended below as ret
       "rsrq": -10.25,
       "rssi": -73.0,
       "serving": {
-       "id": 37590,
+       "id": 43961,
        "latitude": 41.811214,
        "longitude": -72.284928,
        "rsrp": -98.92,
        "sector_name": "CCL00001_aa_1"
       },
       "top1": {
-       "id": 37590,
+       "id": 43961,
        "latitude": 41.811214,
        "longitude": -72.284928,
        "rsrp": -98.92,
        "sector_name": "CCL00001_aa_1"
       },
       "top2": {
-       "id": 21610,
+       "id": 53572,
        "latitude": 41.811214,
        "longitude": -72.284928,
        "rsrp": -110.9,
@@ -408,14 +408,14 @@ Investigate the outage with the tools. Each tool output is appended below as ret
       "rsrq": -10.7,
       "rssi": -73.31,
       "serving": {
-       "id": 37590,
+       "id": 43961,
        "latitude": 41.811257,
        "longitude": -72.284851,
        "rsrp": -103.9,
        "sector_name": "CCL00001_aa_1"
       },
       "top1": {
-       "id": 37590,
+       "id": 43961,
        "latitude": 41.811257,
        "longitude": -72.284851,
        "rsrp": -103.9,

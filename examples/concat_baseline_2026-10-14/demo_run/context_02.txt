@@ -37,7 +37,7 @@ Inspection and completion
 Use an observation inspection action only if it is actually declared. Inspection notes and reviewer concerns are evidence or questions, not substituted decisions.
 Use current final_report_inputs exactly for final_step_report when available.
 A generated report does not prove that boundary or backup-load checks passed.
-The boundary check is satisfied for each observed outage sector only when fully queried, valid coverage in a settlement or road corridor farther from the down site than the farthest settlement/road area where that sector was observed shows the sector absent. Do not query farther settlements or roads once this evidence exists. Distance is an ordering proxy from the down site, not a propagation contour. Backup-load evidence remains unknown until a verified computation is implemented.
+An outage sector covers a location when a sample lists it at or above -110 dBm, serving or not. The boundary check works per direction from the down site, in the directions where the sector covers something: the settlement and road-corridor locations nearer than the farthest covered one must be fetched, and the nearest settlement or road-corridor locations beyond it must show the sector below the threshold or not listed. Directions open at the study-area edge are reported and do not block. Do not query farther settlements or roads in a direction that is closed. Backup load is reported, not required.
 finish is a control proposal with empty parameters, not a data tool. Explain any remaining gaps, unknown coverage, unsupported estimates, and excluded locations.
 Choose finish when the evidence answers the task.
 Do not present synthetic formulas or uncomputed predictions as calibrated results.

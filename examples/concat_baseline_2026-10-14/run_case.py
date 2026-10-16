@@ -104,10 +104,19 @@ def _point_query(arguments: argparse.Namespace) -> Any:
         return lambda lat, lon, r: fake_point_api(lat, lon, r)
     query_point_coverage = importlib.import_module(f"{PACKAGE}.point_by_point_cover").query_point_coverage
     make_point_query = importlib.import_module(f"{PACKAGE}.runner_point_nodes").make_point_query
-    token = os.environ.get(arguments.token_env)
-    if not token:
-        raise SystemExit(f"{arguments.token_env} is not set; export the point API token or use --fake-point-api")
+    # The token: the environment variable when set, else the default of query_point_coverage's
+    # own token parameter, which point_by_point_cover.py can carry so the token never appears
+    # on a command line.
+    token = os.environ.get(arguments.token_env) or None
+    if token is None and not _has_default_token(query_point_coverage):
+        raise SystemExit(f"{arguments.token_env} is not set and query_point_coverage has no default token; "
+                         "set the variable, or give the token parameter a default in point_by_point_cover.py")
     return make_point_query(query_point_coverage, token)
+
+
+def _has_default_token(function: Any) -> bool:
+    parameter = inspect.signature(function).parameters.get("token")
+    return parameter is not None and parameter.default is not inspect.Parameter.empty and bool(parameter.default)
 
 
 def main() -> int:

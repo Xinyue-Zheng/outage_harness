@@ -233,14 +233,24 @@ The certificate file must be PEM: its first line is
 `openssl x509 -inform der -in cert.crt -out cert.pem` and use the `.pem`.
 
 Pass it with `--ca-bundle`; the script sets `REQUESTS_CA_BUNDLE` and
-`SSL_CERT_FILE` before any client is imported. The point API token is read
-from the environment variable `COVERAGE_API_TOKEN` (change the name with
-`--token-env`):
+`SSL_CERT_FILE` before any client is imported.
 
-```
-export COVERAGE_API_TOKEN=<token>          # bash, zsh
-$env:COVERAGE_API_TOKEN = "<token>"        # PowerShell
-```
+The point API token has two sources; the script uses the first that exists:
+
+1. The environment variable `COVERAGE_API_TOKEN` (another name with
+   `--token-env`): `export COVERAGE_API_TOKEN=<token>` in bash or zsh,
+   `$env:COVERAGE_API_TOKEN = "<token>"` in PowerShell.
+2. A default on the `token` parameter of `query_point_coverage` in the
+   package's `point_by_point_cover.py`:
+
+   ```python
+   TOKEN = "<your token>"
+
+   def query_point_coverage(lat: str, lon: str, r: str, token: str = TOKEN):
+   ```
+
+   The token then never appears on a command line. Keep that file out of
+   version control.
 
 ### F3. The commands
 

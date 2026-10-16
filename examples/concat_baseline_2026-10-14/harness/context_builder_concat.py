@@ -23,9 +23,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from transcript import Transcript
+from .transcript import Transcript
 
-SKILL_PATH = Path(__file__).resolve().parent / "investigation_skill_concat.txt"
+SKILL_PATH = Path(__file__).resolve().parent / "investigation_skill.txt"
 
 
 @dataclass(frozen=True)

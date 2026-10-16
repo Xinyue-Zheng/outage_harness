@@ -11,20 +11,42 @@ Package names below: `outage_harness_langgraph` (rendered) and
 
 ## A. Copy the changed modules (both)
 
-From `examples/point_coverage_wiring_2026-10-13/` (rendered) or
-`examples/concat_baseline_2026-10-14/` (concat; same files, package name
-already swapped), copy over the versions in the package:
+The modules live in the `harness/` folder of each example directory
+(`examples/point_coverage_wiring_2026-10-13/harness/` for the rendered
+package, `examples/concat_baseline_2026-10-14/harness/` for the concat
+package). Their in-package imports are relative (`from .point_coverage import
+...`), so they work under any package name: copy, do not edit imports.
 
-| file | why it changed |
-|---|---|
-| `point_coverage.py` | per-area counts `down_cell_covered`, `_with_backup`, `_without_backup` at -110 dBm; per-cell `covered` |
-| `completion_point.py` | the direction-bin completion check, the report content, the new `finish_check` |
-| `report.py` | replaces the old report tool; same `final_step_report(run_dir, case_state_path)` signature |
-| `context_builder_point.py` | copy as `context_builder.py`; new completion text, per-direction lines, reads `kpi_baselines` |
-| `investigation_skill_point.txt` (rendered) / `investigation_skill_concat.txt` (concat) | copy as `investigation_skill.txt`; new coverage and completion sentences |
+Copy from `harness/` into the package, replacing what is there:
 
-Keep your old `report.py` elsewhere if you want it; the package copy is
-`report_previous_heatmap.py` in the example folders.
+| file | copy as | why it changed |
+|---|---|---|
+| `point_coverage.py` | same name | per-area counts `down_cell_covered`, `_with_backup`, `_without_backup` at -110 dBm; per-cell `covered` |
+| `completion_point.py` | same name | the direction-bin completion check, the report content, the new `finish_check` |
+| `report.py` | same name | replaces the old report tool; same `final_step_report(run_dir, case_state_path)` signature |
+| `runner_point_nodes.py` | same name | relative imports |
+| `context_builder_point.py` | `context_builder.py` | new completion text, per-direction lines, reads `kpi_baselines`; reads the skill from the file next to it |
+| `investigation_skill.txt` | same name | the skill for this package's condition (point version in the rendered folder, concat version in the concat folder) |
+| concat package only: `context_builder_concat.py`, `runner_concat_nodes.py`, `transcript.py` | same names | relative imports |
+
+If you already copied earlier versions and see `No module named
+'completion_point'` (or `point_coverage`, `report`, `transcript`), the copy
+has bare imports. Either copy again from `harness/`, or change these lines
+in the package copies to relative imports:
+
+| file | line | change to |
+|---|---|---|
+| `report.py` | `from completion_point import completion_evidence_status, final_report` | `from .completion_point import ...` |
+| `completion_point.py` | `from point_coverage import COVERAGE_RSRP_DBM, read_geometry` | `from .point_coverage import ...` |
+| `completion_point.py`, inside `finish_check` | `from report import build_report` | `from .report import build_report` |
+| `context_builder.py`, inside `_completion_state_lines` | `from completion_point import completion_context_lines` | `from .completion_point import ...` |
+| `context_builder.py` | `def load_skill()` reading `files("outage_harness_...")` | keep yours; it reads the same `investigation_skill.txt` |
+| `runner_point_nodes.py` | `from point_coverage import (` | `from .point_coverage import (` |
+| `runner_concat_nodes.py` | `from point_coverage import ...` and `from transcript import ...` | `from .point_coverage import ...`, `from .transcript import ...` |
+| `context_builder_concat.py` | `from transcript import Transcript` | `from .transcript import Transcript` |
+
+Your old `report.py` is kept in the example folders as
+`report_previous_heatmap.py`.
 
 ## B. `finish_check_node` (both)
 

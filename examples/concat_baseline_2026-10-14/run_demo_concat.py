@@ -28,13 +28,13 @@ sys.path.insert(0, str(HERE))
 
 from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell  # noqa: E402
 
-import context_builder_concat as concat  # noqa: E402
-import runner_concat_nodes as rc  # noqa: E402
-from completion_point import completion_evidence_status  # noqa: E402
-from context_builder_point import build_context as build_rendered  # noqa: E402
-from point_coverage import apply_point_coverage, fetch_area_points  # noqa: E402
-from synthetic_case import TOOL_DECLARATIONS, build_case, fake_point_api  # noqa: E402
-from transcript import OUTPUT_CAP_BYTES  # noqa: E402
+from harness import context_builder_concat as concat  # noqa: E402
+from harness import runner_concat_nodes as rc  # noqa: E402
+from harness.completion_point import completion_evidence_status  # noqa: E402
+from harness.context_builder_point import build_context as build_rendered  # noqa: E402
+from harness.point_coverage import apply_point_coverage, fetch_area_points  # noqa: E402
+from harness.synthetic_case import TOOL_DECLARATIONS, build_case, fake_point_api  # noqa: E402
+from harness.transcript import OUTPUT_CAP_BYTES  # noqa: E402
 
 DECISIONS = [
     {"purpose": "Locate where the outage sectors serve around the site.",

@@ -19,10 +19,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell  # noqa: E402
 
-from completion_point import completion_context_lines, completion_evidence_status, unmet_required  # noqa: E402
-from report import final_step_report  # noqa: E402
-from point_coverage import apply_point_coverage, fetch_area_points  # noqa: E402
-from synthetic_case import build_case, fake_point_api  # noqa: E402
+from harness.completion_point import completion_context_lines, completion_evidence_status, unmet_required  # noqa: E402
+from harness.report import final_step_report  # noqa: E402
+from harness.point_coverage import apply_point_coverage, fetch_area_points  # noqa: E402
+from harness.synthetic_case import build_case, fake_point_api  # noqa: E402
 
 RESOLUTION = 10
 

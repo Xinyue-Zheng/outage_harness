@@ -32,8 +32,8 @@ from typing import Any
 
 from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell
 
-from point_coverage import apply_point_coverage, fetch_area_points, inspect_point_coverage, read_geometry
-from transcript import Transcript, format_rejection, format_tool_output
+from .point_coverage import apply_point_coverage, fetch_area_points, inspect_point_coverage, read_geometry
+from .transcript import Transcript, format_rejection, format_tool_output
 
 COMPLETION_MODE_MODEL = "model"      # finish accepted as proposed (Codex behaviour)
 COMPLETION_MODE_CHECKS = "checks"    # finish refused until the program checks pass (concat+checks)

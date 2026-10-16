@@ -31,10 +31,10 @@ sys.path.insert(0, str(HERE.parent))
 from outage_harness_codex_state.radio import radio_technology  # noqa: E402
 
 import gap_checks_partial as gap_checks  # noqa: E402  (internal module, unchanged)
-import runner_point_nodes as rp  # noqa: E402
-from context_builder_point import build_context  # noqa: E402
-from point_coverage import inspect_point_coverage  # noqa: E402
-from synthetic_case import TOOL_DECLARATIONS, build_case, fake_point_api  # noqa: E402
+from harness import runner_point_nodes as rp  # noqa: E402
+from harness.context_builder_point import build_context  # noqa: E402
+from harness.point_coverage import inspect_point_coverage  # noqa: E402
+from harness.synthetic_case import TOOL_DECLARATIONS, build_case, fake_point_api  # noqa: E402
 
 
 # --- Internal helpers, copied from runner_partial.py and the client usage in langgraph_runner.py.

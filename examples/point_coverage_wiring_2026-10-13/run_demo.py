@@ -19,9 +19,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from outage_harness_langgraph.radio import eligible_backup_cells, is_outage_cell  # noqa: E402
 
-from context_builder_point import build_context  # noqa: E402
-from point_coverage import apply_point_coverage, fetch_area_points, inspect_point_coverage  # noqa: E402
-from synthetic_case import TOOL_DECLARATIONS, build_case, fake_point_api  # noqa: E402
+from harness.context_builder_point import build_context  # noqa: E402
+from harness.point_coverage import apply_point_coverage, fetch_area_points, inspect_point_coverage  # noqa: E402
+from harness.synthetic_case import TOOL_DECLARATIONS, build_case, fake_point_api  # noqa: E402
 
 RESOLUTION = 10  # the model's choice: the point-API radius in metres
 

@@ -2,7 +2,7 @@
 
 - Outage window: 2026-02-10T09:00:00Z to 2026-02-10T12:00:00Z (planned; not evidence that it happened)
 - Objective: Find where the outage sectors serve users and which cells can take over.
-- Generated: 2026-10-16T04:14:50-04:00
+- Generated: 2026-10-16T18:08:28-04:00
 - Program-generated from the run's State after the completion check; the model wrote none of it.
 
 ```

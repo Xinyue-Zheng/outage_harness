@@ -41,7 +41,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
-from point_coverage import COVERAGE_RSRP_DBM, read_geometry
+from .point_coverage import COVERAGE_RSRP_DBM, read_geometry
 
 ACTIVITY_KINDS = {"settlement", "road_corridor"}
 BIN_DEGREES = 30.0
@@ -462,7 +462,7 @@ def finish_check(state: dict[str, Any], is_outage: IsOutage, eligible_backups: E
     if unmet:
         return {"state": {**state["state"], "completion_checks": checks},
                 "error": "Completion refused: " + json.dumps({k: v.get("unresolved", v.get("reason")) for k, v in unmet.items()})}
-    from report import build_report  # the same report the tool writes
+    from .report import build_report  # the same report the tool writes
 
     markdown, data = build_report({**state["state"], "completion_checks": checks}, run_dir)
     (run_dir / "final_report.md").write_text(markdown, encoding="utf-8")

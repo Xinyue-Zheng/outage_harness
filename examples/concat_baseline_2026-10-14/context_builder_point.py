@@ -377,17 +377,17 @@ def _action_lines(state: Mapping[str, Any], tools: Iterable[Any]) -> list[str]:
 def _completion_lines() -> list[str]:
     return [
         "Completion checks, applied when you choose finish:",
-        "- boundary: for every observed outage sector, one settlement or road corridor farther from the "
-        "down site than the farthest area where the sector serves a sample is fully queried (every "
-        "location fetched; missing data does not count against it) and shows the sector never serving "
-        "and never the strongest cell. A sector listed only as a weak neighbour does not extend its "
-        "service distance.",
-        "- backup_load: reported, not required. Verified backup-cell load after the outage traffic moves "
-        "is not computed yet.",
-        "When the boundary check passes, the program produces the final report and the run ends; you do "
-        "not call a report action. Only LTE cells are backups for LTE outage sectors; only NR cells are "
-        "backups for NR outage sectors. If both technologies are explicitly listed as outage prefixes, "
-        "assess each technology separately.",
+        "- boundary: an outage sector covers a location when a sample lists it at or above -110 dBm, "
+        "serving or not. Directions around the site are 30-degree bins; a bin is checked when the sector "
+        "covers some fetched location in it, plus one bin on each side. In a checked bin, every settlement "
+        "or road-corridor location nearer than the farthest covered one must be fetched, and the nearest "
+        "settlement or road-corridor locations beyond it must be fetched and show the sector below the "
+        "threshold or not listed. A bin with no such location beyond, inside the study area, is open at the "
+        "study-area edge and is reported, not required. Missing data never blocks.",
+        "- backup_load: reported, not required. A backup cell without a load baseline is reported as such.",
+        "When the boundary check passes, the program writes the final report and the run ends; you do not "
+        "call a report action. Only LTE cells are backups for LTE outage sectors; only NR cells are backups "
+        "for NR outage sectors.",
     ]
 
 
@@ -640,6 +640,11 @@ def _completion_state_lines(state: Mapping[str, Any]) -> list[str]:
         lines = ["Completion checks: not yet evaluated; status unknown."]
     else:
         lines = ["Completion checks from the last finish attempt:"]
+        boundary = checks.get("boundary") if isinstance(checks, Mapping) else None
+        if isinstance(boundary, Mapping) and isinstance(boundary.get("sectors"), Mapping):
+            from completion_point import completion_context_lines
+            lines += completion_context_lines(dict(checks))
+            checks = {k: v for k, v in checks.items() if k != "boundary"}
         for name, check in checks.items() if isinstance(checks, Mapping) else enumerate(checks):
             if isinstance(check, Mapping):
                 lines.append(f"- {name}: {check.get('status', _UNKNOWN)}"

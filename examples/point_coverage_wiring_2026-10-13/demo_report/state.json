@@ -1,5 +1,5 @@
 {
- "id": "state_02",
+ "id": "state_00",
  "task": {
   "down_cell_id": "CCL00001",
   "start_time": "2026-02-10T09:00:00Z",
@@ -67,6 +67,7 @@
     "id": "study_area",
     "kind": "study_area",
     "description": "The whole study area.",
+    "name": "study_area",
     "grid_count": 400,
     "locations": 400,
     "contains_site": true,
@@ -78,6 +79,7 @@
     "id": "S1",
     "kind": "settlement",
     "description": "S1 (village) settlement area.",
+    "name": "Ashford village",
     "grid_count": 30,
     "locations": 30,
     "contains_site": true,
@@ -89,6 +91,7 @@
     "id": "S2",
     "kind": "settlement",
     "description": "S2 (hamlet) settlement area.",
+    "name": "Bramble hamlet",
     "grid_count": 16,
     "locations": 16,
     "contains_site": false,
@@ -100,6 +103,7 @@
     "id": "road_H1",
     "kind": "road_corridor",
     "description": "300 m corridor around the primary road H1.",
+    "name": "primary road H1",
     "grid_count": 60,
     "locations": 60,
     "contains_site": true,
@@ -111,6 +115,7 @@
     "id": "F1",
     "kind": "landuse",
     "description": "Farmland in the north-west; demand is not inferred from land use.",
+    "name": "F1",
     "grid_count": 54,
     "locations": 54,
     "contains_site": false,
@@ -133,6 +138,7 @@
    "id": "study_area",
    "kind": "study_area",
    "description": "The whole study area.",
+   "name": "study_area",
    "grid_count": 400,
    "locations": 400,
    "contains_site": true,
@@ -144,6 +150,7 @@
    "id": "S1",
    "kind": "settlement",
    "description": "S1 (village) settlement area.",
+   "name": "Ashford village",
    "grid_count": 30,
    "locations": 30,
    "contains_site": true,
@@ -155,6 +162,7 @@
    "id": "S2",
    "kind": "settlement",
    "description": "S2 (hamlet) settlement area.",
+   "name": "Bramble hamlet",
    "grid_count": 16,
    "locations": 16,
    "contains_site": false,
@@ -166,6 +174,7 @@
    "id": "road_H1",
    "kind": "road_corridor",
    "description": "300 m corridor around the primary road H1.",
+   "name": "primary road H1",
    "grid_count": 60,
    "locations": 60,
    "contains_site": true,
@@ -177,6 +186,7 @@
    "id": "F1",
    "kind": "landuse",
    "description": "Farmland in the north-west; demand is not inferred from land use.",
+   "name": "F1",
    "grid_count": 54,
    "locations": 54,
    "contains_site": false,
@@ -2423,6 +2433,240 @@
    "sample_count": 0,
    "samples": [],
    "cells": {}
+  },
+  "236": {
+   "status": "valid",
+   "observation": "real_obs_03",
+   "area_ids": [
+    "S2",
+    "study_area"
+   ],
+   "sample_count": 2,
+   "samples": [
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00001_aa_1": -108.79,
+      "CCL00002_aa_1": -96.58
+     }
+    },
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -98.26
+     }
+    }
+   ],
+   "cells": {
+    "CCL00001_aa_1": {
+     "sample_count": 1,
+     "serving_count": 0,
+     "rsrp_min_dbm": -108.79,
+     "rsrp_max_dbm": -108.79,
+     "rsrp_mean_dbm": -108.79
+    },
+    "CCL00002_aa_1": {
+     "sample_count": 2,
+     "serving_count": 2,
+     "rsrp_min_dbm": -98.26,
+     "rsrp_max_dbm": -96.58,
+     "rsrp_mean_dbm": -97.42
+    }
+   }
+  },
+  "237": {
+   "status": "valid",
+   "observation": "real_obs_03",
+   "area_ids": [
+    "S2",
+    "study_area"
+   ],
+   "sample_count": 3,
+   "samples": [
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -89.59
+     }
+    },
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -91.03
+     }
+    },
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -89.83
+     }
+    }
+   ],
+   "cells": {
+    "CCL00002_aa_1": {
+     "sample_count": 3,
+     "serving_count": 3,
+     "rsrp_min_dbm": -91.03,
+     "rsrp_max_dbm": -89.59,
+     "rsrp_mean_dbm": -90.15
+    }
+   }
+  },
+  "238": {
+   "status": "valid",
+   "observation": "real_obs_03",
+   "area_ids": [
+    "S2",
+    "study_area"
+   ],
+   "sample_count": 3,
+   "samples": [
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -80.17
+     }
+    },
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -82.39
+     }
+    },
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -80.87
+     }
+    }
+   ],
+   "cells": {
+    "CCL00002_aa_1": {
+     "sample_count": 3,
+     "serving_count": 3,
+     "rsrp_min_dbm": -82.39,
+     "rsrp_max_dbm": -80.17,
+     "rsrp_mean_dbm": -81.14
+    }
+   }
+  },
+  "239": {
+   "status": "valid",
+   "observation": "real_obs_03",
+   "area_ids": [
+    "S2",
+    "study_area"
+   ],
+   "sample_count": 2,
+   "samples": [
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -98.22
+     }
+    },
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -102.63
+     }
+    }
+   ],
+   "cells": {
+    "CCL00002_aa_1": {
+     "sample_count": 2,
+     "serving_count": 2,
+     "rsrp_min_dbm": -102.63,
+     "rsrp_max_dbm": -98.22,
+     "rsrp_mean_dbm": -100.42
+    }
+   }
+  },
+  "256": {
+   "status": "missing",
+   "observation": "real_obs_03",
+   "area_ids": [
+    "S2",
+    "study_area"
+   ],
+   "sample_count": 0,
+   "samples": [],
+   "cells": {}
+  },
+  "257": {
+   "status": "valid",
+   "observation": "real_obs_03",
+   "area_ids": [
+    "S2",
+    "study_area"
+   ],
+   "sample_count": 2,
+   "samples": [
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -99.08
+     }
+    },
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -99.53
+     }
+    }
+   ],
+   "cells": {
+    "CCL00002_aa_1": {
+     "sample_count": 2,
+     "serving_count": 2,
+     "rsrp_min_dbm": -99.53,
+     "rsrp_max_dbm": -99.08,
+     "rsrp_mean_dbm": -99.31
+    }
+   }
+  },
+  "258": {
+   "status": "missing",
+   "observation": "real_obs_03",
+   "area_ids": [
+    "S2",
+    "study_area"
+   ],
+   "sample_count": 0,
+   "samples": [],
+   "cells": {}
+  },
+  "259": {
+   "status": "valid",
+   "observation": "real_obs_03",
+   "area_ids": [
+    "S2",
+    "study_area"
+   ],
+   "sample_count": 2,
+   "samples": [
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -108.11
+     }
+    },
+    {
+     "serving": "CCL00002_aa_1",
+     "cells": {
+      "CCL00002_aa_1": -111.55
+     }
+    }
+   ],
+   "cells": {
+    "CCL00002_aa_1": {
+     "sample_count": 2,
+     "serving_count": 2,
+     "rsrp_min_dbm": -111.55,
+     "rsrp_max_dbm": -108.11,
+     "rsrp_mean_dbm": -109.83
+    }
+   }
   }
  },
  "coverage_artifacts": {},
@@ -2449,8 +2693,7 @@
     "parameters": {
      "area_id": "S1",
      "resolution": 10
-    },
-    "requested_area_id": "S1"
+    }
    },
    "params": {
     "area_id": "S1",
@@ -2478,8 +2721,7 @@
     "parameters": {
      "area_id": "road_H1",
      "resolution": 10
-    },
-    "requested_area_id": "road_H1"
+    }
    },
    "params": {
     "area_id": "road_H1",
@@ -2499,6 +2741,34 @@
     "error_points": 0,
     "error_grid_ids": []
    }
+  },
+  {
+   "id": "real_obs_03",
+   "action": {
+    "function": "query_area_coverage",
+    "parameters": {
+     "area_id": "S2",
+     "resolution": 10
+    }
+   },
+   "params": {
+    "area_id": "S2",
+    "resolution": 10
+   },
+   "requested_area_id": "S2",
+   "result": {
+    "output_file": "artifacts/step_03_S2.json",
+    "status": "success",
+    "area_id": "S2",
+    "radius_m": 10.0,
+    "requested": 16,
+    "fetched": 8,
+    "skipped_already_queried": 8,
+    "valid_points": 6,
+    "missing_points": 2,
+    "error_points": 0,
+    "error_grid_ids": []
+   }
   }
  ],
  "kpis": [],
@@ -2506,19 +2776,19 @@
  "unknowns": {
   "coverage": {
    "areas_unqueried": 1,
-   "locations_unqueried": 328,
-   "locations_missing": 21,
+   "locations_unqueried": 320,
+   "locations_missing": 23,
    "not_listed": "A cell that is not listed at a location is not shown to be absent there: the point API lists the serving sector and only the strongest neighbours of each sample."
   },
   "backup_cells": "Backup candidates are cells of the outage technology seen in valid samples; their load after the outage traffic moves is not verified."
  },
  "query_budget": {
-  "locations_spent": 72,
+  "locations_spent": 0,
   "locations_limit": 600
  },
  "final_report_inputs": {
-  "run_dir": "demo_concat/concat",
-  "case_state_path": "demo_concat/concat/state.json"
+  "run_dir": "demo_report",
+  "case_state_path": "demo_report/state.json"
  },
  "summaries": {
   "F1": {
@@ -2533,6 +2803,10 @@
    "down_cell_with_backup": 0,
    "down_cell_with_backup_same_sample": 0,
    "down_cell_without_backup": 0,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 0,
+   "down_cell_covered_with_backup": 0,
+   "down_cell_covered_without_backup": 0,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2553,6 +2827,10 @@
    "down_cell_with_backup": 6,
    "down_cell_with_backup_same_sample": 6,
    "down_cell_without_backup": 15,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 21,
+   "down_cell_covered_with_backup": 1,
+   "down_cell_covered_without_backup": 20,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2568,6 +2846,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 15,
+     "covered": 15,
      "strongest": 11,
      "with_down_cell": 0,
      "serving": 11,
@@ -2578,6 +2857,7 @@
     },
     "CCL00001_ab_1": {
      "present": 14,
+     "covered": 13,
      "strongest": 10,
      "with_down_cell": 0,
      "serving": 10,
@@ -2588,6 +2868,7 @@
     },
     "CCL00002_aa_1": {
      "present": 4,
+     "covered": 1,
      "strongest": 0,
      "with_down_cell": 4,
      "serving": 0,
@@ -2598,6 +2879,7 @@
     },
     "CCL00003_ab_1": {
      "present": 2,
+     "covered": 0,
      "strongest": 0,
      "with_down_cell": 2,
      "serving": 0,
@@ -2608,6 +2890,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 9,
+     "covered": 5,
      "strongest": 0,
      "with_down_cell": 9,
      "serving": 0,
@@ -2620,18 +2903,22 @@
   },
   "S2": {
    "total": 16,
-   "queried": 8,
-   "unqueried": 8,
-   "valid": 6,
-   "missing": 2,
+   "queried": 16,
+   "unqueried": 0,
+   "valid": 12,
+   "missing": 4,
    "no_coverage": 0,
-   "other_cells_only": 5,
-   "down_cell_present": 1,
-   "down_cell_with_backup": 1,
-   "down_cell_with_backup_same_sample": 1,
+   "other_cells_only": 10,
+   "down_cell_present": 2,
+   "down_cell_with_backup": 2,
+   "down_cell_with_backup_same_sample": 2,
    "down_cell_without_backup": 0,
-   "boundary": 4,
-   "boundary_missing": 2,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 1,
+   "down_cell_covered_with_backup": 1,
+   "down_cell_covered_without_backup": 0,
+   "boundary": 0,
+   "boundary_missing": 0,
    "boundary_with_down_cell": 0,
    "outage_cells": [
     "CCL00001_aa_1"
@@ -2639,27 +2926,29 @@
    "backup_candidates": [
     "CCL00002_aa_1"
    ],
-   "valid_sample_count": 12,
+   "valid_sample_count": 26,
    "cells": {
     "CCL00001_aa_1": {
-     "present": 1,
+     "present": 2,
+     "covered": 1,
      "strongest": 0,
      "with_down_cell": 0,
      "serving": 0,
-     "sample_count": 1,
+     "sample_count": 2,
      "rsrp_min_dbm": -111.47,
-     "rsrp_max_dbm": -111.47,
-     "rsrp_mean_dbm": -111.47
+     "rsrp_max_dbm": -108.79,
+     "rsrp_mean_dbm": -110.13
     },
     "CCL00002_aa_1": {
-     "present": 6,
-     "strongest": 6,
-     "with_down_cell": 1,
-     "serving": 6,
-     "sample_count": 12,
-     "rsrp_min_dbm": -99.31,
+     "present": 12,
+     "covered": 12,
+     "strongest": 12,
+     "with_down_cell": 2,
+     "serving": 12,
+     "sample_count": 26,
+     "rsrp_min_dbm": -111.55,
      "rsrp_max_dbm": -72.29,
-     "rsrp_mean_dbm": -89.47
+     "rsrp_mean_dbm": -92.37
     }
    }
   },
@@ -2675,6 +2964,10 @@
    "down_cell_with_backup": 16,
    "down_cell_with_backup_same_sample": 16,
    "down_cell_without_backup": 10,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 24,
+   "down_cell_covered_with_backup": 7,
+   "down_cell_covered_without_backup": 17,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2690,6 +2983,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 16,
+     "covered": 15,
      "strongest": 10,
      "with_down_cell": 0,
      "serving": 10,
@@ -2700,6 +2994,7 @@
     },
     "CCL00001_ab_1": {
      "present": 15,
+     "covered": 13,
      "strongest": 12,
      "with_down_cell": 0,
      "serving": 12,
@@ -2710,6 +3005,7 @@
     },
     "CCL00002_aa_1": {
      "present": 19,
+     "covered": 18,
      "strongest": 13,
      "with_down_cell": 9,
      "serving": 14,
@@ -2720,6 +3016,7 @@
     },
     "CCL00003_ab_1": {
      "present": 13,
+     "covered": 4,
      "strongest": 7,
      "with_down_cell": 7,
      "serving": 7,
@@ -2730,6 +3027,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 9,
+     "covered": 4,
      "strongest": 0,
      "with_down_cell": 7,
      "serving": 0,
@@ -2742,19 +3040,23 @@
   },
   "study_area": {
    "total": 400,
-   "queried": 72,
-   "unqueried": 328,
-   "valid": 51,
-   "missing": 21,
+   "queried": 80,
+   "unqueried": 320,
+   "valid": 57,
+   "missing": 23,
    "no_coverage": 0,
-   "other_cells_only": 16,
-   "down_cell_present": 35,
-   "down_cell_with_backup": 18,
-   "down_cell_with_backup_same_sample": 18,
+   "other_cells_only": 21,
+   "down_cell_present": 36,
+   "down_cell_with_backup": 19,
+   "down_cell_with_backup_same_sample": 19,
    "down_cell_without_backup": 17,
-   "boundary": 42,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 34,
+   "down_cell_covered_with_backup": 8,
+   "down_cell_covered_without_backup": 26,
+   "boundary": 43,
    "boundary_missing": 12,
-   "boundary_with_down_cell": 19,
+   "boundary_with_down_cell": 20,
    "outage_cells": [
     "CCL00001_aa_1",
     "CCL00001_ab_1"
@@ -2763,20 +3065,22 @@
     "CCL00002_aa_1",
     "CCL00003_ab_1"
    ],
-   "valid_sample_count": 103,
+   "valid_sample_count": 117,
    "cells": {
     "CCL00001_aa_1": {
-     "present": 22,
+     "present": 23,
+     "covered": 22,
      "strongest": 15,
      "with_down_cell": 0,
      "serving": 15,
-     "sample_count": 47,
+     "sample_count": 48,
      "rsrp_min_dbm": -111.47,
      "rsrp_max_dbm": -87.52,
-     "rsrp_mean_dbm": -99.96
+     "rsrp_mean_dbm": -100.14
     },
     "CCL00001_ab_1": {
      "present": 21,
+     "covered": 19,
      "strongest": 16,
      "with_down_cell": 0,
      "serving": 16,
@@ -2786,17 +3090,19 @@
      "rsrp_mean_dbm": -99.97
     },
     "CCL00002_aa_1": {
-     "present": 21,
-     "strongest": 13,
-     "with_down_cell": 11,
-     "serving": 14,
-     "sample_count": 40,
-     "rsrp_min_dbm": -111.38,
+     "present": 27,
+     "covered": 24,
+     "strongest": 19,
+     "with_down_cell": 12,
+     "serving": 20,
+     "sample_count": 54,
+     "rsrp_min_dbm": -111.55,
      "rsrp_max_dbm": -72.29,
-     "rsrp_mean_dbm": -101.02
+     "rsrp_mean_dbm": -99.42
     },
     "CCL00003_ab_1": {
      "present": 13,
+     "covered": 4,
      "strongest": 7,
      "with_down_cell": 7,
      "serving": 7,
@@ -2807,6 +3113,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 14,
+     "covered": 8,
      "strongest": 0,
      "with_down_cell": 12,
      "serving": 0,
@@ -2832,6 +3139,10 @@
    "down_cell_with_backup": 0,
    "down_cell_with_backup_same_sample": 0,
    "down_cell_without_backup": 0,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 0,
+   "down_cell_covered_with_backup": 0,
+   "down_cell_covered_without_backup": 0,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2853,6 +3164,10 @@
    "down_cell_with_backup": 6,
    "down_cell_with_backup_same_sample": 6,
    "down_cell_without_backup": 15,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 21,
+   "down_cell_covered_with_backup": 1,
+   "down_cell_covered_without_backup": 20,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2868,6 +3183,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 15,
+     "covered": 15,
      "strongest": 11,
      "with_down_cell": 0,
      "serving": 11,
@@ -2878,6 +3194,7 @@
     },
     "CCL00001_ab_1": {
      "present": 14,
+     "covered": 13,
      "strongest": 10,
      "with_down_cell": 0,
      "serving": 10,
@@ -2888,6 +3205,7 @@
     },
     "CCL00002_aa_1": {
      "present": 4,
+     "covered": 1,
      "strongest": 0,
      "with_down_cell": 4,
      "serving": 0,
@@ -2898,6 +3216,7 @@
     },
     "CCL00003_ab_1": {
      "present": 2,
+     "covered": 0,
      "strongest": 0,
      "with_down_cell": 2,
      "serving": 0,
@@ -2908,6 +3227,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 9,
+     "covered": 5,
      "strongest": 0,
      "with_down_cell": 9,
      "serving": 0,
@@ -2921,18 +3241,22 @@
   {
    "area_id": "S2",
    "total": 16,
-   "queried": 8,
-   "unqueried": 8,
-   "valid": 6,
-   "missing": 2,
+   "queried": 16,
+   "unqueried": 0,
+   "valid": 12,
+   "missing": 4,
    "no_coverage": 0,
-   "other_cells_only": 5,
-   "down_cell_present": 1,
-   "down_cell_with_backup": 1,
-   "down_cell_with_backup_same_sample": 1,
+   "other_cells_only": 10,
+   "down_cell_present": 2,
+   "down_cell_with_backup": 2,
+   "down_cell_with_backup_same_sample": 2,
    "down_cell_without_backup": 0,
-   "boundary": 4,
-   "boundary_missing": 2,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 1,
+   "down_cell_covered_with_backup": 1,
+   "down_cell_covered_without_backup": 0,
+   "boundary": 0,
+   "boundary_missing": 0,
    "boundary_with_down_cell": 0,
    "outage_cells": [
     "CCL00001_aa_1"
@@ -2940,27 +3264,29 @@
    "backup_candidates": [
     "CCL00002_aa_1"
    ],
-   "valid_sample_count": 12,
+   "valid_sample_count": 26,
    "cells": {
     "CCL00001_aa_1": {
-     "present": 1,
+     "present": 2,
+     "covered": 1,
      "strongest": 0,
      "with_down_cell": 0,
      "serving": 0,
-     "sample_count": 1,
+     "sample_count": 2,
      "rsrp_min_dbm": -111.47,
-     "rsrp_max_dbm": -111.47,
-     "rsrp_mean_dbm": -111.47
+     "rsrp_max_dbm": -108.79,
+     "rsrp_mean_dbm": -110.13
     },
     "CCL00002_aa_1": {
-     "present": 6,
-     "strongest": 6,
-     "with_down_cell": 1,
-     "serving": 6,
-     "sample_count": 12,
-     "rsrp_min_dbm": -99.31,
+     "present": 12,
+     "covered": 12,
+     "strongest": 12,
+     "with_down_cell": 2,
+     "serving": 12,
+     "sample_count": 26,
+     "rsrp_min_dbm": -111.55,
      "rsrp_max_dbm": -72.29,
-     "rsrp_mean_dbm": -89.47
+     "rsrp_mean_dbm": -92.37
     }
    }
   },
@@ -2977,6 +3303,10 @@
    "down_cell_with_backup": 16,
    "down_cell_with_backup_same_sample": 16,
    "down_cell_without_backup": 10,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 24,
+   "down_cell_covered_with_backup": 7,
+   "down_cell_covered_without_backup": 17,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2992,6 +3322,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 16,
+     "covered": 15,
      "strongest": 10,
      "with_down_cell": 0,
      "serving": 10,
@@ -3002,6 +3333,7 @@
     },
     "CCL00001_ab_1": {
      "present": 15,
+     "covered": 13,
      "strongest": 12,
      "with_down_cell": 0,
      "serving": 12,
@@ -3012,6 +3344,7 @@
     },
     "CCL00002_aa_1": {
      "present": 19,
+     "covered": 18,
      "strongest": 13,
      "with_down_cell": 9,
      "serving": 14,
@@ -3022,6 +3355,7 @@
     },
     "CCL00003_ab_1": {
      "present": 13,
+     "covered": 4,
      "strongest": 7,
      "with_down_cell": 7,
      "serving": 7,
@@ -3032,6 +3366,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 9,
+     "covered": 4,
      "strongest": 0,
      "with_down_cell": 7,
      "serving": 0,
@@ -3045,19 +3380,23 @@
   {
    "area_id": "study_area",
    "total": 400,
-   "queried": 72,
-   "unqueried": 328,
-   "valid": 51,
-   "missing": 21,
+   "queried": 80,
+   "unqueried": 320,
+   "valid": 57,
+   "missing": 23,
    "no_coverage": 0,
-   "other_cells_only": 16,
-   "down_cell_present": 35,
-   "down_cell_with_backup": 18,
-   "down_cell_with_backup_same_sample": 18,
+   "other_cells_only": 21,
+   "down_cell_present": 36,
+   "down_cell_with_backup": 19,
+   "down_cell_with_backup_same_sample": 19,
    "down_cell_without_backup": 17,
-   "boundary": 42,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 34,
+   "down_cell_covered_with_backup": 8,
+   "down_cell_covered_without_backup": 26,
+   "boundary": 43,
    "boundary_missing": 12,
-   "boundary_with_down_cell": 19,
+   "boundary_with_down_cell": 20,
    "outage_cells": [
     "CCL00001_aa_1",
     "CCL00001_ab_1"
@@ -3066,20 +3405,22 @@
     "CCL00002_aa_1",
     "CCL00003_ab_1"
    ],
-   "valid_sample_count": 103,
+   "valid_sample_count": 117,
    "cells": {
     "CCL00001_aa_1": {
-     "present": 22,
+     "present": 23,
+     "covered": 22,
      "strongest": 15,
      "with_down_cell": 0,
      "serving": 15,
-     "sample_count": 47,
+     "sample_count": 48,
      "rsrp_min_dbm": -111.47,
      "rsrp_max_dbm": -87.52,
-     "rsrp_mean_dbm": -99.96
+     "rsrp_mean_dbm": -100.14
     },
     "CCL00001_ab_1": {
      "present": 21,
+     "covered": 19,
      "strongest": 16,
      "with_down_cell": 0,
      "serving": 16,
@@ -3089,17 +3430,19 @@
      "rsrp_mean_dbm": -99.97
     },
     "CCL00002_aa_1": {
-     "present": 21,
-     "strongest": 13,
-     "with_down_cell": 11,
-     "serving": 14,
-     "sample_count": 40,
-     "rsrp_min_dbm": -111.38,
+     "present": 27,
+     "covered": 24,
+     "strongest": 19,
+     "with_down_cell": 12,
+     "serving": 20,
+     "sample_count": 54,
+     "rsrp_min_dbm": -111.55,
      "rsrp_max_dbm": -72.29,
-     "rsrp_mean_dbm": -101.02
+     "rsrp_mean_dbm": -99.42
     },
     "CCL00003_ab_1": {
      "present": 13,
+     "covered": 4,
      "strongest": 7,
      "with_down_cell": 7,
      "serving": 7,
@@ -3110,6 +3453,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 14,
+     "covered": 8,
      "strongest": 0,
      "with_down_cell": 12,
      "serving": 0,
@@ -3120,5 +3464,421 @@
     }
    }
   }
- ]
+ ],
+ "kpi_baseline": {
+  "selection": "same weekday and hours, 4 prior weeks",
+  "reference_time": "2026-02-10T09:00:00Z",
+  "cells": {
+   "CCL00002_aa_1": {
+    "prb_utilization": {
+     "mean": 41.0,
+     "prior_week_count": 4,
+     "sample_count": 12
+    }
+   },
+   "CCL00001_aa_1": {
+    "prb_utilization": {
+     "mean": 35.0,
+     "prior_week_count": 4,
+     "sample_count": 12
+    }
+   },
+   "CCL00001_ab_1": {
+    "prb_utilization": {
+     "mean": 28.0,
+     "prior_week_count": 4,
+     "sample_count": 12
+    }
+   }
+  }
+ },
+ "impact": {
+  "source": "transfer_tool",
+  "backup_loads": [
+   {
+    "cell_id": "CCL00002_aa_1",
+    "assigned_locations": 0,
+    "baseline_prb_percent": 41.0,
+    "estimated_prb_percent": 86.0
+   }
+  ]
+ },
+ "completion_checks": {
+  "boundary": {
+   "status": "complete",
+   "reason": "Every observed outage sector is closed in every checked direction",
+   "coverage_rsrp_dbm": -110.0,
+   "bin_degrees": 30.0,
+   "margin_bins": 1,
+   "sectors": {
+    "CCL00001_aa_1": {
+     "checked_bins": 12,
+     "closed": 6,
+     "open": 0,
+     "open_at_edge": 6,
+     "bins": {
+      "0": {
+       "bin": 0,
+       "label": "north 0-30 deg",
+       "active": true,
+       "reach_m": 255,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "1": {
+       "bin": 1,
+       "label": "north-east 30-60 deg",
+       "active": true,
+       "reach_m": 354,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "2": {
+       "bin": 2,
+       "label": "north-east 60-90 deg",
+       "active": true,
+       "reach_m": 667,
+       "reach_areas": [
+        "S1",
+        "S2",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "closing_area": "S2",
+       "closing_distance_m": 696,
+       "closing_unfetched": 0,
+       "closing_sampled": 7,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "S2 shows CCL00001_aa_1 absent at 7 sampled locations"
+      },
+      "3": {
+       "bin": 3,
+       "label": "east 90-120 deg",
+       "active": true,
+       "reach_m": 552,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "closing_area": "road_H1",
+       "closing_distance_m": 570,
+       "closing_unfetched": 0,
+       "closing_sampled": 9,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "road_H1 shows CCL00001_aa_1 absent at 9 sampled locations"
+      },
+      "4": {
+       "bin": 4,
+       "label": "south-east 120-150 deg",
+       "active": true,
+       "reach_m": 292,
+       "reach_areas": [
+        "S1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "5": {
+       "bin": 5,
+       "label": "south-east 150-180 deg",
+       "active": true,
+       "reach_m": 158,
+       "reach_areas": [
+        "S1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "6": {
+       "bin": 6,
+       "label": "south 180-210 deg",
+       "active": false,
+       "reach_m": 0,
+       "reach_areas": [],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [
+        "S1"
+       ],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "7": {
+       "bin": 7,
+       "label": "south-west 210-240 deg",
+       "active": true,
+       "reach_m": 71,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "closing_area": "S1",
+       "closing_distance_m": 212,
+       "closing_unfetched": 0,
+       "closing_sampled": 2,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "S1 shows CCL00001_aa_1 absent at 2 sampled locations"
+      },
+      "8": {
+       "bin": 8,
+       "label": "south-west 240-270 deg",
+       "active": false,
+       "reach_m": 0,
+       "reach_areas": [],
+       "unfetched_within_reach": 0,
+       "closing_area": "S1",
+       "closing_distance_m": 158,
+       "closing_unfetched": 0,
+       "closing_sampled": 1,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "S1 shows CCL00001_aa_1 absent at 1 sampled locations"
+      },
+      "9": {
+       "bin": 9,
+       "label": "west 270-300 deg",
+       "active": false,
+       "reach_m": 0,
+       "reach_areas": [],
+       "unfetched_within_reach": 0,
+       "closing_area": "S1",
+       "closing_distance_m": 158,
+       "closing_unfetched": 0,
+       "closing_sampled": 1,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "S1 shows CCL00001_aa_1 absent at 1 sampled locations"
+      },
+      "10": {
+       "bin": 10,
+       "label": "north-west 300-330 deg",
+       "active": true,
+       "reach_m": 212,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "closing_area": "S1",
+       "closing_distance_m": 292,
+       "closing_unfetched": 0,
+       "closing_sampled": 2,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "S1 shows CCL00001_aa_1 absent at 2 sampled locations"
+      },
+      "11": {
+       "bin": 11,
+       "label": "north-west 330-360 deg",
+       "active": true,
+       "reach_m": 255,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      }
+     }
+    },
+    "CCL00001_ab_1": {
+     "checked_bins": 10,
+     "closed": 5,
+     "open": 0,
+     "open_at_edge": 5,
+     "bins": {
+      "0": {
+       "bin": 0,
+       "label": "north 0-30 deg",
+       "active": false,
+       "reach_m": 0,
+       "reach_areas": [],
+       "unfetched_within_reach": 0,
+       "closing_area": "S1",
+       "closing_distance_m": 158,
+       "closing_unfetched": 0,
+       "closing_sampled": 2,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "S1 shows CCL00001_ab_1 absent at 2 sampled locations"
+      },
+      "3": {
+       "bin": 3,
+       "label": "east 90-120 deg",
+       "active": false,
+       "reach_m": 0,
+       "reach_areas": [],
+       "unfetched_within_reach": 0,
+       "closing_area": "S1",
+       "closing_distance_m": 158,
+       "closing_unfetched": 0,
+       "closing_sampled": 1,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "S1 shows CCL00001_ab_1 absent at 1 sampled locations"
+      },
+      "4": {
+       "bin": 4,
+       "label": "south-east 120-150 deg",
+       "active": true,
+       "reach_m": 212,
+       "reach_areas": [
+        "S1"
+       ],
+       "unfetched_within_reach": 0,
+       "closing_area": "S1",
+       "closing_distance_m": 292,
+       "closing_unfetched": 0,
+       "closing_sampled": 1,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "S1 shows CCL00001_ab_1 absent at 1 sampled locations"
+      },
+      "5": {
+       "bin": 5,
+       "label": "south-east 150-180 deg",
+       "active": true,
+       "reach_m": 158,
+       "reach_areas": [
+        "S1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "6": {
+       "bin": 6,
+       "label": "south 180-210 deg",
+       "active": false,
+       "reach_m": 0,
+       "reach_areas": [],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [
+        "S1"
+       ],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "7": {
+       "bin": 7,
+       "label": "south-west 210-240 deg",
+       "active": true,
+       "reach_m": 292,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "8": {
+       "bin": 8,
+       "label": "south-west 240-270 deg",
+       "active": true,
+       "reach_m": 255,
+       "reach_areas": [
+        "S1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      },
+      "9": {
+       "bin": 9,
+       "label": "west 270-300 deg",
+       "active": true,
+       "reach_m": 570,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "closing_area": "road_H1",
+       "closing_distance_m": 604,
+       "closing_unfetched": 0,
+       "closing_sampled": 5,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "road_H1 shows CCL00001_ab_1 absent at 5 sampled locations"
+      },
+      "10": {
+       "bin": 10,
+       "label": "north-west 300-330 deg",
+       "active": true,
+       "reach_m": 354,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "closing_area": "road_H1",
+       "closing_distance_m": 430,
+       "closing_unfetched": 0,
+       "closing_sampled": 1,
+       "closing_covered": 0,
+       "status": "closed",
+       "reason": "road_H1 shows CCL00001_ab_1 absent at 1 sampled locations"
+      },
+      "11": {
+       "bin": 11,
+       "label": "north-west 330-360 deg",
+       "active": true,
+       "reach_m": 255,
+       "reach_areas": [
+        "S1",
+        "road_H1"
+       ],
+       "unfetched_within_reach": 0,
+       "status": "open_at_edge",
+       "closing_area": null,
+       "no_sample_areas": [],
+       "reason": "no activity location with a sample beyond the reach inside the study area"
+      }
+     }
+    }
+   },
+   "unresolved": {}
+  },
+  "backup_load": {
+   "status": "complete",
+   "required": false,
+   "reason": "Transfer and load estimate present"
+  }
+ }
 }

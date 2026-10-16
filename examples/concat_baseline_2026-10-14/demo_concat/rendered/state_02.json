@@ -67,6 +67,7 @@
     "id": "study_area",
     "kind": "study_area",
     "description": "The whole study area.",
+    "name": "study_area",
     "grid_count": 400,
     "locations": 400,
     "contains_site": true,
@@ -78,6 +79,7 @@
     "id": "S1",
     "kind": "settlement",
     "description": "S1 (village) settlement area.",
+    "name": "Ashford village",
     "grid_count": 30,
     "locations": 30,
     "contains_site": true,
@@ -89,6 +91,7 @@
     "id": "S2",
     "kind": "settlement",
     "description": "S2 (hamlet) settlement area.",
+    "name": "Bramble hamlet",
     "grid_count": 16,
     "locations": 16,
     "contains_site": false,
@@ -100,6 +103,7 @@
     "id": "road_H1",
     "kind": "road_corridor",
     "description": "300 m corridor around the primary road H1.",
+    "name": "primary road H1",
     "grid_count": 60,
     "locations": 60,
     "contains_site": true,
@@ -111,6 +115,7 @@
     "id": "F1",
     "kind": "landuse",
     "description": "Farmland in the north-west; demand is not inferred from land use.",
+    "name": "F1",
     "grid_count": 54,
     "locations": 54,
     "contains_site": false,
@@ -133,6 +138,7 @@
    "id": "study_area",
    "kind": "study_area",
    "description": "The whole study area.",
+   "name": "study_area",
    "grid_count": 400,
    "locations": 400,
    "contains_site": true,
@@ -144,6 +150,7 @@
    "id": "S1",
    "kind": "settlement",
    "description": "S1 (village) settlement area.",
+   "name": "Ashford village",
    "grid_count": 30,
    "locations": 30,
    "contains_site": true,
@@ -155,6 +162,7 @@
    "id": "S2",
    "kind": "settlement",
    "description": "S2 (hamlet) settlement area.",
+   "name": "Bramble hamlet",
    "grid_count": 16,
    "locations": 16,
    "contains_site": false,
@@ -166,6 +174,7 @@
    "id": "road_H1",
    "kind": "road_corridor",
    "description": "300 m corridor around the primary road H1.",
+   "name": "primary road H1",
    "grid_count": 60,
    "locations": 60,
    "contains_site": true,
@@ -177,6 +186,7 @@
    "id": "F1",
    "kind": "landuse",
    "description": "Farmland in the north-west; demand is not inferred from land use.",
+   "name": "F1",
    "grid_count": 54,
    "locations": 54,
    "contains_site": false,
@@ -2533,6 +2543,10 @@
    "down_cell_with_backup": 0,
    "down_cell_with_backup_same_sample": 0,
    "down_cell_without_backup": 0,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 0,
+   "down_cell_covered_with_backup": 0,
+   "down_cell_covered_without_backup": 0,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2553,6 +2567,10 @@
    "down_cell_with_backup": 6,
    "down_cell_with_backup_same_sample": 6,
    "down_cell_without_backup": 15,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 21,
+   "down_cell_covered_with_backup": 1,
+   "down_cell_covered_without_backup": 20,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2568,6 +2586,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 15,
+     "covered": 15,
      "strongest": 11,
      "with_down_cell": 0,
      "serving": 11,
@@ -2578,6 +2597,7 @@
     },
     "CCL00001_ab_1": {
      "present": 14,
+     "covered": 13,
      "strongest": 10,
      "with_down_cell": 0,
      "serving": 10,
@@ -2588,6 +2608,7 @@
     },
     "CCL00002_aa_1": {
      "present": 4,
+     "covered": 1,
      "strongest": 0,
      "with_down_cell": 4,
      "serving": 0,
@@ -2598,6 +2619,7 @@
     },
     "CCL00003_ab_1": {
      "present": 2,
+     "covered": 0,
      "strongest": 0,
      "with_down_cell": 2,
      "serving": 0,
@@ -2608,6 +2630,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 9,
+     "covered": 5,
      "strongest": 0,
      "with_down_cell": 9,
      "serving": 0,
@@ -2630,6 +2653,10 @@
    "down_cell_with_backup": 1,
    "down_cell_with_backup_same_sample": 1,
    "down_cell_without_backup": 0,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 0,
+   "down_cell_covered_with_backup": 0,
+   "down_cell_covered_without_backup": 0,
    "boundary": 4,
    "boundary_missing": 2,
    "boundary_with_down_cell": 0,
@@ -2643,6 +2670,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 1,
+     "covered": 0,
      "strongest": 0,
      "with_down_cell": 0,
      "serving": 0,
@@ -2653,6 +2681,7 @@
     },
     "CCL00002_aa_1": {
      "present": 6,
+     "covered": 6,
      "strongest": 6,
      "with_down_cell": 1,
      "serving": 6,
@@ -2675,6 +2704,10 @@
    "down_cell_with_backup": 16,
    "down_cell_with_backup_same_sample": 16,
    "down_cell_without_backup": 10,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 24,
+   "down_cell_covered_with_backup": 7,
+   "down_cell_covered_without_backup": 17,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2690,6 +2723,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 16,
+     "covered": 15,
      "strongest": 10,
      "with_down_cell": 0,
      "serving": 10,
@@ -2700,6 +2734,7 @@
     },
     "CCL00001_ab_1": {
      "present": 15,
+     "covered": 13,
      "strongest": 12,
      "with_down_cell": 0,
      "serving": 12,
@@ -2710,6 +2745,7 @@
     },
     "CCL00002_aa_1": {
      "present": 19,
+     "covered": 18,
      "strongest": 13,
      "with_down_cell": 9,
      "serving": 14,
@@ -2720,6 +2756,7 @@
     },
     "CCL00003_ab_1": {
      "present": 13,
+     "covered": 4,
      "strongest": 7,
      "with_down_cell": 7,
      "serving": 7,
@@ -2730,6 +2767,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 9,
+     "covered": 4,
      "strongest": 0,
      "with_down_cell": 7,
      "serving": 0,
@@ -2752,6 +2790,10 @@
    "down_cell_with_backup": 18,
    "down_cell_with_backup_same_sample": 18,
    "down_cell_without_backup": 17,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 33,
+   "down_cell_covered_with_backup": 7,
+   "down_cell_covered_without_backup": 26,
    "boundary": 42,
    "boundary_missing": 12,
    "boundary_with_down_cell": 19,
@@ -2767,6 +2809,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 22,
+     "covered": 21,
      "strongest": 15,
      "with_down_cell": 0,
      "serving": 15,
@@ -2777,6 +2820,7 @@
     },
     "CCL00001_ab_1": {
      "present": 21,
+     "covered": 19,
      "strongest": 16,
      "with_down_cell": 0,
      "serving": 16,
@@ -2787,6 +2831,7 @@
     },
     "CCL00002_aa_1": {
      "present": 21,
+     "covered": 18,
      "strongest": 13,
      "with_down_cell": 11,
      "serving": 14,
@@ -2797,6 +2842,7 @@
     },
     "CCL00003_ab_1": {
      "present": 13,
+     "covered": 4,
      "strongest": 7,
      "with_down_cell": 7,
      "serving": 7,
@@ -2807,6 +2853,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 14,
+     "covered": 8,
      "strongest": 0,
      "with_down_cell": 12,
      "serving": 0,
@@ -2832,6 +2879,10 @@
    "down_cell_with_backup": 0,
    "down_cell_with_backup_same_sample": 0,
    "down_cell_without_backup": 0,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 0,
+   "down_cell_covered_with_backup": 0,
+   "down_cell_covered_without_backup": 0,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2853,6 +2904,10 @@
    "down_cell_with_backup": 6,
    "down_cell_with_backup_same_sample": 6,
    "down_cell_without_backup": 15,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 21,
+   "down_cell_covered_with_backup": 1,
+   "down_cell_covered_without_backup": 20,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2868,6 +2923,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 15,
+     "covered": 15,
      "strongest": 11,
      "with_down_cell": 0,
      "serving": 11,
@@ -2878,6 +2934,7 @@
     },
     "CCL00001_ab_1": {
      "present": 14,
+     "covered": 13,
      "strongest": 10,
      "with_down_cell": 0,
      "serving": 10,
@@ -2888,6 +2945,7 @@
     },
     "CCL00002_aa_1": {
      "present": 4,
+     "covered": 1,
      "strongest": 0,
      "with_down_cell": 4,
      "serving": 0,
@@ -2898,6 +2956,7 @@
     },
     "CCL00003_ab_1": {
      "present": 2,
+     "covered": 0,
      "strongest": 0,
      "with_down_cell": 2,
      "serving": 0,
@@ -2908,6 +2967,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 9,
+     "covered": 5,
      "strongest": 0,
      "with_down_cell": 9,
      "serving": 0,
@@ -2931,6 +2991,10 @@
    "down_cell_with_backup": 1,
    "down_cell_with_backup_same_sample": 1,
    "down_cell_without_backup": 0,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 0,
+   "down_cell_covered_with_backup": 0,
+   "down_cell_covered_without_backup": 0,
    "boundary": 4,
    "boundary_missing": 2,
    "boundary_with_down_cell": 0,
@@ -2944,6 +3008,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 1,
+     "covered": 0,
      "strongest": 0,
      "with_down_cell": 0,
      "serving": 0,
@@ -2954,6 +3019,7 @@
     },
     "CCL00002_aa_1": {
      "present": 6,
+     "covered": 6,
      "strongest": 6,
      "with_down_cell": 1,
      "serving": 6,
@@ -2977,6 +3043,10 @@
    "down_cell_with_backup": 16,
    "down_cell_with_backup_same_sample": 16,
    "down_cell_without_backup": 10,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 24,
+   "down_cell_covered_with_backup": 7,
+   "down_cell_covered_without_backup": 17,
    "boundary": 0,
    "boundary_missing": 0,
    "boundary_with_down_cell": 0,
@@ -2992,6 +3062,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 16,
+     "covered": 15,
      "strongest": 10,
      "with_down_cell": 0,
      "serving": 10,
@@ -3002,6 +3073,7 @@
     },
     "CCL00001_ab_1": {
      "present": 15,
+     "covered": 13,
      "strongest": 12,
      "with_down_cell": 0,
      "serving": 12,
@@ -3012,6 +3084,7 @@
     },
     "CCL00002_aa_1": {
      "present": 19,
+     "covered": 18,
      "strongest": 13,
      "with_down_cell": 9,
      "serving": 14,
@@ -3022,6 +3095,7 @@
     },
     "CCL00003_ab_1": {
      "present": 13,
+     "covered": 4,
      "strongest": 7,
      "with_down_cell": 7,
      "serving": 7,
@@ -3032,6 +3106,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 9,
+     "covered": 4,
      "strongest": 0,
      "with_down_cell": 7,
      "serving": 0,
@@ -3055,6 +3130,10 @@
    "down_cell_with_backup": 18,
    "down_cell_with_backup_same_sample": 18,
    "down_cell_without_backup": 17,
+   "coverage_rsrp_dbm": -110.0,
+   "down_cell_covered": 33,
+   "down_cell_covered_with_backup": 7,
+   "down_cell_covered_without_backup": 26,
    "boundary": 42,
    "boundary_missing": 12,
    "boundary_with_down_cell": 19,
@@ -3070,6 +3149,7 @@
    "cells": {
     "CCL00001_aa_1": {
      "present": 22,
+     "covered": 21,
      "strongest": 15,
      "with_down_cell": 0,
      "serving": 15,
@@ -3080,6 +3160,7 @@
     },
     "CCL00001_ab_1": {
      "present": 21,
+     "covered": 19,
      "strongest": 16,
      "with_down_cell": 0,
      "serving": 16,
@@ -3090,6 +3171,7 @@
     },
     "CCL00002_aa_1": {
      "present": 21,
+     "covered": 18,
      "strongest": 13,
      "with_down_cell": 11,
      "serving": 14,
@@ -3100,6 +3182,7 @@
     },
     "CCL00003_ab_1": {
      "present": 13,
+     "covered": 4,
      "strongest": 7,
      "with_down_cell": 7,
      "serving": 7,
@@ -3110,6 +3193,7 @@
     },
     "CCSN000004_aa_1": {
      "present": 14,
+     "covered": 8,
      "strongest": 0,
      "with_down_cell": 12,
      "serving": 0,

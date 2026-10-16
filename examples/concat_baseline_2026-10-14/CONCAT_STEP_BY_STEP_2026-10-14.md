@@ -352,9 +352,12 @@ Replace the whole function with:
     def finish_check_node(state: InvestigationState) -> dict[str, Any]:
         if COMPLETION_MODE == rc.COMPLETION_MODE_CHECKS:
             # The concat+checks condition: the same completion rule as the rendered package.
-            return finish_check(state, client, radio_technology, write_json=_write_json,
+            task = state["state"]["task"]
+            return finish_check(state, lambda c: is_outage_cell(c, task),
+                                lambda cells: eligible_backup_cells(cells, task), write_json=_write_json,
                                 model_name=getattr(model, "model", type(model).__name__))
-        checks = completion_evidence_status(state["state"], radio_technology)   # recorded, not enforced
+        task = state["state"]["task"]
+        checks = completion_evidence_status(state["state"], state["output_dir"], lambda c: is_outage_cell(c, task))   # recorded, not enforced
         index = state["step_index"]
         output_dir = Path(state["output_dir"])
         final_state = {**state["state"], "completion_checks": checks}
@@ -381,7 +384,7 @@ Imports this needs, next to the ones from step 3a:
 
 ```python
 from outage_harness_codex_state.completion_point import completion_evidence_status, finish_check
-from outage_harness_codex_state.radio import radio_technology
+from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell
 ```
 
 The completion rule in `completion_point.py` is provisional and is the same

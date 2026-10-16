@@ -1,0 +1,844 @@
+{
+  "report_type": "final_outage_investigation_report",
+  "generated_at": "2026-10-15T20:32:01-04:00",
+  "case": {
+    "down_cell_id": "CCL00001",
+    "outage_cell_ids": null,
+    "start_time": "2026-02-10T09:00:00Z",
+    "end_time": "2026-02-10T12:00:00Z",
+    "objective": "Find where the outage sectors serve users and which cells can take over."
+  },
+  "areas": {
+    "S1": {
+      "name": "Ashford village",
+      "covered": 21,
+      "valid": 21,
+      "classes": {
+        "total_loss": {
+          "count": 15,
+          "share_of_covered": 0.714,
+          "share_of_valid": 0.714,
+          "grid_ids": [
+            "167",
+            "168",
+            "170",
+            "171",
+            "187",
+            "189",
+            "191",
+            "207",
+            "209",
+            "227",
+            "229",
+            "230",
+            "231",
+            "249",
+            "250"
+          ]
+        },
+        "degrade_signal": {
+          "count": 2,
+          "share_of_covered": 0.095,
+          "share_of_valid": 0.095,
+          "grid_ids": [
+            "228",
+            "247"
+          ]
+        },
+        "degrade_capacity": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        },
+        "degrade_both": {
+          "count": 4,
+          "share_of_covered": 0.19,
+          "share_of_valid": 0.19,
+          "grid_ids": [
+            "172",
+            "212",
+            "232",
+            "252"
+          ]
+        },
+        "served_by_backup": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        },
+        "degrade_unknown": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        }
+      }
+    },
+    "S2": {
+      "name": "Bramble hamlet",
+      "covered": 1,
+      "valid": 12,
+      "classes": {
+        "total_loss": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        },
+        "degrade_signal": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        },
+        "degrade_capacity": {
+          "count": 1,
+          "share_of_covered": 1.0,
+          "share_of_valid": 0.083,
+          "grid_ids": [
+            "236"
+          ]
+        },
+        "degrade_both": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        },
+        "served_by_backup": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        },
+        "degrade_unknown": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        }
+      }
+    },
+    "road_H1": {
+      "name": "primary road H1",
+      "covered": 24,
+      "valid": 42,
+      "classes": {
+        "total_loss": {
+          "count": 10,
+          "share_of_covered": 0.417,
+          "share_of_valid": 0.238,
+          "grid_ids": [
+            "189",
+            "191",
+            "204",
+            "206",
+            "207",
+            "209",
+            "227",
+            "229",
+            "230",
+            "231"
+          ]
+        },
+        "degrade_signal": {
+          "count": 6,
+          "share_of_covered": 0.25,
+          "share_of_valid": 0.143,
+          "grid_ids": [
+            "205",
+            "224",
+            "225",
+            "226",
+            "228",
+            "247"
+          ]
+        },
+        "degrade_capacity": {
+          "count": 6,
+          "share_of_covered": 0.25,
+          "share_of_valid": 0.143,
+          "grid_ids": [
+            "174",
+            "193",
+            "195",
+            "213",
+            "214",
+            "215"
+          ]
+        },
+        "degrade_both": {
+          "count": 2,
+          "share_of_covered": 0.083,
+          "share_of_valid": 0.048,
+          "grid_ids": [
+            "212",
+            "232"
+          ]
+        },
+        "served_by_backup": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        },
+        "degrade_unknown": {
+          "count": 0,
+          "share_of_covered": 0.0,
+          "share_of_valid": 0.0,
+          "grid_ids": []
+        }
+      }
+    }
+  },
+  "totals": {
+    "total_loss": 25,
+    "degrade_signal": 8,
+    "degrade_capacity": 7,
+    "degrade_both": 6,
+    "served_by_backup": 0,
+    "degrade_unknown": 0
+  },
+  "locations": {
+    "167": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -97.81,
+      "backup": null
+    },
+    "168": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -92.28,
+      "backup": null
+    },
+    "170": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -96.6,
+      "backup": null
+    },
+    "171": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -97.7,
+      "backup": null
+    },
+    "172": {
+      "class": "degrade_both",
+      "outage_rsrp_dbm": -101.14,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -111.09,
+      "capacity_known": true
+    },
+    "187": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -96.05,
+      "backup": null
+    },
+    "189": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -69.91,
+      "backup": null
+    },
+    "191": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -89.21,
+      "backup": null
+    },
+    "207": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -97.88,
+      "backup": null
+    },
+    "209": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -77.9,
+      "backup": null
+    },
+    "212": {
+      "class": "degrade_both",
+      "outage_rsrp_dbm": -94.46,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -109.15,
+      "capacity_known": true
+    },
+    "227": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -104.62,
+      "backup": null
+    },
+    "228": {
+      "class": "degrade_signal",
+      "outage_rsrp_dbm": -99.79,
+      "backup": "CCL00003_ab_1",
+      "backup_rsrp_dbm": -111.44,
+      "capacity_known": false
+    },
+    "229": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -96.65,
+      "backup": null
+    },
+    "230": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -87.52,
+      "backup": null
+    },
+    "231": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -92.22,
+      "backup": null
+    },
+    "232": {
+      "class": "degrade_both",
+      "outage_rsrp_dbm": -95.97,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -110.72,
+      "capacity_known": true
+    },
+    "247": {
+      "class": "degrade_signal",
+      "outage_rsrp_dbm": -108.07,
+      "backup": "CCL00003_ab_1",
+      "backup_rsrp_dbm": -111.87,
+      "capacity_known": false
+    },
+    "249": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -103.63,
+      "backup": null
+    },
+    "250": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -97.78,
+      "backup": null
+    },
+    "252": {
+      "class": "degrade_both",
+      "outage_rsrp_dbm": -98.92,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -110.9,
+      "capacity_known": true
+    },
+    "236": {
+      "class": "degrade_capacity",
+      "outage_rsrp_dbm": -108.79,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -96.58,
+      "capacity_known": true
+    },
+    "174": {
+      "class": "degrade_capacity",
+      "outage_rsrp_dbm": -106.84,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -106.98,
+      "capacity_known": true
+    },
+    "193": {
+      "class": "degrade_capacity",
+      "outage_rsrp_dbm": -102.25,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -107.94,
+      "capacity_known": true
+    },
+    "195": {
+      "class": "degrade_capacity",
+      "outage_rsrp_dbm": -109.71,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -103.57,
+      "capacity_known": true
+    },
+    "204": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -108.48,
+      "backup": null
+    },
+    "205": {
+      "class": "degrade_signal",
+      "outage_rsrp_dbm": -105.14,
+      "backup": "CCL00003_ab_1",
+      "backup_rsrp_dbm": -111.9,
+      "capacity_known": false
+    },
+    "206": {
+      "class": "total_loss",
+      "outage_rsrp_dbm": -100.5,
+      "backup": null
+    },
+    "213": {
+      "class": "degrade_capacity",
+      "outage_rsrp_dbm": -103.1,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -106.66,
+      "capacity_known": true
+    },
+    "214": {
+      "class": "degrade_capacity",
+      "outage_rsrp_dbm": -106.83,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -107.4,
+      "capacity_known": true
+    },
+    "215": {
+      "class": "degrade_capacity",
+      "outage_rsrp_dbm": -109.36,
+      "backup": "CCL00002_aa_1",
+      "backup_rsrp_dbm": -101.05,
+      "capacity_known": true
+    },
+    "224": {
+      "class": "degrade_signal",
+      "outage_rsrp_dbm": -109.46,
+      "backup": "CCL00003_ab_1",
+      "backup_rsrp_dbm": -110.45,
+      "capacity_known": false
+    },
+    "225": {
+      "class": "degrade_signal",
+      "outage_rsrp_dbm": -107.6,
+      "backup": "CCL00003_ab_1",
+      "backup_rsrp_dbm": -110.74,
+      "capacity_known": false
+    },
+    "226": {
+      "class": "degrade_signal",
+      "outage_rsrp_dbm": -105.02,
+      "backup": "CCL00003_ab_1",
+      "backup_rsrp_dbm": -110.98,
+      "capacity_known": false
+    }
+  },
+  "completion": {
+    "boundary": {
+      "status": "complete",
+      "reason": "Every observed outage sector is closed in every checked direction",
+      "coverage_rsrp_dbm": -110.0,
+      "bin_degrees": 30.0,
+      "margin_bins": 1,
+      "sectors": {
+        "CCL00001_aa_1": {
+          "checked_bins": 12,
+          "closed": 6,
+          "open": 0,
+          "open_at_edge": 6,
+          "bins": {
+            "0": {
+              "bin": 0,
+              "label": "north 0-30 deg",
+              "active": true,
+              "reach_m": 255,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "1": {
+              "bin": 1,
+              "label": "north-east 30-60 deg",
+              "active": true,
+              "reach_m": 354,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "2": {
+              "bin": 2,
+              "label": "north-east 60-90 deg",
+              "active": true,
+              "reach_m": 667,
+              "reach_areas": [
+                "S1",
+                "S2",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "closing_area": "S2",
+              "closing_distance_m": 696,
+              "closing_unfetched": 0,
+              "closing_sampled": 7,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "S2 shows CCL00001_aa_1 absent at 7 sampled locations"
+            },
+            "3": {
+              "bin": 3,
+              "label": "east 90-120 deg",
+              "active": true,
+              "reach_m": 552,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "closing_area": "road_H1",
+              "closing_distance_m": 570,
+              "closing_unfetched": 0,
+              "closing_sampled": 9,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "road_H1 shows CCL00001_aa_1 absent at 9 sampled locations"
+            },
+            "4": {
+              "bin": 4,
+              "label": "south-east 120-150 deg",
+              "active": true,
+              "reach_m": 292,
+              "reach_areas": [
+                "S1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "5": {
+              "bin": 5,
+              "label": "south-east 150-180 deg",
+              "active": true,
+              "reach_m": 158,
+              "reach_areas": [
+                "S1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "6": {
+              "bin": 6,
+              "label": "south 180-210 deg",
+              "active": false,
+              "reach_m": 0,
+              "reach_areas": [],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [
+                "S1"
+              ],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "7": {
+              "bin": 7,
+              "label": "south-west 210-240 deg",
+              "active": true,
+              "reach_m": 71,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "closing_area": "S1",
+              "closing_distance_m": 212,
+              "closing_unfetched": 0,
+              "closing_sampled": 2,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "S1 shows CCL00001_aa_1 absent at 2 sampled locations"
+            },
+            "8": {
+              "bin": 8,
+              "label": "south-west 240-270 deg",
+              "active": false,
+              "reach_m": 0,
+              "reach_areas": [],
+              "unfetched_within_reach": 0,
+              "closing_area": "S1",
+              "closing_distance_m": 158,
+              "closing_unfetched": 0,
+              "closing_sampled": 1,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "S1 shows CCL00001_aa_1 absent at 1 sampled locations"
+            },
+            "9": {
+              "bin": 9,
+              "label": "west 270-300 deg",
+              "active": false,
+              "reach_m": 0,
+              "reach_areas": [],
+              "unfetched_within_reach": 0,
+              "closing_area": "S1",
+              "closing_distance_m": 158,
+              "closing_unfetched": 0,
+              "closing_sampled": 1,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "S1 shows CCL00001_aa_1 absent at 1 sampled locations"
+            },
+            "10": {
+              "bin": 10,
+              "label": "north-west 300-330 deg",
+              "active": true,
+              "reach_m": 212,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "closing_area": "S1",
+              "closing_distance_m": 292,
+              "closing_unfetched": 0,
+              "closing_sampled": 2,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "S1 shows CCL00001_aa_1 absent at 2 sampled locations"
+            },
+            "11": {
+              "bin": 11,
+              "label": "north-west 330-360 deg",
+              "active": true,
+              "reach_m": 255,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            }
+          }
+        },
+        "CCL00001_ab_1": {
+          "checked_bins": 10,
+          "closed": 5,
+          "open": 0,
+          "open_at_edge": 5,
+          "bins": {
+            "0": {
+              "bin": 0,
+              "label": "north 0-30 deg",
+              "active": false,
+              "reach_m": 0,
+              "reach_areas": [],
+              "unfetched_within_reach": 0,
+              "closing_area": "S1",
+              "closing_distance_m": 158,
+              "closing_unfetched": 0,
+              "closing_sampled": 2,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "S1 shows CCL00001_ab_1 absent at 2 sampled locations"
+            },
+            "3": {
+              "bin": 3,
+              "label": "east 90-120 deg",
+              "active": false,
+              "reach_m": 0,
+              "reach_areas": [],
+              "unfetched_within_reach": 0,
+              "closing_area": "S1",
+              "closing_distance_m": 158,
+              "closing_unfetched": 0,
+              "closing_sampled": 1,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "S1 shows CCL00001_ab_1 absent at 1 sampled locations"
+            },
+            "4": {
+              "bin": 4,
+              "label": "south-east 120-150 deg",
+              "active": true,
+              "reach_m": 212,
+              "reach_areas": [
+                "S1"
+              ],
+              "unfetched_within_reach": 0,
+              "closing_area": "S1",
+              "closing_distance_m": 292,
+              "closing_unfetched": 0,
+              "closing_sampled": 1,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "S1 shows CCL00001_ab_1 absent at 1 sampled locations"
+            },
+            "5": {
+              "bin": 5,
+              "label": "south-east 150-180 deg",
+              "active": true,
+              "reach_m": 158,
+              "reach_areas": [
+                "S1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "6": {
+              "bin": 6,
+              "label": "south 180-210 deg",
+              "active": false,
+              "reach_m": 0,
+              "reach_areas": [],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [
+                "S1"
+              ],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "7": {
+              "bin": 7,
+              "label": "south-west 210-240 deg",
+              "active": true,
+              "reach_m": 292,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "8": {
+              "bin": 8,
+              "label": "south-west 240-270 deg",
+              "active": true,
+              "reach_m": 255,
+              "reach_areas": [
+                "S1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            },
+            "9": {
+              "bin": 9,
+              "label": "west 270-300 deg",
+              "active": true,
+              "reach_m": 570,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "closing_area": "road_H1",
+              "closing_distance_m": 604,
+              "closing_unfetched": 0,
+              "closing_sampled": 5,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "road_H1 shows CCL00001_ab_1 absent at 5 sampled locations"
+            },
+            "10": {
+              "bin": 10,
+              "label": "north-west 300-330 deg",
+              "active": true,
+              "reach_m": 354,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "closing_area": "road_H1",
+              "closing_distance_m": 430,
+              "closing_unfetched": 0,
+              "closing_sampled": 1,
+              "closing_covered": 0,
+              "status": "closed",
+              "reason": "road_H1 shows CCL00001_ab_1 absent at 1 sampled locations"
+            },
+            "11": {
+              "bin": 11,
+              "label": "north-west 330-360 deg",
+              "active": true,
+              "reach_m": 255,
+              "reach_areas": [
+                "S1",
+                "road_H1"
+              ],
+              "unfetched_within_reach": 0,
+              "status": "open_at_edge",
+              "closing_area": null,
+              "no_sample_areas": [],
+              "reason": "no activity location with a sample beyond the reach inside the study area"
+            }
+          }
+        }
+      },
+      "unresolved": {}
+    },
+    "backup_load": {
+      "status": "complete",
+      "required": false,
+      "reason": "Transfer and load estimate present"
+    }
+  },
+  "parameters": {
+    "coverage_rsrp_dbm": -110.0,
+    "signal_margin_db": 10.0,
+    "service_rsrp_dbm": -110.0,
+    "load_limit_percent": 80.0
+  },
+  "kpi_baseline": {
+    "selection": "same weekday and hours, 4 prior weeks",
+    "reference_time": "2026-02-10T09:00:00Z",
+    "cells": {
+      "CCL00002_aa_1": {
+        "prb_utilization": {
+          "mean": 41.0,
+          "prior_week_count": 4,
+          "sample_count": 12
+        }
+      },
+      "CCL00001_aa_1": {
+        "prb_utilization": {
+          "mean": 35.0,
+          "prior_week_count": 4,
+          "sample_count": 12
+        }
+      },
+      "CCL00001_ab_1": {
+        "prb_utilization": {
+          "mean": 28.0,
+          "prior_week_count": 4,
+          "sample_count": 12
+        }
+      }
+    }
+  },
+  "provenance": [
+    {
+      "id": "real_obs_01",
+      "function": "query_area_coverage",
+      "area": "S1",
+      "file": "artifacts/step_01_S1.json",
+      "status": "success"
+    },
+    {
+      "id": "real_obs_02",
+      "function": "query_area_coverage",
+      "area": "road_H1",
+      "file": "artifacts/step_02_road_H1.json",
+      "status": "success"
+    },
+    {
+      "id": "real_obs_03",
+      "function": "query_area_coverage",
+      "area": "S2",
+      "file": "artifacts/step_03_S2.json",
+      "status": "success"
+    }
+  ]
+}

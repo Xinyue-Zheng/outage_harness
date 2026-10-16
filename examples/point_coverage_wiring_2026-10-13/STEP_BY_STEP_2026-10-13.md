@@ -463,13 +463,15 @@ Copy `wiring/completion_point.py` into the package. Then:
 
 1. `langgraph_runner.py`, imports: add
    `from outage_harness_langgraph.completion_point import finish_check` and
-   `from outage_harness_langgraph.radio import radio_technology`; remove
+   `from outage_harness_langgraph.radio import eligible_backup_cells, is_outage_cell`; remove
    `completion_evidence_status` from the `policy` import.
 2. `langgraph_runner.py`, replace the whole `finish_check_node` with:
 
    ```python
        def finish_check_node(state: InvestigationState) -> dict[str, Any]:
-           return finish_check(state, client, radio_technology, write_json=_write_json,
+           task = state["state"]["task"]
+           return finish_check(state, lambda c: is_outage_cell(c, task),
+                               lambda cells: eligible_backup_cells(cells, task), write_json=_write_json,
                                model_name=getattr(model, "model", type(model).__name__))
    ```
 

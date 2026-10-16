@@ -42,6 +42,9 @@ IsOutage = Callable[[str], bool]
 EligibleBackups = Callable[[Iterable[str]], list[str]]
 
 _SAMPLE_CELL_KEYS_PREFIX = "top"
+# A cell counts as covering a location when some sample lists it at or above this RSRP,
+# whether it is the serving sector or a listed neighbour. Serving alone does not tell everything.
+COVERAGE_RSRP_DBM = -110.0
 _NOT_LISTED = (
     "A cell that is not listed at a location is not shown to be absent there: the "
     "point API lists the serving sector and only the strongest neighbours of each sample."
@@ -328,6 +331,10 @@ def area_summary(
     - down_cell_with_backup: of those, locations where some sample lists an
       eligible backup cell; down_cell_with_backup_same_sample narrows this to
       a backup listed in the same sample as the outage cell.
+    - down_cell_covered: valid locations where a sample lists an outage cell
+      at or above COVERAGE_RSRP_DBM, serving or not; _with_backup: a living
+      backup at or above the threshold in that same sample; _without_backup:
+      the rest. These three drive the completion check and the report.
     - cells[cell]: present (valid locations listing it), strongest (locations
       where it has the highest RSRP), with_down_cell (locations where a sample
       lists both it and an outage cell), serving (locations where it serves at
@@ -346,6 +353,8 @@ def area_summary(
     other_only: set[str] = set()
     all_cells = {cell for e in valid.values() for cell in e["cells"]}
     backups = set(eligible_backups(all_cells))
+    down_covered: set[str] = set()
+    covered_with_backup: set[str] = set()
     for grid_id, entry in valid.items():
         listed = set(entry["cells"])
         if not listed:
@@ -361,17 +370,27 @@ def area_summary(
                 for s in entry["samples"]
             ):
                 with_backup_same_sample.add(grid_id)
+            # Covered at threshold: an outage sector listed at or above COVERAGE_RSRP_DBM in some sample;
+            # with backup: a living backup at or above the threshold in that same sample.
+            for s in entry["samples"]:
+                outage_strong = [c for c, r in s["cells"].items() if is_outage(c) and r >= COVERAGE_RSRP_DBM]
+                if not outage_strong:
+                    continue
+                down_covered.add(grid_id)
+                if any(c in backups and r >= COVERAGE_RSRP_DBM for c, r in s["cells"].items()):
+                    covered_with_backup.add(grid_id)
         else:
             other_only.add(grid_id)
         strongest = min(entry["cells"], key=lambda c: (-entry["cells"][c]["rsrp_max_dbm"], c))
         together = {c for s in entry["samples"] if any(is_outage(x) for x in s["cells"]) for c in s["cells"]}
         for cell, stats in entry["cells"].items():
             summary = cells.setdefault(cell, {
-                "present": 0, "strongest": 0, "with_down_cell": 0, "serving": 0,
+                "present": 0, "covered": 0, "strongest": 0, "with_down_cell": 0, "serving": 0,
                 "sample_count": 0, "rsrp_min_dbm": stats["rsrp_min_dbm"],
                 "rsrp_max_dbm": stats["rsrp_max_dbm"], "rsrp_sum_dbm": 0.0,
             })
             summary["present"] += 1
+            summary["covered"] += int(stats["rsrp_max_dbm"] >= COVERAGE_RSRP_DBM)
             summary["strongest"] += int(cell == strongest)
             summary["with_down_cell"] += int(cell in together and not is_outage(cell))
             summary["serving"] += int(stats["serving_count"] > 0)
@@ -394,6 +413,10 @@ def area_summary(
         "down_cell_with_backup": len(with_backup),
         "down_cell_with_backup_same_sample": len(with_backup_same_sample),
         "down_cell_without_backup": len(down_present - with_backup),
+        "coverage_rsrp_dbm": COVERAGE_RSRP_DBM,
+        "down_cell_covered": len(down_covered),
+        "down_cell_covered_with_backup": len(covered_with_backup),
+        "down_cell_covered_without_backup": len(down_covered - covered_with_backup),
         "boundary": len(boundary),
         "boundary_missing": len(boundary & missing),
         "boundary_with_down_cell": len(boundary & down_present),

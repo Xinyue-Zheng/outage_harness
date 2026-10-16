@@ -26,7 +26,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "test_support"))
 sys.path.insert(0, str(HERE))
 
-from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell, radio_technology  # noqa: E402
+from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell  # noqa: E402
 
 import context_builder_concat as concat  # noqa: E402
 import runner_concat_nodes as rc  # noqa: E402
@@ -73,7 +73,7 @@ def run_condition(condition: str, out: Path) -> dict:
         (out / f"LLM_input_{index:02d}.txt").write_text(rendered.text, encoding="utf-8")
         name = decision["action"]["function"]
         if name == "finish":
-            completion = completion_evidence_status(state, radio_technology)
+            completion = completion_evidence_status(state, run_dir, is_outage)
             rows.append({"round": index, "action": "finish", "input_chars": len(rendered.text)})
             break
         result = fetch_area_points(state, decision["action"]["parameters"]["area_id"], out, fake_point_api,

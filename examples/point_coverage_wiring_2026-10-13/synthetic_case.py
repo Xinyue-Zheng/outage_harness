@@ -182,7 +182,8 @@ def build_case(run_dir: Path) -> dict[str, Any]:
         kind, description = descriptions[area_id]
         centers = [((int(g) % GRID["columns"] + 0.5) * GRID["spacing_m"] - sx, (int(g) // GRID["columns"] + 0.5) * GRID["spacing_m"] - sy) for g in ids]
         nearest = min(math.hypot(dx, dy) for dx, dy in centers)
-        area_meta[area_id] = {"id": area_id, "kind": kind, "description": description,
+        names = {"S1": "Ashford village", "S2": "Bramble hamlet", "road_H1": "primary road H1"}
+        area_meta[area_id] = {"id": area_id, "kind": kind, "description": description, "name": names.get(area_id, area_id),
                               "grid_count": len(ids), "locations": len(ids),
                               "contains_site": nearest < GRID["spacing_m"],
                               "nearest_distance_from_site_m": round(nearest),

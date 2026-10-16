@@ -8,8 +8,8 @@ Completion (the boundary check), agreed 2026-10-16:
   above COVERAGE_RSRP_DBM, serving or not. It is absent at a location when
   the location has samples and the sector is never listed at or above the
   threshold. A location with no sample is neither.
-- Only activity locations matter: grid locations inside a settlement, a road
-  corridor or an activity area. Nothing else is ever required.
+- Only activity locations matter: grid locations inside a settlement or a
+  road corridor. Nothing else is ever required.
 - Direction comes from the data. The compass around the site is divided into
   bins of BIN_DEGREES. A bin is active for a sector when the sector covers
   some fetched location in it. Active bins plus MARGIN_BINS on each side are
@@ -43,7 +43,7 @@ from typing import Any
 
 from point_coverage import COVERAGE_RSRP_DBM, read_geometry
 
-ACTIVITY_KINDS = {"settlement", "road_corridor", "activity_area"}
+ACTIVITY_KINDS = {"settlement", "road_corridor"}
 BIN_DEGREES = 30.0
 MARGIN_BINS = 1
 ACCEPT_EDGE_OPEN = True

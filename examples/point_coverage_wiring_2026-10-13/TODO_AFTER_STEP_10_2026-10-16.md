@@ -173,26 +173,84 @@ prints the option list. An error names what is wrong:
 
 Repeat with `outage_harness_langgraph` for the rendered package.
 
-## F. First runs
+## F. Running
 
-1. Rendered package, fake API, no model cost beyond the decisions:
+From the directory that holds `.venv`, the two packages and `debug_live.py`.
+
+### F1. Activate the environment
+
+| shell | command |
+|---|---|
+| bash or zsh | `source .venv/bin/activate` |
+| Windows PowerShell | `.venv\Scripts\Activate.ps1` |
+| Windows cmd | `.venv\Scripts\activate.bat` |
+
+Or skip activation and call the interpreter by path:
+`.venv/bin/python` (Linux, macOS) or `.venv\Scripts\python` (Windows) in
+place of `python` below.
+
+### F2. The certificate and the point API token
+
+The certificate file must be PEM: its first line is
+`-----BEGIN CERTIFICATE-----`. A `.crt` file usually is. Check with
+`head -1 <file>`; if the first line is binary, convert once with
+`openssl x509 -inform der -in cert.crt -out cert.pem` and use the `.pem`.
+
+Pass it with `--ca-bundle`; the script sets `REQUESTS_CA_BUNDLE` and
+`SSL_CERT_FILE` before any client is imported. The point API token is read
+from the environment variable `COVERAGE_API_TOKEN` (change the name with
+`--token-env`):
 
 ```
-python -m outage_harness_langgraph.run_case --condition rendered --fake-point-api \
-    --down-cell CCL00001 --start-time 2026-02-10T09:00:00Z --end-time 2026-02-10T12:00:00Z \
-    --output runs/fake_rendered --max-steps 8 --query-budget 300 \
-    --ca-bundle <cert.pem>
+export COVERAGE_API_TOKEN=<token>          # bash, zsh
+$env:COVERAGE_API_TOKEN = "<token>"        # PowerShell
 ```
 
-   Expect: the context's "Completion checks" section shows the direction
-   rule; after a finish the run directory has `final_report.md`, or
-   `steps/step_NN/validation.json` shows "Completion refused" with the open
-   directions.
+### F3. The commands
 
-2. Concat package, same command with `--condition concat` and the concat
-   module name, no `--verifier-model`.
+Concat package:
 
-3. Then the real API, small `--query-budget`, one settlement.
+```
+python -m outage_harness_codex_state.run_case --condition concat \
+    --down-cell <ID> --start-time <YYYY-MM-DDTHH:MM:SSZ> --end-time <YYYY-MM-DDTHH:MM:SSZ> \
+    --output runs/case1_concat --max-steps 10 --query-budget 300 \
+    --ca-bundle /path/to/certificate.crt
+```
+
+Rendered package, same case:
+
+```
+python -m outage_harness_langgraph.run_case --condition rendered \
+    --down-cell <ID> --start-time <YYYY-MM-DDTHH:MM:SSZ> --end-time <YYYY-MM-DDTHH:MM:SSZ> \
+    --output runs/case1_rendered --max-steps 10 --query-budget 300 \
+    --ca-bundle /path/to/certificate.crt
+```
+
+Options and their defaults: `--max-steps 8`, `--query-budget 1500`
+locations, `--time-cap 3600` seconds, `--tool-call-cap 20`,
+`--rejection-cap 3`, `--repeat-cap 2`. Explicit outage sectors:
+`--outage-cell-ids <id1> <id2>`. The rendered package runs a verifier unless
+`--no-verifier` is given; the concat package never does. The output
+directory must be new or empty; each run gets its own.
+
+Start with a small `--query-budget` (300) and one case; raise it once a run
+ends with `complete`.
+
+### F4. What to look at afterwards
+
+In the output directory:
+
+- `run.json`: `end_reason` (`complete`, or a cap), `steps`, `condition`.
+- `final_report.md` and `final_report.json`: only when the run completed.
+- `steps/step_NN/LLM_input.txt`: exactly what the model received that round.
+- `steps/step_NN/validation.json`: `accepted`, or `rejected` with the
+  reason; a refused finish reads "Completion refused" and lists the open
+  directions.
+- `state_NN.json`: the State after each round; `summaries` has the per-area
+  counts, `coverage` the per-location samples.
+- `trace.txt`: the whole run in one file.
+
+Keep the whole directory; nothing outside it is written.
 
 ## G. Not changed, on purpose
 

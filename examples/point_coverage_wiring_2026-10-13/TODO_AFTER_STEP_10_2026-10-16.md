@@ -100,6 +100,24 @@ Concat package, the node from step 10, with the two changed lines:
         checks = completion_evidence_status(state["state"], state["output_dir"], lambda c: is_outage_cell(c, task))
 ```
 
+In the model-mode branch of that node, the lines after `checks = ...` must
+also write the report; the model's finish is accepted, but the report is
+still program-generated from the hidden State. Replace the lines from
+`final_state = {**state["state"], "completion_checks": checks}` down to the
+`finish_step = {...}` dict with:
+
+```python
+        markdown, data = build_report({**state["state"], "completion_checks": checks}, output_dir)
+        (output_dir / "final_report.md").write_text(markdown, encoding="utf-8")
+        _write_json(output_dir / "final_report.json", data)
+        final_state = {**state["state"], "completion_checks": checks, "final_report": "final_report.md"}
+        finish_step = {"step": index, "decision": state["decision"], "status": "finished",
+                       "completion_checks": checks, "accepted_by": "model", "final_report": "final_report.md"}
+```
+
+and add `from outage_harness_codex_state.report import build_report` to the
+imports. Step 10 of the concat note shows the whole node with this in place.
+
 The rest of the step 10 node stays. `finish_check` now writes
 `final_report.md` and `final_report.json` itself through `report.build_report`;
 it no longer calls `client.call("final_step_report", ...)`.

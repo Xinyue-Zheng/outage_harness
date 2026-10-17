@@ -390,9 +390,14 @@ Replace the whole function with:
         checks = completion_evidence_status(state["state"], state["output_dir"], lambda c: is_outage_cell(c, task))   # recorded, not enforced
         index = state["step_index"]
         output_dir = Path(state["output_dir"])
-        final_state = {**state["state"], "completion_checks": checks}
+        # The report is program-generated from the hidden State, so the concat run gets one too,
+        # whatever the checks say; its header states the check result.
+        markdown, data = build_report({**state["state"], "completion_checks": checks}, output_dir)
+        (output_dir / "final_report.md").write_text(markdown, encoding="utf-8")
+        _write_json(output_dir / "final_report.json", data)
+        final_state = {**state["state"], "completion_checks": checks, "final_report": "final_report.md"}
         finish_step = {"step": index, "decision": state["decision"], "status": "finished",
-                       "completion_checks": checks, "accepted_by": "model"}
+                       "completion_checks": checks, "accepted_by": "model", "final_report": "final_report.md"}
         steps = [*state["steps"], finish_step]
         step_dir = output_dir / "steps" / f"step_{index:02d}"
         _write_json(step_dir / "finish.json", {"status": "finished", "accepted_by": "model", "completion_checks": checks})
@@ -405,7 +410,7 @@ Replace the whole function with:
             "case_state": state["case_state_path"], "model": getattr(model, "model", type(model).__name__),
             "condition": CONDITION, "steps": len(steps), "finished": True, "end_reason": "model_finish",
             "observations": len(state["observations"]), "tool_declaration_count": len(state["tools"]),
-            "orchestrator": "langgraph",
+            "final_report": "final_report.md", "orchestrator": "langgraph",
         })
         return {"state": final_state, "steps": steps, "finished": True, "error": None}
 ```
@@ -415,6 +420,7 @@ Imports this needs, next to the ones from step 3a:
 ```python
 from outage_harness_codex_state.completion_point import completion_evidence_status, finish_check
 from outage_harness_codex_state.radio import eligible_backup_cells, is_outage_cell
+from outage_harness_codex_state.report import build_report
 ```
 
 The completion rule in `completion_point.py` is provisional and is the same

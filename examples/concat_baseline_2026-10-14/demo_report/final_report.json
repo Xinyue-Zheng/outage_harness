@@ -1,6 +1,6 @@
 {
   "report_type": "final_outage_investigation_report",
-  "generated_at": "2026-10-16T18:21:10-04:00",
+  "generated_at": "2026-10-17T19:00:41-04:00",
   "case": {
     "down_cell_id": "CCL00001",
     "outage_cell_ids": null,
@@ -781,8 +781,20 @@
     },
     "backup_load": {
       "status": "complete",
-      "required": false,
-      "reason": "Transfer and load estimate present"
+      "required": true,
+      "reason": "Every candidate was queried; no KPI rows for: CCL00003_ab_1 (reported as missing)",
+      "candidates": [
+        "CCL00002_aa_1",
+        "CCL00003_ab_1"
+      ],
+      "with_baseline": [
+        "CCL00002_aa_1"
+      ],
+      "missing": [
+        "CCL00003_ab_1"
+      ],
+      "not_queried": [],
+      "transfer_estimate": "present"
     }
   },
   "parameters": {
@@ -838,6 +850,13 @@
       "function": "query_area_coverage",
       "area": "S2",
       "file": "artifacts/step_03_S2.json",
+      "status": "success"
+    },
+    {
+      "id": "real_obs_04",
+      "function": "query_lte_rrc_prb",
+      "area": null,
+      "file": "artifacts/query_kpi_step_04.csv",
       "status": "success"
     }
   ]

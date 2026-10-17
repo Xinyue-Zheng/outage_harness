@@ -165,8 +165,8 @@ Remaining unknowns:
 - Land-use labels do not establish population or complete network demand.
 - Unqueried and missing coverage are distinct; neither is evidence of absence.
 
-Completion checks: not yet evaluated; status unknown.
-Final report inputs (use exactly for final_step_report): run_dir demo_concat/rendered; case_state_path demo_concat/rendered/state.json.
+Completion progress (computed by the program every round):
+- No round has been completed yet; the checks run after the first query.
 
 Query budget: 80 of 600 locations used; 520 remain. A coverage query costs the locations it fetches for the first time.
 

@@ -81,7 +81,10 @@ def build_report(state: dict[str, Any], run_dir: Path) -> tuple[str, dict[str, A
             f"- Outage window: {start} to {end} (planned; not evidence that it happened)",
             f"- Objective: {task.get('objective', '')}",
             f"- Generated: {datetime.now().astimezone().isoformat(timespec='seconds')}",
-            "- Program-generated from the run's State after the completion check; the model wrote none of it.",
+            f"- Run end: {state.get('end_reason', 'complete')}; boundary check {checks.get('boundary', {}).get('status', 'unknown')}; "
+            f"backup_load check {checks.get('backup_load', {}).get('status', 'unknown')} ({checks.get('backup_load', {}).get('reason', '')}).",
+            "- Program-generated from the run's State; the model wrote none of it. A run ended by a cap keeps "
+            "every unresolved item below as unknown.",
             "", "```", text.rstrip(), "```", "", "## KPI baseline", "", *_kpi_lines(state),
             "", "## Provenance", ""]
     for item in _provenance(state):

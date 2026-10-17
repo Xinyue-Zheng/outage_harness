@@ -2769,6 +2769,34 @@
     "error_points": 0,
     "error_grid_ids": []
    }
+  },
+  {
+   "id": "real_obs_04",
+   "action": {
+    "function": "query_lte_rrc_prb",
+    "parameters": {
+     "cell_ids": [
+      "CCL00001_aa_1",
+      "CCL00001_ab_1",
+      "CCL00002_aa_1",
+      "CCL00003_ab_1"
+     ],
+     "start_time": "2026-02-03T09:00:00Z",
+     "end_time": "2026-02-03T12:00:00Z"
+    }
+   },
+   "params": {
+    "cell_ids": [
+     "CCL00001_aa_1",
+     "CCL00001_ab_1",
+     "CCL00002_aa_1",
+     "CCL00003_ab_1"
+    ]
+   },
+   "result": {
+    "status": "success",
+    "output_file": "artifacts/query_kpi_step_04.csv"
+   }
   }
  ],
  "kpis": [],
@@ -3877,8 +3905,20 @@
   },
   "backup_load": {
    "status": "complete",
-   "required": false,
-   "reason": "Transfer and load estimate present"
+   "required": true,
+   "reason": "Every candidate was queried; no KPI rows for: CCL00003_ab_1 (reported as missing)",
+   "candidates": [
+    "CCL00002_aa_1",
+    "CCL00003_ab_1"
+   ],
+   "with_baseline": [
+    "CCL00002_aa_1"
+   ],
+   "missing": [
+    "CCL00003_ab_1"
+   ],
+   "not_queried": [],
+   "transfer_estimate": "present"
   }
  }
 }

@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from outage_harness_langgraph.radio import eligible_backup_cells, is_outage_cell  # noqa: E402
 
+from harness.completion_point import completion_evidence_status  # noqa: E402
 from harness.context_builder_point import build_context  # noqa: E402
 from harness.point_coverage import apply_point_coverage, fetch_area_points, inspect_point_coverage  # noqa: E402
 from harness.synthetic_case import TOOL_DECLARATIONS, build_case, fake_point_api  # noqa: E402
@@ -49,6 +50,7 @@ def main(run_dir: Path) -> None:
             "result": result,
         }
         state = apply_point_coverage(state, observation, run_dir, is_outage, backups)
+        state["completion_checks"] = completion_evidence_status(state, run_dir, is_outage)  # as update_state_node does
         state["query_budget"]["locations_spent"] += result["details"]["fetched"]
         state["id"] = f"state_{step:02d}"
         (run_dir / f"state_{step:02d}.json").write_text(json.dumps(state, indent=1) + "\n", encoding="utf-8")

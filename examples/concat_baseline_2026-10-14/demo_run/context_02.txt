@@ -166,8 +166,13 @@ Remaining unknowns:
 - Land-use labels do not establish population or complete network demand.
 - Unqueried and missing coverage are distinct; neither is evidence of absence.
 
-Completion checks: not yet evaluated; status unknown.
-Final report inputs (use exactly for final_step_report): run_dir demo_run; case_state_path demo_run/state.json.
+Completion progress (computed by the program every round):
+- boundary: not met.
+  CCL00001_aa_1, north-east 60-90 deg: covers to 552 m (S1, road_H1); S2 has 8 locations in this direction not fetched.
+- CCL00001_aa_1: 5 of 12 checked directions closed; open at the study-area edge, not required: north 0-30 deg, north-east 30-60 deg, south-east 120-150 deg, south-east 150-180 deg, south 180-210 deg, north-west 330-360 deg.
+- CCL00001_ab_1: 5 of 10 checked directions closed; open at the study-area edge, not required: south-east 150-180 deg, south 180-210 deg, south-west 210-240 deg, south-west 240-270 deg, north-west 330-360 deg.
+- backup_load: not met. KPI baseline not yet queried for: CCL00002_aa_1, CCL00003_ab_1.
+When every open item above is resolved, finish is accepted.
 
 Query budget: 72 of 600 locations used; 528 remain. A coverage query costs the locations it fetches for the first time.
 

@@ -2,8 +2,9 @@
 
 - Outage window: 2026-02-10T09:00:00Z to 2026-02-10T12:00:00Z (planned; not evidence that it happened)
 - Objective: Find where the outage sectors serve users and which cells can take over.
-- Generated: 2026-10-16T18:08:28-04:00
-- Program-generated from the run's State after the completion check; the model wrote none of it.
+- Generated: 2026-10-17T18:59:35-04:00
+- Run end: complete; boundary check complete; backup_load check complete (Every candidate was queried; no KPI rows for: CCL00003_ab_1 (reported as missing)).
+- Program-generated from the run's State; the model wrote none of it. A run ended by a cap keeps every unresolved item below as unknown.
 
 ```
 OUTAGE IMPACT REPORT
@@ -63,3 +64,4 @@ KPI baseline (same weekday and hours, 4 prior weeks):
 - real_obs_01: query_area_coverage area S1; success; file artifacts/step_01_S1.json
 - real_obs_02: query_area_coverage area road_H1; success; file artifacts/step_02_road_H1.json
 - real_obs_03: query_area_coverage area S2; success; file artifacts/step_03_S2.json
+- real_obs_04: query_lte_rrc_prb; success; file artifacts/query_kpi_step_04.csv

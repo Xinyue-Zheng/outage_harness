@@ -24,7 +24,11 @@ Completion (the boundary check), agreed 2026-10-16:
 - A bin with no activity location beyond the reach inside the study area is
   open at the study-area edge. It is reported, and under ACCEPT_EDGE_OPEN a
   finish may pass with it, until study-area expansion exists as an action.
-- Missing data never blocks. Backup load is reported, never required.
+- Missing data never blocks.
+- backup_load: every backup candidate seen in coverage must have had its KPI
+  baseline queried, because the redistribution analysis needs it. A candidate
+  whose query returned no rows is reported as missing and does not block; a
+  candidate never queried blocks.
 
 Report: see final_report. Every served location (covered at threshold) is
 put in one class: total loss, degrade by signal, degrade by capacity, both,
@@ -52,7 +56,10 @@ SIGNAL_MARGIN_DB = 10.0      # backup weaker than the outage sector by more than
 SERVICE_RSRP_DBM = COVERAGE_RSRP_DBM   # a backup below this does not count as adequate
 LOAD_LIMIT_PERCENT = 80.0    # estimated PRB above this: degrade by capacity
 PRB_METRIC = "MEAN_PRB_USED"   # the KPI column apply_kpi keeps as the PRB utilisation metric, in percent
-REQUIRED_CHECKS = ("boundary",)
+REQUIRED_CHECKS = ("boundary", "backup_load")
+# From this round on, a passing check ends the run without waiting for the model's finish.
+AUTO_STOP_FROM_ROUND = 5
+KPI_FUNCTIONS = {"query_lte_rrc_prb", "query_nr_rrc_prb"}
 
 COMPASS = ("north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west")
 
@@ -192,10 +199,81 @@ def completion_evidence_status(state: dict[str, Any], run_dir: str | Path, is_ou
         "coverage_rsrp_dbm": COVERAGE_RSRP_DBM, "bin_degrees": BIN_DEGREES, "margin_bins": MARGIN_BINS,
         "sectors": per_sector, "unresolved": unresolved,
     }
-    return {"boundary": boundary,
-            "backup_load": {"status": "complete" if state.get("impact") else "unknown", "required": False,
-                            "reason": ("Transfer and load estimate present" if state.get("impact") else
-                                       "No transfer and load estimate was computed; reported, not required")}}
+    return {"boundary": boundary, "backup_load": backup_load_status(state)}
+
+
+def kpi_queried_cells(state: dict[str, Any]) -> set[str]:
+    """Cells named in a successful KPI query, whether or not rows came back."""
+    cells: set[str] = set()
+    for obs in state.get("observations") or []:
+        if not isinstance(obs, dict):
+            continue
+        action = obs.get("action") if isinstance(obs.get("action"), dict) else {}
+        function = action.get("function") or obs.get("function")
+        result = obs.get("result") if isinstance(obs.get("result"), dict) else {}
+        if function not in KPI_FUNCTIONS or result.get("status") != "success":
+            continue
+        params = obs.get("params") or action.get("parameters") or {}
+        for cell in params.get("cell_ids") or []:
+            cells.add(str(cell))
+        for call in (action.get("routing") or {}).get("calls") or []:
+            for cell in call.get("cell_ids") or []:
+                cells.add(str(cell))
+    return cells
+
+
+def backup_load_status(state: dict[str, Any]) -> dict[str, Any]:
+    """Required: every backup candidate's KPI baseline has been queried. Queried but
+    empty is missing (reported, does not block); never queried blocks."""
+    candidates = sorted(state.get("backup_candidates") or [])
+    baselines = ((state.get("kpi_baselines") or {}).get("cells") or {})
+    with_baseline = sorted(c for c in candidates if PRB_METRIC in (baselines.get(c) or {}))
+    queried = kpi_queried_cells(state)
+    missing = sorted(c for c in candidates if c not in with_baseline and c in queried)
+    not_queried = sorted(c for c in candidates if c not in with_baseline and c not in queried)
+    if not candidates:
+        status, reason = "unknown", "No backup candidate has been observed yet"
+    elif not_queried:
+        status, reason = "unknown", f"KPI baseline not yet queried for: {', '.join(not_queried)}"
+    elif missing:
+        status, reason = "complete", f"Every candidate was queried; no KPI rows for: {', '.join(missing)} (reported as missing)"
+    else:
+        status, reason = "complete", "Every backup candidate has a KPI baseline"
+    return {"status": status, "required": True, "reason": reason, "candidates": candidates,
+            "with_baseline": with_baseline, "missing": missing, "not_queried": not_queried,
+            "transfer_estimate": "present" if state.get("impact") else "absent"}
+
+
+def progress_lines(checks: dict[str, Any]) -> list[str]:
+    """The completion progress block rendered every round: open directions only, and
+    what to query next. Closed directions appear only in the finish feedback."""
+    boundary = checks.get("boundary") or {}
+    load = checks.get("backup_load") or {}
+    lines = ["Completion progress (computed by the program every round):"]
+    sectors = boundary.get("sectors") or {}
+    if boundary.get("status") == "complete":
+        lines.append("- boundary: met. Every observed outage sector is closed in every checked direction.")
+    else:
+        lines.append("- boundary: not met." + ("" if sectors else " No outage sector observed at or above the coverage threshold yet."))
+        for cell, sector in sectors.items():
+            for r in sector["bins"].values():
+                if r["status"] == "open":
+                    reach = f"covers to {r['reach_m']} m ({', '.join(r['reach_areas'])})" if r["active"] else "not covered"
+                    lines.append(f"  {cell}, {r['label']}: {reach}; {r['reason']}.")
+    for cell, sector in sectors.items():
+        edge = [r["label"] for r in sector["bins"].values() if r["status"] == "open_at_edge"]
+        lines.append(f"- {cell}: {sector['closed']} of {sector['checked_bins']} checked directions closed"
+                     + (f"; open at the study-area edge, not required: {', '.join(edge)}" if edge else "") + ".")
+    if load.get("status") == "complete":
+        lines.append("- backup_load: met. " + str(load.get("reason", "")) + ".")
+    else:
+        lines.append("- backup_load: not met. " + str(load.get("reason", "")) + ".")
+    unmet = unmet_required(checks)
+    if not unmet:
+        lines.append("All required checks pass now; finish will be accepted.")
+    else:
+        lines.append("When every open item above is resolved, finish is accepted.")
+    return lines
 
 
 def unmet_required(checks: dict[str, Any]) -> dict[str, Any]:
@@ -452,36 +530,66 @@ def final_report(state: dict[str, Any], run_dir: str | Path, is_outage: IsOutage
 # finish node ------------------------------------------------------------------------
 
 
-def finish_check(state: dict[str, Any], is_outage: IsOutage, eligible_backups: EligibleBackups, *,
-                 write_json: Any, model_name: str) -> dict[str, Any]:
-    """finish_check_node for langgraph_runner.py: checks first, then the program writes the report."""
-    run_dir = Path(state["output_dir"])
-    checks = completion_evidence_status(state["state"], run_dir, is_outage)
-    unmet = unmet_required(checks)
-    index = state["step_index"]
-    if unmet:
-        return {"state": {**state["state"], "completion_checks": checks},
-                "error": "Completion refused: " + json.dumps({k: v.get("unresolved", v.get("reason")) for k, v in unmet.items()})}
-    from .report import build_report  # the same report the tool writes
+def end_run(state: dict[str, Any], checks: dict[str, Any], *, end_reason: str, write_json: Any,
+            model_name: str, decision: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Write the report and the end-of-run files, whatever ended the run.
 
-    markdown, data = build_report({**state["state"], "completion_checks": checks}, run_dir)
+    end_reason: "complete" (the model's finish passed the checks),
+    "complete_program_stop" (the checks passed at or after AUTO_STOP_FROM_ROUND
+    without a finish), or a cap name. The report is written in every case; its
+    header carries the end reason and the check result.
+    """
+    from .report import build_report
+
+    run_dir = Path(state["output_dir"])
+    index = state["step_index"]
+    final_state = {**state["state"], "completion_checks": checks, "end_reason": end_reason,
+                   "final_report": "final_report.md"}
+    markdown, data = build_report(final_state, run_dir)
     (run_dir / "final_report.md").write_text(markdown, encoding="utf-8")
     write_json(run_dir / "final_report.json", data)
-    final_state = {**state["state"], "completion_checks": checks, "final_report": "final_report.md"}
-    finish_step = {"step": index, "decision": state["decision"], "status": "finished",
-                   "completion_checks": checks, "final_report": "final_report.md"}
+    finish_step = {"step": index, "decision": decision, "status": "finished" if end_reason.startswith("complete") else "ended",
+                   "end_reason": end_reason, "completion_checks": checks, "final_report": "final_report.md"}
     steps = [*state["steps"], finish_step]
     step_dir = run_dir / "steps" / f"step_{index:02d}"
+    step_dir.mkdir(parents=True, exist_ok=True)
     write_json(run_dir / "steps.json", steps)
     write_json(run_dir / "state.json", final_state)
-    write_json(step_dir / "finish.json", {"status": "finished", "completion_checks": checks})
+    write_json(step_dir / "finish.json", {"status": finish_step["status"], "end_reason": end_reason, "completion_checks": checks})
     write_json(step_dir / "state_after.json", final_state)
     write_json(run_dir / f"state_{index:02d}.json", final_state)
     write_json(step_dir / "step.json", finish_step)
     write_json(run_dir / "run.json", {
         "case_state": state["case_state_path"], "model": model_name, "steps": len(steps),
-        "finished": True, "end_reason": "complete", "observations": len(state["observations"]),
-        "tool_declaration_count": len(state["tools"]), "final_report": "final_report.md",
-        "orchestrator": "langgraph",
+        "finished": end_reason.startswith("complete"), "end_reason": end_reason,
+        "observations": len(state["observations"]), "tool_declaration_count": len(state["tools"]),
+        "final_report": "final_report.md", "orchestrator": "langgraph",
     })
     return {"state": final_state, "steps": steps, "finished": True, "error": None}
+
+
+def finish_check(state: dict[str, Any], is_outage: IsOutage, eligible_backups: EligibleBackups, *,
+                 write_json: Any, model_name: str) -> dict[str, Any]:
+    """finish_check_node: checks first; if they pass, the program writes the report and ends the run."""
+    checks = completion_evidence_status(state["state"], Path(state["output_dir"]), is_outage)
+    unmet = unmet_required(checks)
+    if unmet:
+        return {"state": {**state["state"], "completion_checks": checks},
+                "error": "Completion refused: " + json.dumps({k: v.get("unresolved", v.get("reason")) for k, v in unmet.items()})}
+    return end_run(state, checks, end_reason="complete", write_json=write_json, model_name=model_name,
+                   decision=state.get("decision"))
+
+
+def program_stop(state: dict[str, Any], new_state: dict[str, Any], steps: list[dict[str, Any]],
+                 observations: list[dict[str, Any]], is_outage: IsOutage, *, write_json: Any,
+                 model_name: str) -> dict[str, Any] | None:
+    """Called at the end of update_state_node. Computes the checks into new_state every
+    round; from AUTO_STOP_FROM_ROUND on, a passing check ends the run as
+    complete_program_stop. Returns the node update to use, or None to continue."""
+    index = state["step_index"]
+    checks = completion_evidence_status(new_state, Path(state["output_dir"]), is_outage)
+    new_state["completion_checks"] = checks
+    if index < AUTO_STOP_FROM_ROUND or unmet_required(checks):
+        return None
+    return end_run({**state, "state": new_state, "steps": steps, "observations": observations}, checks,
+                   end_reason="complete_program_stop", write_json=write_json, model_name=model_name)

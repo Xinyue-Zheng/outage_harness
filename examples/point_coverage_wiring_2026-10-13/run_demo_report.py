@@ -46,6 +46,13 @@ def main(run_dir: Path) -> None:
                              "cells": {"CCL00002_aa_1": {"MEAN_PRB_USED": {"mean": 41.0, "prior_week_count": 4, "sample_count": 12}},
                                        "CCL00001_aa_1": {"MEAN_PRB_USED": {"mean": 35.0, "prior_week_count": 4, "sample_count": 12}},
                                        "CCL00001_ab_1": {"MEAN_PRB_USED": {"mean": 28.0, "prior_week_count": 4, "sample_count": 12}}}}
+    # The KPI query that fetched the baselines, as update_state_node records it: CCL00003_ab_1 was
+    # queried but returned no rows, so it is reported as missing and does not block.
+    state["observations"].append({"id": "real_obs_04", "action": {"function": "query_lte_rrc_prb",
+                                  "parameters": {"cell_ids": ["CCL00001_aa_1", "CCL00001_ab_1", "CCL00002_aa_1", "CCL00003_ab_1"],
+                                                 "start_time": "2026-02-03T09:00:00Z", "end_time": "2026-02-03T12:00:00Z"}},
+                                  "params": {"cell_ids": ["CCL00001_aa_1", "CCL00001_ab_1", "CCL00002_aa_1", "CCL00003_ab_1"]},
+                                  "result": {"status": "success", "output_file": "artifacts/query_kpi_step_04.csv"}})
     state["impact"] = {"source": "transfer_tool", "backup_loads": [
         {"cell_id": "CCL00002_aa_1", "assigned_locations": 0, "baseline_prb_percent": 41.0, "estimated_prb_percent": 86.0}]}
     checks = completion_evidence_status(state, run_dir, is_outage)

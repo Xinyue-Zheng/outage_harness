@@ -634,26 +634,14 @@ def _unknown_lines(state: Mapping[str, Any]) -> list[str]:
 
 
 def _completion_state_lines(state: Mapping[str, Any]) -> list[str]:
+    """The completion progress block, from the checks the program computed after the last round."""
+    from .completion_point import progress_lines
+
     checks = state.get("completion_checks")
-    if not checks:
-        lines = ["Completion checks: not yet evaluated; status unknown."]
-    else:
-        lines = ["Completion checks from the last finish attempt:"]
-        boundary = checks.get("boundary") if isinstance(checks, Mapping) else None
-        if isinstance(boundary, Mapping) and isinstance(boundary.get("sectors"), Mapping):
-            from .completion_point import completion_context_lines
-            lines += completion_context_lines(dict(checks))
-            checks = {k: v for k, v in checks.items() if k != "boundary"}
-        for name, check in checks.items() if isinstance(checks, Mapping) else enumerate(checks):
-            if isinstance(check, Mapping):
-                lines.append(f"- {name}: {check.get('status', _UNKNOWN)}"
-                             + (f" ({check['reason']})" if check.get("reason") else ""))
-            else:
-                lines.append(f"- {name}: {check}")
-    inputs = state.get("final_report_inputs") or {}
-    if inputs:
-        lines.append("Final report inputs (use exactly for final_step_report): "
-                     + "; ".join(f"{key} {value}" for key, value in inputs.items()) + ".")
+    if not isinstance(checks, Mapping) or not checks:
+        return ["Completion progress (computed by the program every round):",
+                "- No round has been completed yet; the checks run after the first query."]
+    lines = progress_lines(dict(checks))
     if state.get("final_report"):
         lines.append(f"Final report produced: {state['final_report']}.")
     return lines

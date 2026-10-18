@@ -8,8 +8,8 @@ the same file in both packages: edit once, copy. Every step starts with why,
 then the edit. Where the edit is a refactor of existing code, the step gives
 the exact signature and behaviour and names the lines to move.
 
-Decisions already made, do not reopen: frame half-width 25,000 m (the
-initial 30 km study area has 10 km of room on every side); expansion is a
+Decisions already made, do not reopen: frame half-width 30,000 m (the
+initial 30 km study area has 15 km of room on every side); expansion is a
 wedge in one open direction, never the whole rectangle; one wedge step is a
 free distance between 500 m and 5,000 m; a direction open at the study-area
 edge no longer counts as closed; a direction that reaches the frame edge
@@ -34,7 +34,7 @@ initial rectangle is the first active set, each wedge adds to it.
 After `MIN_UNNAMED_PLACE_FEATURES = 20`, add:
 
 ```python
-FRAME_HALF_WIDTH_M = 25_000.0   # the grid frame: site at the centre; ids never change inside it
+FRAME_HALF_WIDTH_M = 30_000.0   # the grid frame: site at the centre; ids never change inside it
 EXPANSION_MIN_M = 500.0
 EXPANSION_MAX_M = 5_000.0
 WEDGE_MARGIN_DEG = 15.0         # a wedge covers its direction bin plus this margin on each side
@@ -144,7 +144,7 @@ add the keyword `name=title`. In the roads loop, in the
 
 In the `state` dict of `build_state0`:
 
-- `"grid"`: unchanged keys, now with the frame's origin and `columns = rows = 500`.
+- `"grid"`: unchanged keys, now with the frame's origin and `columns = rows = 600`.
 - `"site"`: `"x_m": FRAME_HALF_WIDTH_M, "y_m": FRAME_HALF_WIDTH_M`.
 - `"study_area"`: add `"frame_half_width_m": FRAME_HALF_WIDTH_M`,
   `"shapes": shapes`, `"active_cells": len(active)`, `"expansions": []`.
@@ -157,7 +157,7 @@ Write the active set next to the area memberships:
 ### 1h. Check
 
 Run initialisation for one real site. `state_00.json` has
-`grid.columns == 500`, `study_area.active_cells == 90000` for a rural site,
+`grid.columns == 600`, `study_area.active_cells == 90000` for a rural site,
 every area's `grid_count` unchanged from before this change (within the
 rounding of one cell row), and every settlement area has a `name`.
 
@@ -622,7 +622,7 @@ part.
 
 ## 7. Check on a real run
 
-1. Initialise one site: `grid.columns == 500`, `study_area.active_cells == 90000`.
+1. Initialise one site: `grid.columns == 600`, `study_area.active_cells == 90000`.
 2. Run the rendered package until a direction is open at the edge. The
    progress block shows the edge line with the strip evidence.
 3. Let the model (or a scripted decision) call
@@ -630,5 +630,5 @@ part.
    directory gains `geography_v2.json`; `state_NN.json` lists the new
    areas; the next progress block either names an area to fetch in that
    direction or reports the edge farther out.
-4. A third 5,000 m step in the same direction is rejected with the frame
-   message.
+4. A fourth 5,000 m step in the same direction is rejected with the frame
+   message (three steps reach the 15 km of room).

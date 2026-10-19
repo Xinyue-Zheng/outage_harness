@@ -33,6 +33,7 @@ button:focus-visible { outline: 2px solid var(--rendered); outline-offset: 2px; 
 .gn text { font-family: var(--font-mono); font-size: 11.5px; fill: var(--fg); }
 .gn.ran rect { stroke: var(--c); stroke-width: 1.6; }
 .gn.active rect { fill: var(--lit); stroke: var(--fg); }
+.gn.model rect { stroke: #c0761a; }
 .gn.bad rect { stroke: var(--bad); stroke-width: 2; } .gn.end rect { stroke: var(--ok); stroke-width: 2; }
 .gn.sel rect { stroke-width: 3; }
 .gn { cursor: pointer; }
@@ -72,7 +73,7 @@ kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--li
     <div><h1>Loop Trace Explorer</h1><div style="color:var(--muted);font-size:13px">Every node of the loop, what went in and what came out, step by step. Hover a node for its summary; click it for the full input and output. <span class="placeholder" id="ph">placeholder data from the synthetic case; RUN_DATA is exported from the real run directories</span></div></div>
     <div class="tabs" id="tabs"></div>
   </header>
-  <div class="graph"><svg id="graph" viewBox="0 0 1180 170"></svg></div>
+  <div class="graph"><svg id="graph" viewBox="0 0 1600 450"></svg></div>
   <div class="controls">
     <button id="prev">Previous step</button><button id="next">Next step</button><button id="play">Play</button>
     <span class="stepno" id="stepno"></span>
@@ -93,24 +94,39 @@ kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--li
 // each with node (one of the NODE ids below), duration_s, status, summary (one line), input and
 // output (text shown in the inspector). Step 0 is initialisation.
 // ============================================================================
+// The loop graph, laid out as the design overview: one pipeline row, branch nodes under their source,
+// return edges as nested arcs underneath. Coordinates are the overview's.
 const NODES = [
-  { id: "render_context", label: "render context", x: 20 },
-  { id: "llm_call", label: "llm call", x: 170 },
-  { id: "parse", label: "parse", x: 320 },
-  { id: "validate", label: "validate", x: 440 },
-  { id: "verifier", label: "verifier", x: 570 },
-  { id: "execute_tool", label: "execute tool", x: 710 },
-  { id: "update_state", label: "update State", x: 860 },
-  { id: "record_error", label: "record error", x: 710, y: 110 },
-  { id: "finish_check", label: "finish check", x: 860, y: 110 },
-  { id: "end", label: "end", x: 1030, y: 60 },
+  { id: "start", label: "START", x: 30, y: 172, w: 70, pill: true },
+  { id: "initialize", label: "initialize", sub: "lookups · State 0", x: 114, y: 172 },
+  { id: "render_context", label: "render_context", sub: "State → text", x: 264, y: 172 },
+  { id: "llm_call", label: "llm_call", sub: "action · params · gap", x: 414, y: 172, model: true },
+  { id: "parse", label: "parse", sub: "three parts", x: 564, y: 172 },
+  { id: "validate_action", label: "validate_action", sub: "registry · State", x: 714, y: 172 },
+  { id: "execute_query", label: "execute_query", sub: "tool · timeout", x: 864, y: 172 },
+  { id: "update_state", label: "update_state", sub: "facts · checks", x: 1014, y: 172 },
+  { id: "write_step", label: "write_step", sub: "Step record", x: 1164, y: 172 },
+  { id: "loop_guards", label: "loop_guards", sub: "caps · program stop", x: 1314, y: 172 },
+  { id: "end_cap", label: "END: cap hit", x: 1464, y: 172, w: 110, pill: true },
+  { id: "end_retry", label: "END: retry cap", x: 414, y: 258, pill: true },
+  { id: "record_error_obs", label: "record_error_obs", sub: "what failed, why", x: 564, y: 258 },
+  { id: "verifier", label: "verifier", sub: "agree · concern", x: 714, y: 258, model: true },
+  { id: "end_program_stop", label: "END: program stop", x: 1164, y: 258, w: 136, pill: true },
+  { id: "completion_checks", label: "completion_checks", sub: "boundary · backup_load", x: 714, y: 344 },
+  { id: "end_complete", label: "END: complete", x: 864, y: 344, w: 136, pill: true },
 ];
+const W = 136, H = 40;
+// [from, to, label, path]: path is the overview's drawn route; "auto" draws a straight connector.
 const EDGES = [
-  ["render_context", "llm_call"], ["llm_call", "parse"], ["parse", "validate"], ["validate", "verifier"],
-  ["verifier", "execute_tool", "accepted"], ["execute_tool", "update_state"], ["update_state", "render_context", "loop", true],
-  ["verifier", "record_error", "rejected"], ["record_error", "render_context", "", true],
-  ["verifier", "finish_check", "finish"], ["finish_check", "end", "checks pass"], ["finish_check", "record_error", "refused"],
-  ["update_state", "end", "program stop or cap"],
+  ["start", "initialize", ""], ["initialize", "render_context", ""], ["render_context", "llm_call", ""], ["llm_call", "parse", ""],
+  ["parse", "validate_action", "", "dash"], ["validate_action", "verifier", "checks pass", "down"],
+  ["verifier", "execute_query", "query", "up-right"], ["execute_query", "update_state", ""], ["update_state", "write_step", ""],
+  ["write_step", "loop_guards", ""], ["loop_guards", "end_cap", "cap", "dash"],
+  ["parse", "record_error_obs", "does not parse", "down"], ["validate_action", "record_error_obs", "invalid", "down-left"],
+  ["record_error_obs", "end_retry", "cap", "left"], ["record_error_obs", "render_context", "retry: the error becomes feedback", "arc1"],
+  ["verifier", "completion_checks", "finish", "down"], ["completion_checks", "render_context", "unmet: open items become feedback", "arc2"],
+  ["completion_checks", "end_complete", "pass → redistribution → report", ""],
+  ["loop_guards", "render_context", "next round", "arc3"], ["loop_guards", "end_program_stop", "every check passes, round ≥ 5", "stop"],
 ];
 function span(node, duration_s, status, summary, input, output) { return { node, duration_s, status, summary, input, output }; }
 const CTX = (chars, open) => `[rendered context, ${chars.toLocaleString()} characters]\n...\nCompletion progress (computed by the program every round):\n${open}\nActions allowed now: query_area_coverage, query_lte_rrc_prb, inspect_observation, finish.\n\nReply with your next decision as one JSON object in the decision format of the skill.`;
@@ -121,108 +137,119 @@ const RUN_DATA = {
   conditions: [
     { id: "rendered", label: "Rendered State", steps: [
       { step: 0, title: "Initialisation", kind: "init", spans: [
-        span("execute_tool", 212, "ok", "query_basic_information, query_osm_landuse (30 km square)", "station_id=ARL02850; bbox of the 30 km square", "metadata: 1 row (lat, lon, DENSITY rural)\nOSM: 3,433 elements"),
+        span("initialize", 212, "ok", "query_basic_information, query_osm_landuse (30 km square)", "station_id=ARL02850; bbox of the 30 km square", "metadata: 1 row (lat, lon, DENSITY rural)\nOSM: 3,433 elements"),
         span("update_state", 4, "ok", "State 0: 6 areas, 90,000 active locations, frame 600 x 600", "elements, metadata", "areas: S01 Cameron, S02 Poteau, S03 Hackett, S04 Howe, R02 US-71, R03 OK-112\nrelations: R02 crosses S01, S02") ] },
       { step: 1, title: "query S01", kind: "q", spans: [
         span("render_context", 0.1, "ok", "14,210 chars; no area queried yet", CTX(14210, "- boundary: not met. No outage sector observed at or above the coverage threshold yet.\n- backup_load: not met. No outage sector or backup candidate has been observed yet."), "Rendered(prefix 9,800 chars, variable 4,410 chars)"),
         span("llm_call", 21, "ok", "decision JSON, 412 chars", "system + user messages", '{"purpose": "The site lies inside S01; its coverage is the first fact needed.", "gap": {"targets": ["S01"], "question": "Where does the outage sector serve inside S01?"}, "action": {"function": "query_area_coverage", "parameters": {"area_id": "S01", "resolution": 10}}}'),
         span("parse", 0.01, "ok", "action query_area_coverage, 2 parameters", "raw reply", "decision normalised; no routing"),
-        span("validate", 0.02, "ok", "accepted: area listed; 143 locations; 1,500 remain", "decision + State", "accepted"),
+        span("validate_action", 0.02, "ok", "accepted: area listed; 143 locations; 1,500 remain", "decision + State", "accepted"),
         span("verifier", 9, "ok", "agree", "context + decision", "outcome: agree\nreason: S01 contains the site and has no queried location."),
-        span("execute_tool", 190, "ok", "143 point calls; 118 with samples, 25 missing", "area S01, radius 10 m, 143 locations", "artifacts/step_01_S01.json: 143 points, 212 samples"),
+        span("execute_query", 190, "ok", "143 point calls; 118 with samples, 25 missing", "area S01, radius 10 m, 143 locations", "artifacts/step_01_S01.json: 143 points, 212 samples"),
         span("update_state", 0.4, "ok", "S01 queried 143/143; outage sector covers 86; backup candidates B1, B2", "artifact", "summaries.S01: queried 143, valid 118, down_cell_covered 86, with_backup 61\ncompletion: boundary unknown (east open: R02; south open: S02); backup_load unknown") ] },
       { step: 2, title: "query R02", kind: "q", spans: [
         span("render_context", 0.1, "ok", "15,880 chars", CTX(15880, "- boundary: not met.\n  ARL02850_aa_1, east 90-120 deg: covers to 1.4 km (S01); R02 has 221 locations in this direction not fetched. Next action: query_area_coverage(area_id=R02).\n  ARL02850_ab_1, south 180-210 deg: covers to 0.9 km (S01); S02 has 160 locations not fetched. Next action: query_area_coverage(area_id=S02).\n- backup_load: not met. KPI baseline not yet queried for: 8 outage sectors, B1, B2."), "Rendered"),
         span("llm_call", 19, "ok", "query_area_coverage R02", "messages", '{"gap": {"targets": ["R02"], "question": "How far along US-71 does the outage sector serve?"}, "action": {"function": "query_area_coverage", "parameters": {"area_id": "R02", "resolution": 10}}}'),
-        span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.02, "ok", "accepted: 221 locations; 1,357 remain", "", "accepted"),
+        span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.02, "ok", "accepted: 221 locations; 1,357 remain", "", "accepted"),
         span("verifier", 8, "ok", "agree", "", "outcome: agree\nreason: R02 is the open area the progress block names."),
-        span("execute_tool", 263, "ok", "221 point calls; 180 with samples", "", "artifacts/step_02_R02.json"),
+        span("execute_query", 263, "ok", "221 point calls; 180 with samples", "", "artifacts/step_02_R02.json"),
         span("update_state", 0.5, "ok", "R02 221/221; sector covers to 3.1 km then absent", "", "completion: east still open (S02 beyond reach); backup_load unknown") ] },
       { step: 3, title: "query S02", kind: "q", spans: [
         span("render_context", 0.1, "ok", "17,120 chars", CTX(17120, "- boundary: not met.\n  ARL02850_aa_1, east 90-120 deg: covers to 3.1 km (S01, R02); S02 has 160 locations not fetched. Next action: query_area_coverage(area_id=S02).\n- backup_load: not met."), ""),
         span("llm_call", 20, "ok", "query_area_coverage S02", "", '{"gap": {"targets": ["S02"], "question": "Is the outage sector absent in Poteau?"}, "action": {"function": "query_area_coverage", "parameters": {"area_id": "S02", "resolution": 10}}}'),
-        span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.02, "ok", "accepted: 160 locations; 1,136 remain", "", ""), span("verifier", 8, "ok", "agree", "", ""),
-        span("execute_tool", 171, "ok", "160 point calls; 151 with samples", "", ""),
+        span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.02, "ok", "accepted: 160 locations; 1,136 remain", "", ""), span("verifier", 8, "ok", "agree", "", ""),
+        span("execute_query", 171, "ok", "160 point calls; 151 with samples", "", ""),
         span("update_state", 0.5, "ok", "S02 160/160; sector listed at 12 near-edge locations, absent elsewhere", "", "completion: east closed by S02; north open (S03); backup_load unknown") ] },
       { step: 4, title: "finish refused", kind: "r", spans: [
         span("render_context", 0.1, "ok", "18,002 chars", CTX(18002, "- boundary: not met.\n  ARL02850_aa_1, north 0-30 deg: covers to 2.2 km (S01); S03 has 198 locations not fetched. Next action: query_area_coverage(area_id=S03).\n- backup_load: not met. KPI baseline not yet queried for: 8 outage sectors, B1, B2."), ""),
         span("llm_call", 17, "ok", "finish", "", '{"purpose": "Cameron and Poteau are queried; the corridor shows the signal fading.", "gap": {"targets": ["S03"], "question": "Is the evidence enough to report?"}, "action": {"function": "finish", "parameters": {}}}'),
-        span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.02, "ok", "finish routed to the completion check", "", ""), span("verifier", 7, "warn", "concern: S03 is still open", "", "outcome: concern\nreason: the progress block lists S03 as not fetched in the north."),
-        span("finish_check", 0.3, "bad", "refused: boundary north open (S03); backup_load not queried", "State", "Completion refused: {\"boundary\": \"ARL02850_aa_1 north 0-30 deg: S03 has 198 locations not fetched\", \"backup_load\": \"KPI baseline not yet queried for: ...\"}"),
-        span("record_error", 0.05, "bad", "refusal written as feedback for the next context", "", "notes += {kind: unmet, step 4, text: Completion refused ...}") ] },
+        span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.02, "ok", "finish routed to the completion check", "", ""), span("verifier", 7, "warn", "concern: S03 is still open", "", "outcome: concern\nreason: the progress block lists S03 as not fetched in the north."),
+        span("completion_checks", 0.3, "bad", "refused: boundary north open (S03); backup_load not queried", "State", "Completion refused: {\"boundary\": \"ARL02850_aa_1 north 0-30 deg: S03 has 198 locations not fetched\", \"backup_load\": \"KPI baseline not yet queried for: ...\"}"),
+        span("record_error_obs", 0.05, "bad", "refusal written as feedback for the next context", "", "notes += {kind: unmet, step 4, text: Completion refused ...}") ] },
       { step: 5, title: "query S03", kind: "q", spans: [
         span("render_context", 0.1, "ok", "18,310 chars; feedback: finish refused", CTX(18310, "- boundary: not met.\n  ARL02850_aa_1, north 0-30 deg: S03 has 198 locations not fetched. Next action: query_area_coverage(area_id=S03).\n- backup_load: not met.\n\nFeedback from the last two rounds:\n- Your finish in round 4 was refused: boundary north open (S03); backup_load not queried."), ""),
         span("llm_call", 22, "ok", "query_area_coverage S03", "", '{"gap": {"targets": ["S03"], "question": "Does the outage sector reach Hackett?"}, "action": {"function": "query_area_coverage", "parameters": {"area_id": "S03", "resolution": 10}}}'),
-        span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.02, "ok", "accepted: 198 locations; 976 remain", "", ""), span("verifier", 8, "ok", "agree", "", ""),
-        span("execute_tool", 406, "ok", "198 point calls; 163 with samples; sector absent", "", ""),
+        span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.02, "ok", "accepted: 198 locations; 976 remain", "", ""), span("verifier", 8, "ok", "agree", "", ""),
+        span("execute_query", 406, "ok", "198 point calls; 163 with samples; sector absent", "", ""),
         span("update_state", 0.6, "ok", "north closed by S03; east 90-120 open at the study-area edge", "", "completion: boundary not met (east open at edge: covers to 3.1 km; edge 15 km; 4 of 6 strip locations list the sector, -101 to -108 dBm); backup_load unknown") ] },
       { step: 6, title: "expand east", kind: "x", spans: [
         span("render_context", 0.1, "ok", "19,050 chars; expand_study_area allowed", CTX(19050, "- boundary: not met.\n  ARL02850_aa_1, east 90-120 deg: covers to 3.1 km; study-area edge at 15 km; in the outermost 300 m, 4 of 6 fetched locations list the sector, RSRP -101 to -108 dBm. Open at the edge: expand the study area in this direction (expand_study_area).\n- backup_load: not met.\nActions allowed now: query_area_coverage, query_lte_rrc_prb, inspect_observation, expand_study_area, finish.\nexpand_study_area may name one of: east 90-120 deg."), ""),
         span("llm_call", 18, "ok", "expand_study_area east 2000 m", "", '{"gap": {"targets": ["east 90-120 deg"], "question": "Is there activity beyond the edge where the sector still covers?"}, "action": {"function": "expand_study_area", "parameters": {"direction": "east 90-120 deg", "distance_m": 2000}}}'),
-        span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.03, "ok", "accepted: direction open at the edge; 2,000 m in range; inside the frame", "", ""), span("verifier", 7, "ok", "agree", "", ""),
-        span("execute_tool", 38, "ok", "OSM for the wedge box (9 s); 2,140 cells; 2 areas derived", "wedge 75-135 deg, 15.0 to 17.0 km", "artifacts/expand_06.json: S10 Wister (96), R07 (84)"),
+        span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.03, "ok", "accepted: direction open at the edge; 2,000 m in range; inside the frame", "", ""), span("verifier", 7, "ok", "agree", "", ""),
+        span("execute_query", 38, "ok", "OSM for the wedge box (9 s); 2,140 cells; 2 areas derived", "wedge 75-135 deg, 15.0 to 17.0 km", "artifacts/expand_06.json: S10 Wister (96), R07 (84)"),
         span("update_state", 0.8, "ok", "geography_v2.json; S10, R07 added; east now open with S10 to fetch", "", "completion: east open: S10 has 96 locations not fetched. Next action: query_area_coverage(area_id=S10).") ] },
       { step: 7, title: "query S10", kind: "q", spans: [
         span("render_context", 0.1, "ok", "19,420 chars", CTX(19420, "- boundary: not met.\n  ARL02850_aa_1, east 90-120 deg: S10 has 96 locations not fetched. Next action: query_area_coverage(area_id=S10).\n- backup_load: not met."), ""),
-        span("llm_call", 19, "ok", "query_area_coverage S10", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.02, "ok", "accepted: 96 locations; 778 remain", "", ""), span("verifier", 8, "ok", "agree", "", ""),
-        span("execute_tool", 180, "ok", "96 point calls; 80 with samples; sector absent", "", ""),
+        span("llm_call", 19, "ok", "query_area_coverage S10", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.02, "ok", "accepted: 96 locations; 778 remain", "", ""), span("verifier", 8, "ok", "agree", "", ""),
+        span("execute_query", 180, "ok", "96 point calls; 80 with samples; sector absent", "", ""),
         span("update_state", 0.6, "ok", "boundary complete; backup_load unknown", "", "completion: boundary complete; backup_load: KPI baseline not yet queried for 8 outage sectors, B1, B2, B3") ] },
       { step: 8, title: "KPI outage sectors", kind: "k", spans: [
         span("render_context", 0.1, "ok", "19,700 chars", CTX(19700, "- boundary: met.\n- backup_load: not met. KPI baseline not yet queried for: ARL02850_aa_1, ... (8 sectors), B1, B2, B3."), ""),
         span("llm_call", 23, "ok", "query_lte_rrc_prb, 8 cells, W1 to W4", "", '{"gap": {"targets": ["ARL02850_aa_1", "..."], "question": "What was each outage sector\'s load at these hours in prior weeks?"}, "action": {"function": "query_lte_rrc_prb", "parameters": {"cell_ids": ["ARL02850_aa_1", "..."], "start_time": "2026-01-13T09:00:00Z", "end_time": "2026-02-03T12:00:00Z"}}}'),
-        span("parse", 0.01, "ok", "routed: 8 LTE cells to query_lte_rrc_prb", "", ""), span("validate", 0.03, "ok", "accepted: cells seen; window ends before the outage", "", ""), span("verifier", 7, "ok", "agree", "", ""),
-        span("execute_tool", 61, "ok", "1,152 rows", "", "artifacts/query_kpi_step_08.csv"),
+        span("parse", 0.01, "ok", "routed: 8 LTE cells to query_lte_rrc_prb", "", ""), span("validate_action", 0.03, "ok", "accepted: cells seen; window ends before the outage", "", ""), span("verifier", 7, "ok", "agree", "", ""),
+        span("execute_query", 61, "ok", "1,152 rows", "", "artifacts/query_kpi_step_08.csv"),
         span("update_state", 1.2, "ok", "kpi_baselines: 8 cells, 3 slots each", "", "completion: backup_load not met: KPI baseline not yet queried for B1, B2, B3") ] },
       { step: 9, title: "KPI backups", kind: "k", spans: [
         span("render_context", 0.1, "ok", "19,880 chars", CTX(19880, "- boundary: met.\n- backup_load: not met. KPI baseline not yet queried for: B1, B2, B3."), ""),
-        span("llm_call", 20, "ok", "query_lte_rrc_prb, 3 cells, W1 to W4", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.03, "ok", "accepted", "", ""), span("verifier", 7, "ok", "agree", "", ""),
-        span("execute_tool", 58, "ok", "720 rows; B3 returned no rows", "", ""),
+        span("llm_call", 20, "ok", "query_lte_rrc_prb, 3 cells, W1 to W4", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.03, "ok", "accepted", "", ""), span("verifier", 7, "ok", "agree", "", ""),
+        span("execute_query", 58, "ok", "720 rows; B3 returned no rows", "", ""),
         span("update_state", 1.1, "ok", "every check passes; B3 reported as missing", "", "completion: boundary complete; backup_load complete (no KPI rows for B3, reported as missing)") ] },
       { step: 10, title: "program stop", kind: "e", spans: [
         span("update_state", 0.2, "ok", "round 10 >= 5 and every check passes: the program ends the run", "State", "end_reason complete_program_stop"),
-        span("end", 27, "ok", "redistribution over 412 covered locations, 3 hours; final_report.md; run_log.md", "State", "backup_loads: B1 41% -> 86% (exceeded, 10:00); B2 22% -> 39%; B3 baseline missing\nclasses: loss 71, signal 54, capacity 102, both 18, served 151, unknown 16") ] },
+        span("end_program_stop", 27, "ok", "redistribution over 412 covered locations, 3 hours; final_report.md; run_log.md", "State", "backup_loads: B1 41% -> 86% (exceeded, 10:00); B2 22% -> 39%; B3 baseline missing\nclasses: loss 71, signal 54, capacity 102, both 18, served 151, unknown 16") ] },
     ] },
     { id: "concat", label: "Codex-style concat", steps: [
       { step: 0, title: "Initialisation", kind: "init", spans: [
-        span("execute_tool", 1, "ok", "saved OSM payload of the rendered run reused", "", "6 areas derived, identical to the rendered run"),
+        span("initialize", 1, "ok", "saved OSM payload of the rendered run reused", "", "6 areas derived, identical to the rendered run"),
         span("update_state", 3, "ok", "State 0 (hidden from the model)", "", "transcript: system prefix only (skill, task, area list, tool declarations)") ] },
       { step: 1, title: "query metadata", kind: "q", spans: [
         span("render_context", 0.05, "ok", "12,400 chars: prefix only", TX(12400, 0), ""),
         span("llm_call", 24, "ok", "query_basic_information ARL02850", "", '{"gap": {"targets": ["ARL02850"], "question": "Where is the site and what technology?"}, "action": {"function": "query_basic_information", "parameters": {"station_id": "ARL02850"}}}'),
-        span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.01, "ok", "schema valid", "", ""),
-        span("execute_tool", 6, "ok", "1 row (already fetched at initialisation; the transcript did not show it)", "", "artifacts/metadata_step_01.csv"),
+        span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.01, "ok", "schema valid", "", ""),
+        span("execute_query", 6, "ok", "1 row (already fetched at initialisation; the transcript did not show it)", "", "artifacts/metadata_step_01.csv"),
         span("update_state", 0.3, "ok", "transcript += reply + raw CSV", "", "completion (recorded, not shown): boundary unknown") ] },
       { step: 2, title: "query S01", kind: "q", spans: [
         span("render_context", 0.05, "ok", "14,900 chars", TX(14900, 1), ""),
-        span("llm_call", 22, "ok", "query_area_coverage S01", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.01, "ok", "schema valid; area listed", "", ""),
-        span("execute_tool", 190, "ok", "143 point calls; raw output 1.1 MB", "", "artifacts/step_02_S01.json"),
+        span("llm_call", 22, "ok", "query_area_coverage S01", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.01, "ok", "schema valid; area listed", "", ""),
+        span("execute_query", 190, "ok", "143 point calls; raw output 1.1 MB", "", "artifacts/step_02_S01.json"),
         span("update_state", 0.4, "ok", "transcript += truncated output: the model sees 9 of 143 locations", "", "completion (recorded): east open (R02), south open (S02)") ] },
       { step: 3, title: "query S02", kind: "q", spans: [
         span("render_context", 0.05, "ok", "20,100 chars", TX(20100, 2), ""),
-        span("llm_call", 21, "ok", "query_area_coverage S02", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.01, "ok", "schema valid", "", ""),
-        span("execute_tool", 171, "ok", "160 point calls", "", ""),
+        span("llm_call", 21, "ok", "query_area_coverage S02", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.01, "ok", "schema valid", "", ""),
+        span("execute_query", 171, "ok", "160 point calls", "", ""),
         span("update_state", 0.4, "ok", "transcript += truncated output", "", "completion (recorded): east open (R02 never queried), north open (S03)") ] },
       { step: 4, title: "query S03", kind: "q", spans: [
         span("render_context", 0.05, "ok", "25,300 chars", TX(25300, 3), ""),
-        span("llm_call", 23, "ok", "query_area_coverage S03", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.01, "ok", "schema valid", "", ""),
-        span("execute_tool", 406, "ok", "198 point calls; no outage sector in the visible rows", "", ""),
+        span("llm_call", 23, "ok", "query_area_coverage S03", "", ""), span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.01, "ok", "schema valid", "", ""),
+        span("execute_query", 406, "ok", "198 point calls; no outage sector in the visible rows", "", ""),
         span("update_state", 0.5, "ok", "transcript += truncated output", "", "completion (recorded): east open, east open at the edge") ] },
       { step: 5, title: "KPI backups", kind: "k", spans: [
         span("render_context", 0.05, "ok", "30,600 chars", TX(30600, 4), ""),
         span("llm_call", 25, "ok", "query_lte_rrc_prb B1, B2, one week", "", '{"action": {"function": "query_lte_rrc_prb", "parameters": {"cell_ids": ["B1", "B2"], "start_time": "2026-02-03T09:00:00Z", "end_time": "2026-02-03T12:00:00Z"}}}'),
-        span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.01, "ok", "schema valid", "", ""),
-        span("execute_tool", 58, "ok", "360 rows; no outage-sector baseline requested", "", ""),
+        span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.01, "ok", "schema valid", "", ""),
+        span("execute_query", 58, "ok", "360 rows; no outage-sector baseline requested", "", ""),
         span("update_state", 0.9, "ok", "transcript += truncated CSV", "", "completion (recorded): backup_load unknown: 8 outage sectors never queried") ] },
       { step: 6, title: "model finish", kind: "e", spans: [
         span("render_context", 0.05, "ok", "35,900 chars", TX(35900, 5), ""),
         span("llm_call", 19, "ok", "finish", "", '{"purpose": "Cameron, Poteau and Hackett are checked and the backup load is known.", "action": {"function": "finish", "parameters": {}}}'),
-        span("parse", 0.01, "ok", "ok", "", ""), span("validate", 0.01, "ok", "finish accepted as proposed (plain concat)", "", ""),
-        span("finish_check", 0.2, "warn", "checks recorded, not enforced: boundary unknown, backup_load unknown", "State", "boundary: east 90-120 deg open (R02 never fetched), open at the edge\nbackup_load: KPI baseline not queried for 8 outage sectors"),
-        span("end", 12, "warn", "redistribution: no outage-sector baseline, no demand to move; report with unknown capacity", "", "end_reason model_finish\nclasses: loss 40, unknown 191") ] },
+        span("parse", 0.01, "ok", "ok", "", ""), span("validate_action", 0.01, "ok", "finish accepted as proposed (plain concat)", "", ""),
+        span("completion_checks", 0.2, "warn", "checks recorded, not enforced: boundary unknown, backup_load unknown", "State", "boundary: east 90-120 deg open (R02 never fetched), open at the edge\nbackup_load: KPI baseline not queried for 8 outage sectors"),
+        span("end_complete", 12, "warn", "redistribution: no outage-sector baseline, no demand to move; report with unknown capacity", "", "end_reason model_finish\nclasses: loss 40, unknown 191") ] },
     ] },
   ],
 };
 
+// Program bookkeeping nodes that every round passes through; the export fills real durations.
+for (const c of RUN_DATA.conditions) for (const st of c.steps) {
+  const ids = st.spans.map(s => s.node);
+  if (ids.includes("update_state") && !ids.includes("write_step")) {
+    const i = ids.indexOf("update_state") + 1;
+    st.spans.splice(i, 0, span("write_step", 0.05, "ok", "Step record: decision, validation, observation, State after", "", `steps/step_${String(st.step).padStart(2, "0")}/`),
+                    span("loop_guards", 0.01, "ok", st.spans.some(s => s.node === "end_program_stop") ? "every check passes at round ≥ 5: program stop" : "caps not hit: next round", "", ""));
+    const e = st.spans.findIndex(s => s.node === "end_program_stop");
+    if (e >= 0) { const [end] = st.spans.splice(e, 1); st.spans.push(end); }
+  }
+}
 // ---------------------------------------------------------------------------
 const $ = (s, el = document) => el.querySelector(s);
 const D = RUN_DATA;
@@ -234,28 +261,39 @@ const pillOf = s => s === "ok" ? "ok" : s === "warn" ? "warn" : "bad";
 const dur = s => s >= 60 ? `${Math.floor(s / 60)} min ${Math.round(s % 60)} s` : s >= 1 ? `${Math.round(s)} s` : `${Math.round(s * 1000)} ms`;
 
 function drawGraph() {
-  const svg = $("#graph"); const W = 130, H = 36;
-  const pos = Object.fromEntries(NODES.map(n => [n.id, { x: n.x, y: n.y ?? 20 }]));
-  const ran = new Set(S().spans.map(s => s.node));
+  const svg = $("#graph");
+  const pos = Object.fromEntries(NODES.map(n => [n.id, { x: n.x, y: n.y, w: n.w || W }]));
   const order = S().spans.map(s => s.node);
+  const ran = new Set(order);
   const activeNode = S().spans[selSpan]?.node;
+  const stepRan = new Set(order); if (step > 0 || true) stepRan.add("start");
+  const mid = n => ({ cx: pos[n].x + pos[n].w / 2, cy: pos[n].y + H / 2, l: pos[n].x, r: pos[n].x + pos[n].w, t: pos[n].y, b: pos[n].y + H });
   let g = "";
-  for (const [a, b, label, back] of EDGES) {
-    const A = pos[a], B = pos[b];
-    const ia = order.indexOf(a), ib = order.indexOf(b);
-    const edgeRan = ia >= 0 && ib === ia + 1;
-    let d;
-    if (back) d = `M${A.x + W / 2} ${A.y + H} C ${A.x + W / 2} ${A.y + H + 50}, ${B.x + W / 2} ${B.y + H + 50}, ${B.x + W / 2} ${B.y + H}`;
-    else if (A.y === B.y) d = `M${A.x + W} ${A.y + H / 2} L${B.x} ${B.y + H / 2}`;
-    else d = `M${A.x + W} ${A.y + H / 2} C ${A.x + W + 40} ${A.y + H / 2}, ${B.x - 40} ${B.y + H / 2}, ${B.x} ${B.y + H / 2}`;
-    g += `<path class="ge ${edgeRan ? "ran" : ""}" d="${d}" style="--c:${colorOf()}" marker-end="url(#arr)"/>`;
-    if (label) { const mx = back ? (A.x + B.x) / 2 + W / 2 : (A.x + W + B.x) / 2, my = back ? Math.max(A.y, B.y) + H + 42 : (A.y + B.y) / 2 + H / 2 - 6; g += `<text class="gl" x="${mx}" y="${my}" text-anchor="middle">${label}</text>`; }
+  for (const [a, b, label, kind] of EDGES) {
+    const A = mid(a), B = mid(b); const ia = order.indexOf(a), ib = order.indexOf(b);
+    const edgeRan = (ia >= 0 && ib >= 0 && ib > ia) || (a === "start" && b === "initialize" && ran.has("initialize"));
+    let d, lx, ly, anchor = "middle";
+    if (kind === "down") { d = `M${A.cx} ${A.b} L${B.cx} ${B.t - 2}`; lx = A.cx + 6; ly = (A.b + B.t) / 2; anchor = "start"; }
+    else if (kind === "down-left") { d = `M${A.cx + 30} ${A.b} L${A.cx + 30} ${A.b + 16} L${B.cx + 36} ${A.b + 16} L${B.cx + 36} ${B.t - 2}`; lx = A.cx + 36; ly = A.b + 12; anchor = "start"; }
+    else if (kind === "up-right") { d = `M${A.r} ${A.cy - 8} L${B.cx} ${A.cy - 8} L${B.cx} ${B.b + 2}`; lx = (A.r + B.cx) / 2; ly = A.cy - 12; }
+    else if (kind === "stop") { d = `M${A.cx - 42} ${A.b} L${A.cx - 42} ${B.cy} L${B.r + 2} ${B.cy}`; lx = A.cx - 36; ly = B.cy + 16; anchor = "start"; }
+    else if (kind === "left") { d = `M${A.l} ${A.cy} L${B.r + 2} ${B.cy}`; lx = (A.l + B.r) / 2; ly = A.cy - 6; }
+    else if (kind === "arc1") { d = `M${A.cx} ${A.b} L${A.cx} 392 L${B.cx + 35} 392 L${B.cx + 35} ${B.b + 2}`; lx = (A.cx + B.cx) / 2; ly = 386; }
+    else if (kind === "arc2") { d = `M${A.cx} ${A.b} L${A.cx} 412 L${B.cx} 412 L${B.cx} ${B.b + 2}`; lx = (A.cx + B.cx) / 2; ly = 406; }
+    else if (kind === "arc3") { d = `M${A.cx} ${A.b} L${A.cx} 432 L${B.cx - 40} 432 L${B.cx - 40} ${B.b + 2}`; lx = (A.cx + B.cx) / 2; ly = 426; }
+    else { d = `M${A.r} ${A.cy} L${B.l - 2} ${B.cy}`; lx = (A.r + B.l) / 2; ly = A.cy - 6; }
+    g += `<path class="ge ${edgeRan ? "ran" : ""}" d="${d}" ${kind === "dash" || label ? 'stroke-dasharray="4 3"' : ""} style="--c:${colorOf()}" marker-end="url(#arr)"/>`;
+    if (label) g += `<text class="gl" x="${lx}" y="${ly}" text-anchor="${anchor}">${label}</text>`;
   }
   for (const n of NODES) {
     const p = pos[n.id]; const sp = S().spans.find(s => s.node === n.id);
-    const cls = ["gn", ran.has(n.id) ? "ran" : "", activeNode === n.id ? "active sel" : "", sp && sp.status === "bad" ? "bad" : "", n.id === "end" && ran.has("end") ? "end" : ""].join(" ");
-    g += `<g class="${cls}" data-node="${n.id}" style="--c:${colorOf()}"><rect x="${p.x}" y="${p.y}" width="${W}" height="${H}"/><text x="${p.x + W / 2}" y="${p.y + H / 2 + 4}" text-anchor="middle">${n.label}</text>${sp ? `<text class="gl" x="${p.x + W / 2}" y="${p.y + H + 12}" text-anchor="middle">${dur(sp.duration_s)}</text>` : ""}</g>`;
+    const cls = ["gn", stepRan.has(n.id) ? "ran" : "", activeNode === n.id ? "active sel" : "", sp && sp.status === "bad" ? "bad" : "", n.id.startsWith("end_") && ran.has(n.id) ? "end" : "", n.model ? "model" : ""].join(" ");
+    g += `<g class="${cls}" data-node="${n.id}" style="--c:${colorOf()}"><rect x="${p.x}" y="${p.y}" width="${p.w}" height="${H}" ${n.pill ? 'rx="20"' : ""}/>` +
+      `<text x="${p.x + p.w / 2}" y="${p.y + (n.sub ? 16 : H / 2 + 4)}" text-anchor="middle">${n.label}</text>` +
+      (n.sub ? `<text class="gl" x="${p.x + p.w / 2}" y="${p.y + 30}" text-anchor="middle">${n.sub}</text>` : "") +
+      (sp ? `<text class="gl" x="${p.x + p.w / 2}" y="${p.y + H + 12}" text-anchor="middle" style="fill:var(--c)">${dur(sp.duration_s)}</text>` : "") + `</g>`;
   }
+  g += `<text class="gl" x="1000" y="262">solid: always · dashed: conditional · model nodes in orange</text>`;
   svg.innerHTML = `<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>` + g;
   svg.querySelectorAll(".gn").forEach(el => {
     el.addEventListener("click", () => { const i = S().spans.findIndex(s => s.node === el.dataset.node); if (i >= 0) { selSpan = i; render(false); } });

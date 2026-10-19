@@ -36,14 +36,20 @@ STEP = { step: <int>, title: <string>, kind: "init" | "q" | "x" | "k" | "r" | "e
 SPAN = { node, duration_s, status: "ok" | "warn" | "bad", summary, input, output }
 ```
 
-`node` is one of: `render_context`, `llm_call`, `parse`, `validate`,
-`verifier`, `execute_tool`, `update_state`, `record_error`, `finish_check`,
-`end`. The spans of a step are listed in the order the nodes ran.
+`node` is one of the overview's node names: `initialize` (step 0 only),
+`render_context`, `llm_call`, `parse`, `validate_action`, `verifier`,
+`execute_query`, `update_state`, `write_step`, `loop_guards`,
+`record_error_obs`, `completion_checks`, and the ends `end_cap`,
+`end_retry`, `end_program_stop`, `end_complete`. The spans of a step are
+listed in the order the nodes ran. Every round that reaches `update_state`
+also has `write_step` and `loop_guards` after it (the page adds them with
+nominal durations when they are missing; export the real ones from
+`timing.json` when you have them).
 
 ## 3. Where each span comes from
 
 Step 0 (`steps/step_00/`):
-- `execute_tool`: summary from the two initialisation observations
+- `initialize`: summary from the two initialisation observations
   (`initialization_observations.json`: function names, row counts, OSM
   element count); input the parameters; output the result summaries.
   `duration_s` from `step.json`'s `started_at` and `ended_at`.
@@ -62,11 +68,11 @@ Every later step `steps/step_NN/`, one span per node that ran:
   or `timing.json`; else the round duration minus the tool duration.
 - `parse`: summary from `decision.json` (action, parameter count, routing
   if any); output the normalised decision as JSON.
-- `validate`: from `validation.json`; status `ok` when accepted, `bad` when
+- `validate_action`: from `validation.json`; status `ok` when accepted, `bad` when
   rejected; summary the message; output the file's content.
 - `verifier` (rendered only, when `verifier_output.json` exists): status
   `ok` for agree, `warn` for concern; output the two lines.
-- `execute_tool`: from `tool_result.json`; summary one line (locations
+- `execute_query`: from `tool_result.json`; summary one line (locations
   fetched, rows, areas added, or the error); input the resolved parameters
   (`resolved_parameters.json` when present); output the result summary;
   `duration_s` from the tool result's `duration_s`.
@@ -74,14 +80,17 @@ Every later step `steps/step_NN/`, one span per node that ran:
   added, baselines added); output the completion check after the step from
   `completion_checks.json`, rendered as its `progress_lines` text when the
   helper is importable, else as JSON.
-- `record_error` (rejected steps): status `bad`; summary and output the
+- `record_error_obs` (rejected steps): status `bad`; summary and output the
   error from `error.json`.
-- `finish_check` (steps whose action was finish): status `bad` when refused
+- `completion_checks` (steps whose action was finish, and the program stop): status `bad` when refused
   (output the refusal), `ok` when accepted after a passed check, `warn`
   when accepted as proposed (plain concat); output the checks.
-- `end` (the last step of the run): summary the end reason and what was
-  written (`final_report.md`, `run_log.md`, `redistribution.json`); output
-  the backup loads and the class totals from `final_report.json`.
+- the end node of the last step, by `run.json`'s `end_reason`:
+  `end_complete` for `complete` and for `model_finish`, `end_program_stop`
+  for `complete_program_stop`, `end_retry` for `rejection_cap`, `end_cap`
+  for every other cap. Summary the end reason and what was written
+  (`final_report.md`, `run_log.md`, `redistribution.json`); output the
+  backup loads and the class totals from `final_report.json`.
 
 `kind` per step: `init` for step 0; `q` for a coverage or inspection
 query; `x` for an expansion; `k` for a KPI query; `r` for a rejected or
@@ -103,7 +112,7 @@ three words ("query S01", "expand east", "KPI backups", "finish refused",
 ## 5. Check
 
 Open the page with the exported data: the tab list shows one tab per run;
-step 0 lights `execute_tool` and `update_state`; a rejected step lights the
-path to `record_error` in red; the last step lights `end` in green; clicking
+step 0 lights `initialize` and `update_state`; a rejected step lights the
+path to `record_error_obs` in red; the last step lights its end pill in green; clicking
 `llm_call` at any step shows the raw reply; the durations in the tree sum to
 the round durations in `run_log.md`.

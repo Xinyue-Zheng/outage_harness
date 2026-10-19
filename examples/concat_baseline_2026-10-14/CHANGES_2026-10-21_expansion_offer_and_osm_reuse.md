@@ -40,13 +40,30 @@ rendered run's saved payload, and the fetch happens once per case.
 
 ## 2. Precondition: `expand_study_area` is offered only with an edge-open direction
 
-### 2a. The registry entry (`runner_point_nodes.py`, where `EXPAND_STUDY_AREA` is declared)
+### 2a. The check records which areas each open direction needs (`completion_point.py`)
 
-Find the declaration dict of `expand_study_area` and add one key:
+Why: the open item and the rejection must name the area to fetch. The
+check knows it when it computes the open status; today it keeps only the
+reason text. Record the area ids.
+
+In `completion_evidence_status`, find the place where the unfetched
+activity locations within the reach are collected (the list the status
+`open` with reason "... activity locations within the reach not fetched"
+is built from; in the reference implementation it is named
+`inside_unfetched`). Directly after that list is built, add:
 
 ```python
-    "precondition": "edge_open_direction",
+            areas_to_fetch = sorted({a for row in in_bin if row["distance_m"] <= reach and row["status"] == "unqueried"
+                                     for a in row["areas"] if state["geography"]["areas"][a].get("kind") in ACTIVITY_KINDS})
 ```
+
+(`in_bin` is the list of activity rows of the bin and `reach` the reach
+distance; use the names the file has.) Then, in every `result.update({...,
+"status": "open", ...})` whose reason is about unfetched locations, add the
+key `"areas_to_fetch"`: for the within-reach case the list above; for the
+closing-area case `[closing]`. For the other open reasons (the reach
+extends; no sample) add `"areas_to_fetch": [closing]` as well, because the
+closing area is what must be fetched further.
 
 ### 2b. The precondition test (`completion_point.py`)
 
@@ -58,46 +75,83 @@ def edge_open_labels(state: dict[str, Any]) -> list[str]:
     checks = state.get("completion_checks") or {}
     sectors = ((checks.get("boundary") or {}).get("sectors") or {})
     return sorted({r["label"] for s in sectors.values() for r in s["bins"].values() if r["status"] == "open_at_edge"})
+
+
+def areas_to_fetch(state: dict[str, Any]) -> list[str]:
+    """Areas named by open directions (not at the edge), from the last check."""
+    checks = state.get("completion_checks") or {}
+    sectors = ((checks.get("boundary") or {}).get("sectors") or {})
+    return sorted({a for s in sectors.values() for r in s["bins"].values()
+                   if r["status"] == "open" for a in r.get("areas_to_fetch") or []})
 ```
 
-### 2c. The offer (`context_builder.py`, `_action_lines`; `context_builder_concat.py`, the tool list)
+### 2c. The offer, in the variable part of the rendered context (`context_builder.py`)
 
-Why: the model must not see an action it cannot take. In the rendered
-builder, find the loop that renders one line per declared tool in
-`_action_lines`. Before the line is appended, add:
+Why: the action list in the prefix is rendered once at initialisation and
+cached as the system message, so dropping a line from it per round has no
+effect. The offer must be in the variable part, rendered every round. The
+prefix keeps the declaration, with a note that says when it applies.
+
+In `_action_note`, add an entry for the expansion action:
 
 ```python
-        if tool["name"] == "expand_study_area" and not edge_open_labels(state):
-            continue
+        "expand_study_area": "Offered only when the completion progress marks a direction open at the "
+                             "study-area edge; the line 'Actions allowed now' in each round lists it then.",
 ```
 
-with `from .completion_point import edge_open_labels` in the imports. In the
-concat builder, where the tool declarations are serialised into the system
-message, the list is fixed for the run (the prefix is cached), so the
-concat model keeps seeing the tool; the rejection in 2d then names the
-right action. That is a difference between the two inputs, and it is a
-property of the transcript design, not something to patch.
-
-### 2d. The rejection names the right actions (`runner_point_nodes.py`, `validate_expand_study_area`)
-
-Find the rejection raised when the direction is not open at the edge (the
-message that ends with "open at the study-area edge: none" or lists the
-labels). Replace it with:
+In `build_context`, find the list of variable blocks (the `blocks = [`
+list that starts with `_progress_lines(...)`). Directly after the entry
+`_completion_state_lines(state),` add a new block:
 
 ```python
+        _allowed_actions_lines(state, tools),
+```
+
+and add the function next to `_completion_state_lines`:
+
+```python
+def _allowed_actions_lines(state: Mapping[str, Any], tools: Iterable[Any]) -> list[str]:
+    """The actions the program will accept this round. expand_study_area needs an edge-open direction."""
+    from .completion_point import areas_to_fetch, edge_open_labels
+
+    names = [tool["name"] if isinstance(tool, Mapping) else getattr(tool, "name") for tool in tools]
+    edge = edge_open_labels(state)
+    allowed = [name for name in names if name != "expand_study_area" or edge]
+    lines = ["Actions allowed now: " + ", ".join([*allowed, "finish"]) + "."]
+    if edge:
+        lines.append("expand_study_area may name one of: " + ", ".join(edge) + ".")
+    fetch = areas_to_fetch(state)
+    if fetch:
+        lines.append("Areas the open directions need fetched (query_area_coverage): " + ", ".join(fetch) + ".")
+    return lines
+```
+
+The concat builder serialises the tool list into the fixed system message,
+so the concat model keeps seeing the tool every round; the rejection in 2d
+then names the right action. That difference is a property of the
+transcript design and is not patched.
+
+### 2d. Validation enforces the precondition and names the right action (`runner_point_nodes.py`)
+
+In `validate_expand_study_area`, find the rejection raised when the
+direction is not open at the edge (the message that ends with "open at the
+study-area edge: none" or lists the labels). Replace it with:
+
+```python
+    from .completion_point import areas_to_fetch, edge_open_labels
+
+    open_labels = edge_open_labels(state)
     if label not in open_labels:
-        checks = state.get("completion_checks") or {}
-        sectors = ((checks.get("boundary") or {}).get("sectors") or {})
-        to_fetch = sorted({r["closing_area"] for s in sectors.values() for r in s["bins"].values()
-                           if r["status"] == "open" and r.get("closing_area")})
+        fetch = areas_to_fetch(state)
         hint = (f"; the open directions need coverage queries, not expansion: query_area_coverage for "
-                f"{', '.join(to_fetch)}" if to_fetch else "; no direction is open at all")
+                f"{', '.join(fetch)}" if fetch else "; no direction is open at all")
         raise ValueError(f"{label} is not open at the study-area edge; directions open at the edge: "
                          f"{', '.join(open_labels) or 'none'}{hint}")
 ```
 
-`open_labels` is the list the function already computes (2b gives it a
-name; use `edge_open_labels(state)`).
+(If the function already computes the open labels under another name,
+replace that computation with `edge_open_labels(state)` so there is one
+definition.)
 
 ### 2e. Every open item names its action (`completion_point.py`, `progress_lines`)
 
@@ -110,10 +164,8 @@ Find the line that renders an open direction:
 Replace with:
 
 ```python
-                    area = r.get("closing_area")
-                    action = (f" Next action: query_area_coverage(area_id={area})." if area and "not fetched" in r["reason"]
-                              else " Next action: query_area_coverage for the area named." if "not fetched" in r["reason"]
-                              else "")
+                    fetch = r.get("areas_to_fetch") or []
+                    action = (" Next action: query_area_coverage(area_id=" + ", ".join(fetch) + ")." if fetch else "")
                     lines.append(f"  {cell}, {r['label']}: {reach}; {r['reason']}.{action}")
 ```
 
@@ -123,12 +175,15 @@ action in the same form.
 
 ### 2f. The skill text (all three)
 
-Find the sentence that introduces the expansion action (added on
-2026-10-19; it begins "A direction open at the study-area edge"). Append:
+Find the paragraph that describes the expansion action (added on
+2026-10-19). Append to it:
 
 ```
-expand_study_area applies only to a direction the progress block marks "open at the edge"; a direction marked open with an area named needs query_area_coverage of that area. The action list offers expand_study_area only when some direction is open at the edge.
+expand_study_area applies only to a direction the progress block marks "open at the edge"; a direction marked open with an area named needs query_area_coverage of that area. Each round's "Actions allowed now" line lists expand_study_area only when some direction is open at the edge.
 ```
+
+In the concat variants, the last sentence does not apply (no progress
+block); append only the first sentence.
 
 ---
 
@@ -194,9 +249,9 @@ fetcher with its retries.
 ## 4. Check
 
 1. On the State of round 12 of the failed run (`steps/step_12/state_before.json`),
-   the rendered context's action list has no `expand_study_area`, and the
-   progress block's open lines end with "Next action: query_area_coverage(area_id=R13)"
-   and "(area_id=S06)".
+   the rendered context's "Actions allowed now" line has no
+   `expand_study_area`, and the progress block's open lines end with
+   "Next action: query_area_coverage(area_id=R13)" and "(area_id=S06)".
 2. A scripted `expand_study_area` decision on that State is rejected with
    the message that names the two coverage queries.
 3. A concat run started with `--reuse-osm` has `state_00.json` identical to

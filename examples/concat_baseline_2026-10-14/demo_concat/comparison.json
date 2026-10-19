@@ -7,8 +7,8 @@
      "round": 1,
      "action": "query_area_coverage S1",
      "input_chars": 16759,
-     "raw_output_bytes": 32644,
-     "shown_output_bytes": 4964,
+     "raw_output_bytes": 32598,
+     "shown_output_bytes": 4958,
      "points_in_output": 30,
      "points_visible_after_truncation": null
     },
@@ -16,7 +16,7 @@
      "round": 2,
      "action": "query_area_coverage road_H1",
      "input_chars": 22083,
-     "raw_output_bytes": 37744,
+     "raw_output_bytes": 37719,
      "shown_output_bytes": 4330,
      "points_in_output": 42,
      "points_visible_after_truncation": null
@@ -452,17 +452,17 @@
     {
      "round": 1,
      "action": "query_area_coverage S1",
-     "input_chars": 12416,
-     "raw_output_bytes": 32644,
-     "shown_output_bytes": 4964,
+     "input_chars": 12494,
+     "raw_output_bytes": 32598,
+     "shown_output_bytes": 4958,
      "points_in_output": 30,
      "points_visible_after_truncation": 5
     },
     {
      "round": 2,
      "action": "query_area_coverage road_H1",
-     "input_chars": 17708,
-     "raw_output_bytes": 37744,
+     "input_chars": 17780,
+     "raw_output_bytes": 37719,
      "shown_output_bytes": 4330,
      "points_in_output": 42,
      "points_visible_after_truncation": 7
@@ -470,7 +470,7 @@
     {
      "round": 3,
      "action": "query_area_coverage S2",
-     "input_chars": 22357,
+     "input_chars": 22429,
      "raw_output_bytes": 8225,
      "shown_output_bytes": 4965,
      "points_in_output": 8,
@@ -479,7 +479,7 @@
     {
      "round": 4,
      "action": "finish",
-     "input_chars": 27649
+     "input_chars": 27721
     }
    ],
    "final_state_summary": {
@@ -891,7 +891,7 @@
      }
     }
    },
-   "final_input_chars": 27649
+   "final_input_chars": 27721
   }
  }
 }

@@ -78,14 +78,56 @@ def build_prefix(state: Mapping[str, Any], tools: Iterable[Any]) -> str:
     return "\n\n".join("\n".join(block) for block in blocks)
 
 
-def initial_user_message() -> str:
-    return ("Investigate the outage with the tools. Each tool output is appended below as "
-            "returned. Reply with one JSON decision per turn.")
+def initial_user_message(state: Mapping[str, Any], observations: Iterable[Mapping[str, Any]],
+                         run_dir: str | Path) -> str:
+    """The environment message: what initialization ran and what it returned, before the
+    first model turn. Each output is shown as returned, truncated like every tool output."""
+    from .transcript import truncate
+
+    lines = ["Initialization has run before this conversation. Its tool calls and outputs:"]
+    for obs in observations:
+        action = obs.get("action") or {}
+        name = action.get("function") or obs.get("function") or "?"
+        params = action.get("parameters") or obs.get("params") or {}
+        result = obs.get("result") or {}
+        lines.append("")
+        lines.append(f"[tool {name}({json.dumps(params, sort_keys=True)}) output]")
+        lines.append(_initialization_output(name, result, run_dir, truncate))
+    lines.append("")
+    lines.append("Investigate the outage with the tools. Each tool output is appended below as "
+                 "returned. Reply with one JSON decision per turn.")
+    return "\n".join(lines)
 
 
-def new_transcript(state: Mapping[str, Any], tools: Iterable[Any]) -> Transcript:
+def _initialization_output(name: str, result: Mapping[str, Any], run_dir: str | Path, truncate: Any) -> str:
+    """The raw text of an initialization tool's output: the metadata CSV, or the OSM payload's
+    element count followed by the land-use GeoJSON feature list. A missing file is said so."""
+    if result.get("status") != "success":
+        return f"error: {result.get('error', 'no detail')}"
+    output = result.get("output_file")
+    path = Path(str(output)) if output else None
+    if path is not None and not path.is_absolute():
+        path = Path(run_dir) / path
+    if path is None or not path.is_file():
+        return "not recorded"
+    text = path.read_text(encoding="utf-8")
+    if name == "query_osm_landuse":
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            return truncate(text)
+        elements = payload.get("elements")
+        if isinstance(elements, list):
+            head = {"element_count": len(elements), "bbox_wgs84": payload.get("bbox_wgs84"),
+                    "source": result.get("source", "OpenStreetMap Overpass API")}
+            return truncate(json.dumps(head, indent=1) + "\n" + json.dumps(elements, indent=1))
+    return truncate(text)
+
+
+def new_transcript(state: Mapping[str, Any], tools: Iterable[Any],
+                   observations: Iterable[Mapping[str, Any]] = (), run_dir: str | Path = ".") -> Transcript:
     transcript = Transcript(system=build_prefix(state, tools))
-    transcript.user(initial_user_message())
+    transcript.user(initial_user_message(state, list(observations), run_dir))
     return transcript
 
 

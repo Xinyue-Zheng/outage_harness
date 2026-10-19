@@ -165,4 +165,6 @@ Tools:
 ]
 
 ----- USER -----
+Initialization has run before this conversation. Its tool calls and outputs:
+
 Investigate the outage with the tools. Each tool output is appended below as returned. Reply with one JSON decision per turn.

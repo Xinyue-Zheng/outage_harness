@@ -184,21 +184,42 @@ def run_redistribution(state: dict[str, Any], run_dir: str | Path) -> dict[str, 
             "demand_rule": "population density x OSM weight x exp((RSRP + 120) / 10); softmax over backups by RSRP / 10"}
 ```
 
-Two things to settle in this module before it runs, both one line:
+### 2a. Check the module against the original script (Copilot: fill in from the file)
 
-- `PRB_METRIC` and `RRC_METRIC` must be the column names `apply_kpi` kept.
-  The standalone script reads `MEAN_PrbUsed` and `AVG_RRC_USERS` from its
-  CSV; the harness confirmed `MEAN_PRB_USED`. Set the two constants to what
-  `state["kpi_baselines"]["cells"][<cell>]` holds as keys.
-- `OSM_WEIGHTS` here replaces the per-point OSM feature weights of the
-  standalone script, which the harness does not keep. The three values are
-  a starting point; change them in one place.
+The module above was written from a transcription of
+`TrafficRedistributionModel` that lacked the file's header. Open the
+original script at:
 
-`traffic_redistribution_estimate.py` must be importable from the package
-(`<pkg>/traffic_redistribution_estimate.py`) with its header constants
-(`RSRP_THRESHOLD_DBM`, `RSRP_WEAK_MIN_DBM`, `RSRP_WEAK_MAX_DBM`,
-`PRB_CAPACITY_THRESHOLD`, `DISCARD_CELL_PATTERN`) present. Its file-reading
-loaders are not called.
+```
+ORIGINAL_REDISTRIBUTION_SCRIPT = <path to the original traffic redistribution script>
+```
+
+and settle these four points from it, each one line in `redistribution.py`:
+
+1. `RRC_METRIC` and `PRB_METRIC` must equal the keys that
+   `state["kpi_baselines"]["cells"][<cell>]` holds, which are the KPI CSV
+   column names `apply_kpi` kept. The original script reads `AVG_RRC_USERS`
+   and `MEAN_PrbUsed`; the harness KPI CSV may spell PRB `MEAN_PRB_USED`.
+   Read one `kpi_baselines` entry from a real `state_NN.json` and set both
+   constants to the keys found there.
+2. `OSM_WEIGHTS`: the original script holds a per-feature weight table
+   (`OSM_WEIGHTS[feature]`, read through `get_osm_weight`). Map it to the
+   three area kinds here: the settlement weight is the value the script gives
+   residential or settlement features, the road-corridor weight the value for
+   roads if one exists (otherwise keep 0.5), and `default` the script's
+   `"default"` entry.
+3. The header constants the engineering steps use (`RSRP_THRESHOLD_DBM`,
+   `RSRP_WEAK_MIN_DBM`, `RSRP_WEAK_MAX_DBM`, `PRB_CAPACITY_THRESHOLD`,
+   `DISCARD_CELL_PATTERN`) must be present in
+   `<pkg>/traffic_redistribution_estimate.py`. Copy the original script into
+   the package under that name with its header intact; its file-reading
+   loaders are not called. `pandas` and `numpy` must be importable in the
+   harness environment.
+4. If the original `get_historical_metrics_for_cell` returns a default
+   such as `(0.0, 50.0)` for a cell without history, do not carry that into
+   the subclass: a missing baseline is `(0.0, 0.0)` and is reported as
+   missing. The subclass above already does this; confirm no other method
+   of the original substitutes a default load.
 
 ---
 
@@ -277,7 +298,27 @@ the comparison between packages its per-step cost.
 
 ### 4a. Record the times
 
-In `langgraph_runner.py`, `render_context_node` is the start of a round and
+Initialisation is step 0 and is logged too: its metadata query, its OSM
+land-use query for the study square, and the areas it derived, with the
+time they took. In `langgraph_runner.py`, `initialize_node`, add as its
+first statement:
+
+```python
+        init_started = datetime.now(timezone.utc)
+```
+
+and, where it writes `steps/step_00/step.json`, extend that dict:
+
+```python
+        _write_json(output_dir / "steps" / "step_00" / "step.json", {
+            "step": 0, "source": "deterministic_initialization", "observations": initial_observations,
+            "started_at": init_started.isoformat(timespec="seconds"),
+            "ended_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "areas": len((case_state.get("geography") or {}).get("areas") or {}),
+        })
+```
+
+Then every later round. `render_context_node` is the start of a round and
 `update_state_node` or `record_error_node` its end. Add, at the top of
 `render_context_node`:
 
@@ -312,10 +353,15 @@ def write_run_log(run_dir: Path, run: dict[str, Any]) -> Path:
     rows = []
     for step_dir in sorted(run_dir.glob("steps/step_[0-9][0-9]")):
         number = int(step_dir.name[-2:])
-        if number == 0:
-            continue
         step = json.loads((step_dir / "step.json").read_text(encoding="utf-8")) if (step_dir / "step.json").is_file() else {}
         timing = json.loads((step_dir / "timing.json").read_text(encoding="utf-8")) if (step_dir / "timing.json").is_file() else {}
+        if number == 0:
+            started, ended = step.get("started_at"), step.get("ended_at")
+            seconds = (f"{(datetime.fromisoformat(ended) - datetime.fromisoformat(started)).total_seconds():.0f} s"
+                       if started and ended else "")
+            queries = ", ".join(str((o.get("action") or {}).get("function")) for o in step.get("observations") or [])
+            rows.append(f"| 0 | {started or ''} | {seconds} | initialised: {queries} | {step.get('areas', '?')} areas derived |")
+            continue
         decision = step.get("decision") or {}
         action = decision.get("action") or {}
         name = action.get("function") or "?"

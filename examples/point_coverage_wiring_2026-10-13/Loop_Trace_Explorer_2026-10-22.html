@@ -28,6 +28,15 @@ h1 { font-size: 20px; font-weight: 600; margin: 0; }
 .tabs button[aria-pressed="true"] { border-color: var(--c); color: var(--c); box-shadow: inset 0 -3px var(--c); }
 button:focus-visible { outline: 2px solid var(--rendered); outline-offset: 2px; }
 .graph { background: var(--panel); border: 1px solid var(--line); padding: 6px; }
+.panels { display: grid; gap: 14px; }
+.panels.side { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1100px) { .panels.side { grid-template-columns: 1fr; } }
+.panel { display: grid; gap: 10px; min-width: 0; }
+.panel .ph { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 3px solid var(--c); padding-bottom: 4px; }
+.panel .ph .name { font-weight: 600; color: var(--c); } .panel .ph .desc { font-size: 12px; color: var(--muted); }
+.panels.side .body { grid-template-columns: 1fr; }
+.panels.side .tree { max-height: 32vh; }
+.gn.absent rect { stroke-dasharray: 3 3; opacity: 0.45; } .gn.absent text { opacity: 0.5; }
 .graph svg { width: 100%; height: auto; display: block; max-width: 100%; }
 .gn rect { fill: var(--panel2); stroke: var(--line); stroke-width: 1.2; rx: 6; }
 .gn text { font-family: var(--font-mono); font-size: 11.5px; fill: var(--fg); }
@@ -73,17 +82,14 @@ kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--li
     <div><h1>Loop Trace Explorer</h1><div style="color:var(--muted);font-size:13px">Every node of the loop, what went in and what came out, step by step. Hover a node for its summary; click it for the full input and output. <span class="placeholder" id="ph">placeholder data from the synthetic case; RUN_DATA is exported from the real run directories</span></div></div>
     <div class="tabs" id="tabs"></div>
   </header>
-  <div class="graph"><svg id="graph" viewBox="0 0 1600 450"></svg></div>
   <div class="controls">
     <button id="prev">Previous step</button><button id="next">Next step</button><button id="play">Play</button>
     <span class="stepno" id="stepno"></span>
     <label><input type="checkbox" id="auto" checked> animate nodes within a step</label>
+    <label><input type="checkbox" id="side"> both designs side by side</label>
     <span style="font-size:12px;color:var(--muted)">Keys <kbd>←</kbd> <kbd>→</kbd> <kbd>space</kbd></span>
   </div>
-  <div class="body">
-    <div class="tree" id="tree"></div>
-    <div class="inspector" id="inspector"></div>
-  </div>
+  <div id="panels" class="panels"></div>
 </div>
 <div class="tip" id="tip" hidden></div>
 
@@ -135,7 +141,7 @@ const RUN_DATA = {
   placeholder: true,
   case: { site: "ARL02850", outage_window: "2026-02-10 09:00 to 12:00 UTC", model: "Qwen2.5-32B" },
   conditions: [
-    { id: "rendered", label: "Rendered State", steps: [
+    { id: "rendered", label: "Rendered State", desc: "context rendered from State; program checks gate the finish", graph: {}, steps: [
       { step: 0, title: "Initialisation", kind: "init", spans: [
         span("initialize", 212, "ok", "query_basic_information, query_osm_landuse (30 km square)", "station_id=ARL02850; bbox of the 30 km square", "metadata: 1 row (lat, lon, DENSITY rural)\nOSM: 3,433 elements"),
         span("update_state", 4, "ok", "State 0: 6 areas, 90,000 active locations, frame 600 x 600", "elements, metadata", "areas: S01 Cameron, S02 Poteau, S03 Hackett, S04 Howe, R02 US-71, R03 OK-112\nrelations: R02 crosses S01, S02") ] },
@@ -198,7 +204,9 @@ const RUN_DATA = {
         span("update_state", 0.2, "ok", "round 10 >= 5 and every check passes: the program ends the run", "State", "end_reason complete_program_stop"),
         span("end_program_stop", 27, "ok", "redistribution over 412 covered locations, 3 hours; final_report.md; run_log.md", "State", "backup_loads: B1 41% -> 86% (exceeded, 10:00); B2 22% -> 39%; B3 baseline missing\nclasses: loss 71, signal 54, capacity 102, both 18, served 151, unknown 16") ] },
     ] },
-    { id: "concat", label: "Codex-style concat", steps: [
+    { id: "concat", label: "Codex-style concat", desc: "transcript of replies and raw tool output; the model decides the end",
+      graph: { subs: { render_context: "transcript append", validate_action: "schema only", completion_checks: "recorded, not enforced", update_state: "hidden State", loop_guards: "caps only" },
+               absent: ["verifier", "end_program_stop"] }, steps: [
       { step: 0, title: "Initialisation", kind: "init", spans: [
         span("initialize", 1, "ok", "saved OSM payload of the rendered run reused", "", "6 areas derived, identical to the rendered run"),
         span("update_state", 3, "ok", "State 0 (hidden from the model)", "", "transcript: system prefix only (skill, task, area list, tool declarations)") ] },
@@ -253,25 +261,25 @@ for (const c of RUN_DATA.conditions) for (const st of c.steps) {
 // ---------------------------------------------------------------------------
 const $ = (s, el = document) => el.querySelector(s);
 const D = RUN_DATA;
-let cond = 0, step = 0, selSpan = 0, playing = false, timer = null;
-const C = () => D.conditions[cond];
-const S = () => C().steps[step];
-const colorOf = () => `var(--${C().id})`;
+let cond = 0, step = 0, playing = false, timer = null, side = false;
+const sel = D.conditions.map(() => 0);           // selected span per condition
+const maxStep = Math.max(...D.conditions.map(c => c.steps.length));
 const pillOf = s => s === "ok" ? "ok" : s === "warn" ? "warn" : "bad";
 const dur = s => s >= 60 ? `${Math.floor(s / 60)} min ${Math.round(s % 60)} s` : s >= 1 ? `${Math.round(s)} s` : `${Math.round(s * 1000)} ms`;
+const stepOf = ci => D.conditions[ci].steps[step];
+const colorOf = ci => `var(--${D.conditions[ci].id})`;
 
-function drawGraph() {
-  const svg = $("#graph");
+function drawGraph(ci, svg) {
+  const c = D.conditions[ci], st = stepOf(ci); const subs = (c.graph && c.graph.subs) || {}; const absent = new Set((c.graph && c.graph.absent) || []);
   const pos = Object.fromEntries(NODES.map(n => [n.id, { x: n.x, y: n.y, w: n.w || W }]));
-  const order = S().spans.map(s => s.node);
-  const ran = new Set(order);
-  const activeNode = S().spans[selSpan]?.node;
-  const stepRan = new Set(order); if (step > 0 || true) stepRan.add("start");
+  const order = st ? st.spans.map(s => s.node) : []; const ran = new Set(order); ran.add("start");
+  const activeNode = st ? st.spans[sel[ci]]?.node : null;
   const mid = n => ({ cx: pos[n].x + pos[n].w / 2, cy: pos[n].y + H / 2, l: pos[n].x, r: pos[n].x + pos[n].w, t: pos[n].y, b: pos[n].y + H });
   let g = "";
   for (const [a, b, label, kind] of EDGES) {
+    if (absent.has(a) && absent.has(b)) continue;
     const A = mid(a), B = mid(b); const ia = order.indexOf(a), ib = order.indexOf(b);
-    const edgeRan = (ia >= 0 && ib >= 0 && ib > ia) || (a === "start" && b === "initialize" && ran.has("initialize"));
+    const edgeRan = (ia >= 0 && ib > ia) || (a === "start" && ran.has("initialize"));
     let d, lx, ly, anchor = "middle";
     if (kind === "down") { d = `M${A.cx} ${A.b} L${B.cx} ${B.t - 2}`; lx = A.cx + 6; ly = (A.b + B.t) / 2; anchor = "start"; }
     else if (kind === "down-left") { d = `M${A.cx + 30} ${A.b} L${A.cx + 30} ${A.b + 16} L${B.cx + 36} ${A.b + 16} L${B.cx + 36} ${B.t - 2}`; lx = A.cx + 36; ly = A.b + 12; anchor = "start"; }
@@ -282,62 +290,85 @@ function drawGraph() {
     else if (kind === "arc2") { d = `M${A.cx} ${A.b} L${A.cx} 412 L${B.cx} 412 L${B.cx} ${B.b + 2}`; lx = (A.cx + B.cx) / 2; ly = 406; }
     else if (kind === "arc3") { d = `M${A.cx} ${A.b} L${A.cx} 432 L${B.cx - 40} 432 L${B.cx - 40} ${B.b + 2}`; lx = (A.cx + B.cx) / 2; ly = 426; }
     else { d = `M${A.r} ${A.cy} L${B.l - 2} ${B.cy}`; lx = (A.r + B.l) / 2; ly = A.cy - 6; }
-    g += `<path class="ge ${edgeRan ? "ran" : ""}" d="${d}" ${kind === "dash" || label ? 'stroke-dasharray="4 3"' : ""} style="--c:${colorOf()}" marker-end="url(#arr)"/>`;
-    if (label) g += `<text class="gl" x="${lx}" y="${ly}" text-anchor="${anchor}">${label}</text>`;
+    const dim = absent.has(a) || absent.has(b);
+    g += `<path class="ge ${edgeRan ? "ran" : ""}" d="${d}" ${kind === "dash" || label ? 'stroke-dasharray="4 3"' : ""} style="--c:${colorOf(ci)};${dim ? "opacity:.35" : ""}" marker-end="url(#arr${ci})"/>`;
+    if (label && !dim) g += `<text class="gl" x="${lx}" y="${ly}" text-anchor="${anchor}">${label}</text>`;
   }
   for (const n of NODES) {
-    const p = pos[n.id]; const sp = S().spans.find(s => s.node === n.id);
-    const cls = ["gn", stepRan.has(n.id) ? "ran" : "", activeNode === n.id ? "active sel" : "", sp && sp.status === "bad" ? "bad" : "", n.id.startsWith("end_") && ran.has(n.id) ? "end" : "", n.model ? "model" : ""].join(" ");
-    g += `<g class="${cls}" data-node="${n.id}" style="--c:${colorOf()}"><rect x="${p.x}" y="${p.y}" width="${p.w}" height="${H}" ${n.pill ? 'rx="20"' : ""}/>` +
-      `<text x="${p.x + p.w / 2}" y="${p.y + (n.sub ? 16 : H / 2 + 4)}" text-anchor="middle">${n.label}</text>` +
-      (n.sub ? `<text class="gl" x="${p.x + p.w / 2}" y="${p.y + 30}" text-anchor="middle">${n.sub}</text>` : "") +
+    const p = pos[n.id]; const sp = st ? st.spans.find(s => s.node === n.id) : null; const sub = subs[n.id] !== undefined ? subs[n.id] : n.sub;
+    const cls = ["gn", ran.has(n.id) ? "ran" : "", activeNode === n.id ? "active sel" : "", sp && sp.status === "bad" ? "bad" : "", n.id.startsWith("end_") && ran.has(n.id) ? "end" : "", n.model ? "model" : "", absent.has(n.id) ? "absent" : ""].join(" ");
+    g += `<g class="${cls}" data-node="${n.id}" style="--c:${colorOf(ci)}"><rect x="${p.x}" y="${p.y}" width="${p.w}" height="${H}" ${n.pill ? 'rx="20"' : ""}/>` +
+      `<text x="${p.x + p.w / 2}" y="${p.y + (sub ? 16 : H / 2 + 4)}" text-anchor="middle">${n.label}</text>` +
+      (sub ? `<text class="gl" x="${p.x + p.w / 2}" y="${p.y + 30}" text-anchor="middle">${sub}</text>` : "") +
       (sp ? `<text class="gl" x="${p.x + p.w / 2}" y="${p.y + H + 12}" text-anchor="middle" style="fill:var(--c)">${dur(sp.duration_s)}</text>` : "") + `</g>`;
   }
-  g += `<text class="gl" x="1000" y="262">solid: always · dashed: conditional · model nodes in orange</text>`;
-  svg.innerHTML = `<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>` + g;
+  g += `<text class="gl" x="1000" y="262">solid: always · dashed: conditional · model nodes in orange · dotted: not in this design</text>`;
+  svg.innerHTML = `<defs><marker id="arr${ci}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>` + g;
   svg.querySelectorAll(".gn").forEach(el => {
-    el.addEventListener("click", () => { const i = S().spans.findIndex(s => s.node === el.dataset.node); if (i >= 0) { selSpan = i; render(false); } });
-    el.addEventListener("mousemove", e => { const sp = S().spans.find(s => s.node === el.dataset.node); const tip = $("#tip"); if (!sp) { tip.hidden = true; return; } tip.textContent = `${el.dataset.node}: ${sp.summary}`; tip.hidden = false; tip.style.left = Math.min(e.clientX + 12, window.innerWidth - 340) + "px"; tip.style.top = (e.clientY + 12) + "px"; });
+    el.addEventListener("click", () => { const i = st ? st.spans.findIndex(s => s.node === el.dataset.node) : -1; if (i >= 0) { sel[ci] = i; paint(ci); } });
+    el.addEventListener("mousemove", e => { const sp = st ? st.spans.find(s => s.node === el.dataset.node) : null; const tip = $("#tip"); if (!sp) { tip.hidden = true; return; } tip.textContent = `${el.dataset.node}: ${sp.summary}`; tip.hidden = false; tip.style.left = Math.min(e.clientX + 12, window.innerWidth - 340) + "px"; tip.style.top = (e.clientY + 12) + "px"; });
     el.addEventListener("mouseleave", () => { $("#tip").hidden = true; });
   });
 }
 
-function drawTree() {
-  $("#tree").innerHTML = C().steps.map((st, i) => {
+function drawTree(ci, tree) {
+  const c = D.conditions[ci];
+  tree.innerHTML = c.steps.map((st, i) => {
     const total = st.spans.reduce((a, s) => a + s.duration_s, 0), max = Math.max(...st.spans.map(s => s.duration_s), 0.001);
-    const rows = i === step ? st.spans.map((s, j) => `<div class="span ${j === selSpan ? "cur" : ""}" data-j="${j}" style="--c:${colorOf()}"><span class="pill ${pillOf(s.status)}" style="width:6px;height:6px;padding:0;border-radius:50%;background:currentColor"></span><span>${s.node}<div class="bar" style="width:${Math.max(2, 100 * s.duration_s / max)}%"></div></span><span class="d">${dur(s.duration_s)}</span></div>`).join("") : "";
-    return `<div class="trow ${i === step ? "cur" : ""}" data-i="${i}" style="--c:${colorOf()}"><span class="t">Step ${st.step}: ${st.title}</span><span class="d">${dur(total)}</span><span class="s">${st.spans.length} nodes · ${st.spans.at(-1).summary}</span></div>${rows}`;
-  }).join("");
-  $("#tree").querySelectorAll(".trow").forEach(el => el.addEventListener("click", () => { step = +el.dataset.i; selSpan = 0; render(true); }));
-  $("#tree").querySelectorAll(".span").forEach(el => el.addEventListener("click", () => { selSpan = +el.dataset.j; render(false); }));
+    const rows = i === step ? st.spans.map((s, j) => `<div class="span ${j === sel[ci] ? "cur" : ""}" data-j="${j}" style="--c:${colorOf(ci)}"><span class="pill ${pillOf(s.status)}" style="width:6px;height:6px;padding:0;border-radius:50%;background:currentColor"></span><span>${s.node}<div class="bar" style="width:${Math.max(2, 100 * s.duration_s / max)}%"></div></span><span class="d">${dur(s.duration_s)}</span></div>`).join("") : "";
+    return `<div class="trow ${i === step ? "cur" : ""}" data-i="${i}" style="--c:${colorOf(ci)}"><span class="t">Step ${st.step}: ${st.title}</span><span class="d">${dur(total)}</span><span class="s">${st.spans.length} nodes · ${st.spans.at(-1).summary}</span></div>${rows}`;
+  }).join("") + (step >= c.steps.length ? `<div class="trow" style="color:var(--muted)"><span class="t">This run ended at step ${c.steps.at(-1).step}.</span></div>` : "");
+  tree.querySelectorAll(".trow[data-i]").forEach(el => el.addEventListener("click", () => { step = +el.dataset.i; sel.fill(0); render(true); }));
+  tree.querySelectorAll(".span").forEach(el => el.addEventListener("click", () => { sel[ci] = +el.dataset.j; paint(ci); }));
 }
 
-function drawInspector() {
-  const sp = S().spans[selSpan];
-  $("#inspector").innerHTML = `<h2><span>Step ${S().step} · ${sp.node} <span class="pill ${pillOf(sp.status)}">${sp.status}</span></span><span class="d">${dur(sp.duration_s)}</span></h2>
+function drawInspector(ci, box) {
+  const st = stepOf(ci);
+  if (!st) { box.innerHTML = `<h2><span>Ended</span></h2><div>This run ended at step ${D.conditions[ci].steps.at(-1).step}; the other design continues.</div>`; return; }
+  const sp = st.spans[sel[ci]];
+  box.innerHTML = `<h2><span>Step ${st.step} · ${sp.node} <span class="pill ${pillOf(sp.status)}">${sp.status}</span></span><span class="d">${dur(sp.duration_s)}</span></h2>
     <div>${sp.summary}</div>
     <h3>Input</h3><pre>${sp.input || "(see the files of this step)"}</pre>
     <h3>Output</h3><pre>${sp.output || "(see the files of this step)"}</pre>`;
 }
 
-function render(animate) {
-  const c = C();
-  $("#tabs").innerHTML = D.conditions.map((x, i) => `<button aria-pressed="${i === cond}" data-i="${i}" style="--c:var(--${x.id})">${x.label}</button>`).join("");
-  $("#tabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => { cond = +b.dataset.i; step = Math.min(step, C().steps.length - 1); selSpan = 0; render(true); }));
-  $("#stepno").textContent = `Step ${S().step} of ${c.steps.at(-1).step}`;
-  $("#prev").disabled = step === 0; $("#next").disabled = step === c.steps.length - 1;
-  drawGraph(); drawTree(); drawInspector();
-  if (animate && $("#auto").checked) animateSpans();
+function paint(ci) {
+  const panel = $(`#panel-${ci}`); if (!panel) return;
+  drawGraph(ci, $(".gsvg", panel)); drawTree(ci, $(".tree", panel)); drawInspector(ci, $(".inspector", panel));
 }
 
-function animateSpans() {
-  clearTimeout(timer); selSpan = 0; drawGraph(); drawTree(); drawInspector();
-  const tick = () => { if (selSpan < S().spans.length - 1) { selSpan++; drawGraph(); drawTree(); drawInspector(); timer = setTimeout(tick, 650); } else if (playing) { timer = setTimeout(() => { if (step < C().steps.length - 1) { step++; render(true); } else { playing = false; $("#play").textContent = "Play"; } }, 900); } };
-  timer = setTimeout(tick, 650);
+function render(animate) {
+  const shown = side ? D.conditions.map((_, i) => i) : [cond];
+  $("#tabs").innerHTML = D.conditions.map((x, i) => `<button aria-pressed="${!side && i === cond}" data-i="${i}" style="--c:var(--${x.id})" ${side ? "disabled" : ""}>${x.label}</button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => { cond = +b.dataset.i; sel.fill(0); render(true); }));
+  $("#panels").className = "panels" + (side ? " side" : "");
+  $("#panels").innerHTML = shown.map(ci => `<div class="panel" id="panel-${ci}" style="--c:${colorOf(ci)}">
+      <div class="ph"><span class="name">${D.conditions[ci].label}</span><span class="desc">${D.conditions[ci].desc || ""}</span></div>
+      <div class="graph"><svg class="gsvg" viewBox="0 0 1600 450"></svg></div>
+      <div class="body"><div class="tree"></div><div class="inspector"></div></div></div>`).join("");
+  $("#stepno").textContent = `Step ${step} of ${maxStep - 1}`;
+  $("#prev").disabled = step === 0; $("#next").disabled = step === maxStep - 1;
+  shown.forEach(paint);
+  if (animate && $("#auto").checked) animateSpans(shown);
 }
-$("#prev").addEventListener("click", () => { clearTimeout(timer); step = Math.max(0, step - 1); selSpan = 0; render(true); });
-$("#next").addEventListener("click", () => { clearTimeout(timer); step = Math.min(C().steps.length - 1, step + 1); selSpan = 0; render(true); });
-$("#play").addEventListener("click", () => { playing = !playing; $("#play").textContent = playing ? "Pause" : "Play"; if (playing) { if (step === C().steps.length - 1) step = 0; selSpan = 0; render(true); } else clearTimeout(timer); });
+
+function animateSpans(shown) {
+  clearTimeout(timer); sel.fill(0); shown.forEach(paint);
+  const longest = Math.max(...shown.map(ci => stepOf(ci) ? stepOf(ci).spans.length : 0));
+  let k = 0;
+  const tick = () => {
+    k++;
+    for (const ci of shown) { const st = stepOf(ci); if (st && k < st.spans.length) sel[ci] = k; }
+    shown.forEach(paint);
+    if (k < longest - 1) timer = setTimeout(tick, 650);
+    else if (playing) timer = setTimeout(() => { if (step < maxStep - 1) { step++; render(true); } else { playing = false; $("#play").textContent = "Play"; } }, 900);
+  };
+  if (longest > 1) timer = setTimeout(tick, 650);
+}
+$("#prev").addEventListener("click", () => { clearTimeout(timer); step = Math.max(0, step - 1); sel.fill(0); render(true); });
+$("#next").addEventListener("click", () => { clearTimeout(timer); step = Math.min(maxStep - 1, step + 1); sel.fill(0); render(true); });
+$("#play").addEventListener("click", () => { playing = !playing; $("#play").textContent = playing ? "Pause" : "Play"; if (playing) { if (step === maxStep - 1) step = 0; sel.fill(0); render(true); } else clearTimeout(timer); });
+$("#side").addEventListener("change", e => { side = e.target.checked; sel.fill(0); render(false); });
 document.addEventListener("keydown", e => { if (e.key === "ArrowRight") $("#next").click(); if (e.key === "ArrowLeft") $("#prev").click(); if (e.key === " ") { e.preventDefault(); $("#play").click(); } });
 $("#ph").hidden = !D.placeholder;
 render(false);

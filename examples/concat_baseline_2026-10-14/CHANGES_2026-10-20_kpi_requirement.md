@@ -1,4 +1,4 @@
-# Change of 2026-10-20: the KPI requirement covers the outage sectors and every outage hour; one set of thresholds
+# Changes of 2026-10-20: the KPI requirement covers the outage sectors and every outage hour; one set of thresholds; same-sample co-observation in the redistribution
 
 All three packages. Shared file `completion_point.py`, plus the skill text
 and `redistribution.py`. Every step starts with why, then the edit.
@@ -159,7 +159,95 @@ no import cycle.
 
 ---
 
-## 5. Check
+## 5. `redistribution.py`: same-sample co-observation
+
+Why: a grid location is 100 m by 100 m and one point call returns every
+sample inside the radius; each sample is one measurement listing the
+serving sector and up to five neighbours. The completion check and the
+report count a backup at a location only when some sample lists both the
+outage sector (at or above the coverage threshold) and the backup: one
+device, one moment. The adapter fed the engineering model one RSRP per cell
+per location, the maximum over all samples, so a backup seen only in a
+sample without the outage sector counted as available, and the estimate
+saw more backup coverage than the report. With the 4 m and 10 m radii most
+locations hold one sample and the two agree; at 100 m they diverge. The
+fix feeds the model the same fact the report uses.
+
+In `redistribution.py`, `StateRedistributionModel.load_from_state`, find:
+
+```python
+            coverage = [{"antenna_id": cell, "rsrp": float(stats["rsrp_max_dbm"])}
+                        for cell, stats in entry["cells"].items()]
+            self.coverage_data[grid_id] = {"latitude": lat, "longitude": lon, "coverage": coverage}
+```
+
+Replace with:
+
+```python
+            # Only samples in which an outage sector is listed at or above the coverage threshold
+            # count: the outage sector's RSRP and every backup's RSRP are the best over those samples.
+            # A backup seen only in a sample without the outage sector is not a backup here.
+            best: dict[str, float] = {}
+            for sample in entry.get("samples") or []:
+                cells = sample.get("cells") or {}
+                if not any(self._is_outage(c) and r >= COVERAGE_RSRP_DBM for c, r in cells.items()):
+                    continue
+                for c, r in cells.items():
+                    best[c] = max(best.get(c, -1e9), float(r))
+            if not best:
+                continue
+            coverage = [{"antenna_id": cell, "rsrp": rsrp} for cell, rsrp in sorted(best.items())]
+            self.coverage_data[grid_id] = {"latitude": lat, "longitude": lon, "coverage": coverage}
+```
+
+Add the outage predicate to the class. Find:
+
+```python
+    def __init__(self, state: dict[str, Any], geometry: dict[str, Any]) -> None:
+        super().__init__()
+        self._state = state
+```
+
+Replace with:
+
+```python
+    def __init__(self, state: dict[str, Any], geometry: dict[str, Any]) -> None:
+        super().__init__()
+        self._state = state
+        from .radio import is_outage_cell
+
+        task = state["task"]
+        self._is_outage = lambda cell: is_outage_cell(cell, task)
+```
+
+and add `COVERAGE_RSRP_DBM` to the import from `point_coverage`:
+
+```python
+from .point_coverage import COVERAGE_RSRP_DBM, read_geometry
+```
+
+`redistribution.json` gains one line of provenance. In `run_redistribution`,
+find:
+
+```python
+            "demand_rule": "population density x OSM weight x exp((RSRP + 120) / 10); softmax over backups by RSRP / 10"}
+```
+
+Replace with:
+
+```python
+            "demand_rule": "population density x OSM weight x exp((RSRP + 120) / 10); softmax over backups by RSRP / 10",
+            "coverage_rule": f"per location, the best RSRP per cell over the samples that list an outage sector at or "
+                             f"above {COVERAGE_RSRP_DBM:g} dBm; backups outside those samples are not counted"}
+```
+
+Check: on a State where one location has two samples, one listing the
+outage sector with backup A and one listing backup B alone, the adapter's
+`coverage_data` for that location holds the outage sector and A, not B.
+The report's "with backup" count and the estimate's backup set then agree
+for every location.
+
+## 6. Check
 
 1. On the `ARL02850` State that produced zero load estimates, the progress
    block's `backup_load` line now lists the eight outage sectors under "not
@@ -170,4 +258,4 @@ no import cycle.
    per candidate with a baseline, and the report's per-backup lines show
    estimated PRB with the worst hour.
 3. `redistribution.json` reports the thresholds the engine used; they equal
-   the report's.
+   the report's, and its `coverage_rule` line states the same-sample rule.

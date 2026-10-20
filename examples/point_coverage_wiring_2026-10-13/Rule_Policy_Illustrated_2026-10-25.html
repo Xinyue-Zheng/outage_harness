@@ -1,0 +1,180 @@
+<title>Rule Policy Illustrated</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one row per rule; left a schematic map, right the condition, the action and the effect. */
+:root {
+  --bg: #f7f6f2; --fg: #1d1f22; --muted: #5d6168; --line: #cfccc2; --panel: #ffffff;
+  --site: #1d1f22; --area: #d9d6cc; --fetched: #9fc5e8; --covered: #d9534f; --absent: #5aa469; --action: #b7791f; --study: #8a8a8a;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15171a; --fg: #e8e6e0; --muted: #a2a6ad; --line: #3a3f46; --panel: #1e2126;
+  --site: #e8e6e0; --area: #3a3f46; --fetched: #3f6f99; --covered: #e06b6b; --absent: #6cc08a; --action: #e0a84a; --study: #8a8f96; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15171a; --fg: #e8e6e0; --muted: #a2a6ad; --line: #3a3f46; --panel: #1e2126;
+  --site: #e8e6e0; --area: #3a3f46; --fetched: #3f6f99; --covered: #e06b6b; --absent: #6cc08a; --action: #e0a84a; --study: #8a8f96; color-scheme: dark }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+main { max-width: 1100px; margin: 0 auto; display: grid; gap: 28px; }
+h1 { font-size: 24px; font-weight: 600; margin: 0; text-wrap: balance; }
+h2 { font-size: 17px; font-weight: 600; margin: 0 0 6px; }
+p { margin: 0 0 6px; max-width: 70ch; }
+.lead { color: var(--muted); }
+.rule { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; border-top: 1px solid var(--line); padding-top: 18px; }
+@media (max-width: 760px) { .rule { grid-template-columns: 1fr; } }
+svg { width: 100%; height: auto; display: block; max-width: 100%; background: var(--panel); border: 1px solid var(--line); }
+svg text { font-family: var(--font-mono); font-size: 10.5px; fill: var(--fg); }
+svg .lbl { fill: var(--muted); font-size: 10px; }
+.k { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; background: var(--s); margin-right: 6px; vertical-align: -2px; border: 1px solid var(--line); }
+code { font-family: var(--font-mono); font-size: 12.5px; }
+</style>
+
+<main>
+<header>
+  <h1>The five rules of the reference policy, one picture each</h1>
+  <p class="lead" style="margin-top:6px">Every picture is the same map: the site at the centre, the twelve direction bins, settlements and corridors as blocks, the study-area edge as a dashed line. Grey blocks are not fetched; blue are fetched; red marks locations where an outage sector is listed at -110 dBm or better; green marks fetched locations with no outage sector. The orange element is what the rule does. The policy applies the first rule whose condition holds, in this order, once per round.</p>
+  <div class="legend" style="margin-top:10px"><span style="--s:var(--area)">area, not fetched</span><span style="--s:var(--fetched)">fetched</span><span style="--s:var(--covered)">outage sector covers</span><span style="--s:var(--absent)">fetched, sector absent</span><span style="--s:var(--action)">the rule's action</span></div>
+</header>
+
+<!-- shared drawing pieces -->
+<svg width="0" height="0" style="position:absolute;border:0;background:none" aria-hidden="true">
+  <defs>
+    <g id="base">
+      <rect x="0" y="0" width="380" height="300" fill="var(--panel)"/>
+      <g stroke="var(--line)" stroke-width="0.6">
+        <line x1="190" y1="150" x2="190" y2="0"/><line x1="190" y1="150" x2="265" y2="20"/><line x1="190" y1="150" x2="320" y2="75"/>
+        <line x1="190" y1="150" x2="380" y2="150"/><line x1="190" y1="150" x2="320" y2="225"/><line x1="190" y1="150" x2="265" y2="280"/>
+        <line x1="190" y1="150" x2="190" y2="300"/><line x1="190" y1="150" x2="115" y2="280"/><line x1="190" y1="150" x2="60" y2="225"/>
+        <line x1="190" y1="150" x2="0" y2="150"/><line x1="190" y1="150" x2="60" y2="75"/><line x1="190" y1="150" x2="115" y2="20"/>
+      </g>
+      <rect x="40" y="20" width="300" height="260" fill="none" stroke="var(--study)" stroke-dasharray="5 4" stroke-width="1.2"/>
+      <path d="M183 150 h14 M190 143 v14" stroke="var(--site)" stroke-width="2"/>
+      <text class="lbl" x="44" y="32">study area</text>
+    </g>
+    <marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--action)"/></marker>
+  </defs>
+</svg>
+
+<!-- Rule 1 -->
+<section class="rule">
+  <svg viewBox="0 0 380 300" role="img" aria-label="Rule 1 illustration">
+    <use href="#base"/>
+    <rect x="150" y="110" width="80" height="80" fill="var(--fetched)"/>
+    <g fill="var(--covered)"><rect x="155" y="115" width="10" height="10"/><rect x="170" y="115" width="10" height="10"/><rect x="185" y="130" width="10" height="10"/><rect x="200" y="145" width="10" height="10"/><rect x="160" y="160" width="10" height="10"/><rect x="205" y="170" width="10" height="10"/></g>
+    <text x="155" y="205">S01, fetched: outage sector A at 6 locations;</text><text x="155" y="218">backups B1, B2 seen with it</text>
+    <rect x="30" y="236" width="320" height="52" fill="none" stroke="var(--action)" stroke-width="1.6" rx="4"/>
+    <text x="38" y="252" style="fill:var(--action)">KPI call, one per technology:</text>
+    <text x="38" y="266">query_lte_rrc_prb(cell_ids=[A_aa_1, A_ab_1, B1, B2],</text><text x="38" y="279">  start=outage-4w, end=outage-1w)</text>
+  </svg>
+  <div>
+    <h2>Rule 1. backup_load names cells → one KPI call per technology</h2>
+    <div class="k">Condition</div><p>The completion check's <code>backup_load</code> is not met and lists cells with no baseline: the outage sectors, and every backup seen in the same sample as an outage sector at a covered location.</p>
+    <div class="k">Action</div><p>Query all of them at once, one call per technology (LTE, NR), with the window the check computed: the outage start moved back four weeks to the outage end moved back one week, so every outage hour on the same weekday is covered.</p>
+    <div class="k">Why first</div><p>It is the cheapest open item (one or two tool calls, no point calls) and the only one the model got wrong by splitting it over many rounds. The reference never splits it.</p>
+    <div class="k">Effect</div><p><code>backup_load</code> becomes met, or lists the cells whose query returned no rows as missing, which does not block.</p>
+  </div>
+</section>
+
+<!-- Rule 2 -->
+<section class="rule">
+  <svg viewBox="0 0 380 300" role="img" aria-label="Rule 2 illustration">
+    <use href="#base"/>
+    <rect x="150" y="110" width="80" height="80" fill="var(--fetched)"/>
+    <g fill="var(--covered)"><rect x="200" y="120" width="10" height="10"/><rect x="215" y="135" width="10" height="10"/><rect x="220" y="155" width="10" height="10"/><rect x="215" y="175" width="10" height="10"/></g>
+    <path d="M190 150 A 60 60 0 0 1 245 130" fill="none" stroke="var(--covered)" stroke-width="1.5" stroke-dasharray="3 2"/>
+    <text class="lbl" x="250" y="128">reach 1.4 km</text>
+    <rect x="240" y="150" width="90" height="26" fill="var(--area)"/><text x="245" y="167">R02 corridor</text>
+    <rect x="245" y="185" width="60" height="50" fill="var(--area)"/><text x="250" y="213">S02</text>
+    <rect x="240" y="150" width="90" height="26" fill="none" stroke="var(--action)" stroke-width="2.2"/>
+    <path d="M232 150 L240 160" stroke="var(--action)" stroke-width="1.6" marker-end="url(#m)"/>
+    <text x="30" y="256" style="fill:var(--action)">query_area_coverage(area_id=R02)</text>
+    <text class="lbl" x="30" y="272">east 90-120 deg: covers to 1.4 km; R02 has 221 locations</text><text class="lbl" x="30" y="285">in this direction not fetched → nearest, so R02 before S02</text>
+  </svg>
+  <div>
+    <h2>Rule 2. direction open, area named → fetch the nearest such area</h2>
+    <div class="k">Condition</div><p>For some outage sector and some direction bin, the check reports <em>open</em> with an area to fetch: either activity locations within the sector's reach are unfetched, or the nearest activity area beyond the reach in that bin is not yet fully fetched. The check names the area.</p>
+    <div class="k">Action</div><p>Fetch that area. When several directions are open, take the area whose nearest location is closest to the site; ties by area id. Here the corridor R02 comes before the settlement S02.</p>
+    <div class="k">Why before expansion</div><p>Closure inside the study area is always cheaper than growing it, and an unfetched area inside the reach must be fetched for the report in any case.</p>
+    <div class="k">Effect</div><p>The direction closes if the sector is absent there; or the reach grows, and the next area beyond becomes the one named; or a neighbouring bin becomes active.</p>
+  </div>
+</section>
+
+<!-- Rule 3 -->
+<section class="rule">
+  <svg viewBox="0 0 380 300" role="img" aria-label="Rule 3 illustration">
+    <use href="#base"/>
+    <rect x="150" y="110" width="80" height="80" fill="var(--fetched)"/>
+    <rect x="240" y="150" width="100" height="26" fill="var(--fetched)"/>
+    <g fill="var(--covered)"><rect x="245" y="158" width="10" height="10"/><rect x="265" y="158" width="10" height="10"/><rect x="285" y="158" width="10" height="10"/><rect x="305" y="158" width="10" height="10"/><rect x="325" y="158" width="10" height="10"/></g>
+    <text class="lbl" x="242" y="190">R02 fetched to the edge: sector still listed,</text><text class="lbl" x="242" y="202">RSRP -101 to -108 dBm in the last 300 m</text>
+    <path d="M340 85 L372 85 L372 215 L340 215 Z" fill="var(--action)" fill-opacity="0.25" stroke="var(--action)" stroke-width="1.6"/>
+    <text x="300" y="70" style="fill:var(--action)">wedge, +2 km</text>
+    <path d="M340 150 L370 150" stroke="var(--action)" stroke-width="1.6" marker-end="url(#m)"/>
+    <text x="30" y="256" style="fill:var(--action)">expand_study_area(direction="east 90-120 deg", distance_m=2000)</text>
+    <text class="lbl" x="30" y="272">then OSM for the wedge's box; new areas there get ids;</text><text class="lbl" x="30" y="285">the next round names one of them under rule 2</text>
+  </svg>
+  <div>
+    <h2>Rule 3. direction open at the edge → expand it by 2 km</h2>
+    <div class="k">Condition</div><p>The check reports a direction <em>open at the study-area edge</em>: the sector covers out to the edge and no activity location with a sample lies beyond it inside the study area. No rule-2 item exists anywhere (rule 2 is checked first).</p>
+    <div class="k">Action</div><p>Expand the study area in that direction by a fixed 2 km: the wedge of the bin plus its margins, from the current edge outward along every bearing. The program fetches OSM for the wedge's bounding box and derives the settlements and corridors there as new areas. If several directions are open at the edge, the one whose sector is strongest in the outermost strip goes first.</p>
+    <div class="k">Why fixed</div><p>The model may choose a step from the edge evidence; the reference does not judge, it steps by 2 km until an activity location beyond the reach appears or the frame cap is reached.</p>
+    <div class="k">Effect</div><p>Either a new area lies beyond the reach and the direction becomes open with that area named (rule 2 next round), or the wedge holds no activity and the direction stays open at the new edge (rule 3 again), until the frame edge closes it at the cap, which the report records.</p>
+  </div>
+</section>
+
+<!-- Rule 4 -->
+<section class="rule">
+  <svg viewBox="0 0 380 300" role="img" aria-label="Rule 4 illustration">
+    <use href="#base"/>
+    <rect x="150" y="110" width="80" height="80" fill="var(--fetched)"/>
+    <g fill="var(--covered)"><rect x="200" y="120" width="10" height="10"/><rect x="215" y="140" width="10" height="10"/></g>
+    <g fill="var(--fetched)"><circle cx="190" cy="100" r="3"/><circle cx="215" cy="107" r="3"/><circle cx="233" cy="125" r="3"/><circle cx="240" cy="150" r="3"/><circle cx="233" cy="175" r="3"/><circle cx="215" cy="193" r="3"/><circle cx="190" cy="200" r="3"/><circle cx="165" cy="193" r="3"/><circle cx="147" cy="175" r="3"/><circle cx="165" cy="107" r="3"/></g>
+    <g stroke="var(--action)" stroke-width="1.2" stroke-dasharray="3 2" fill="var(--action)" fill-opacity="0.12"><path d="M190 150 L0 150 L0 75 L60 75 Z"/></g>
+    <text class="lbl" x="52" y="120">west 270-300: no fetched location</text><text class="lbl" x="52" y="132">within 2 km (probe points failed)</text>
+    <rect x="60" y="95" width="70" height="40" fill="var(--area)"/><text x="66" y="118">S04</text>
+    <rect x="60" y="95" width="70" height="40" fill="none" stroke="var(--action)" stroke-width="2.2"/>
+    <path d="M150 128 L132 118" stroke="var(--action)" stroke-width="1.6" marker-end="url(#m)"/>
+    <text x="30" y="256" style="fill:var(--action)">query_area_coverage(area_id=S04)</text>
+    <text class="lbl" x="30" y="272">after it: S04 fetched → the bin is observed; a sector listed</text><text class="lbl" x="30" y="285">there makes it active (rules 2, 3 apply); none → observed-empty</text>
+  </svg>
+  <div>
+    <h2>Rule 4. unobserved, activity inside → fetch the nearest area there</h2>
+    <div class="k">Condition</div><p>A direction bin has no fetched location within 2 km of the site, and an activity area has locations in that bin inside the study area. With the probe ring this is rare: it happens when the probe's points in that bin fell outside the frame or their calls failed.</p>
+    <div class="k">Action</div><p>Fetch the nearest activity area in that bin.</p>
+    <div class="k">Why it exists</div><p>The check only asks about directions where a sector has been seen; a bin never looked at can hide a sector. Fetching once there turns "never looked" into "looked, sector present" or "looked, nothing".</p>
+    <div class="k">What it does not do</div><p>A bin that is unobserved with no activity area in it is left alone: there is nowhere people are in that direction. The report lists it as never observed, with that reason.</p>
+  </div>
+</section>
+
+<!-- Rule 5 -->
+<section class="rule">
+  <svg viewBox="0 0 380 300" role="img" aria-label="Rule 5 illustration">
+    <use href="#base"/>
+    <rect x="150" y="110" width="80" height="80" fill="var(--fetched)"/>
+    <rect x="240" y="150" width="100" height="26" fill="var(--fetched)"/>
+    <g fill="var(--covered)"><rect x="200" y="120" width="10" height="10"/><rect x="245" y="158" width="10" height="10"/><rect x="265" y="158" width="10" height="10"/></g>
+    <rect x="245" y="185" width="60" height="50" fill="var(--absent)" fill-opacity="0.6"/><text x="250" y="213">S02 absent</text>
+    <text class="lbl" x="245" y="248">closing area of east</text>
+    <rect x="300" y="60" width="60" height="45" fill="var(--area)"/><text x="306" y="86">S05</text>
+    <rect x="300" y="60" width="60" height="45" fill="none" stroke="var(--action)" stroke-width="2.2"/>
+    <path d="M305 185 L320 108" stroke="var(--action)" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#m)"/>
+    <text class="lbl" x="245" y="54">one more area beyond S02:</text><text class="lbl" x="245" y="66" style="fill:var(--action)">verification</text>
+    <text x="30" y="256" style="fill:var(--action)">for each closed direction: fetch the next activity area beyond</text>
+    <text class="lbl" x="30" y="272">sector absent there too → confirmed; sector covers there →</text><text class="lbl" x="30" y="285">the direction reopens (rule 2 next round). Then end.</text>
+  </svg>
+  <div>
+    <h2>Rule 5. nothing open → verification pass, then end</h2>
+    <div class="k">Condition</div><p>No rule 1 to 4 applies: <code>backup_load</code> is met, every checked direction is closed, no direction is open at the edge, no unobserved bin has activity. This is where the harness would accept a finish.</p>
+    <div class="k">Action</div><p>Once, for every closed direction of every sector: fetch the next activity area beyond the closing area in that bin, if one exists inside the study area. If the sector is absent there too, the closure is confirmed. If the sector covers there, a served pocket lay past the first absent area (a blocked signal returning), the direction reopens and rules 2 and 3 take over next round. When every direction is confirmed, the run ends: redistribution, report, reference files.</p>
+    <div class="k">Why the reference does this and the harness does not</div><p>The harness stops at one absent area, the "one absent area is enough" decision. The reference pays for one more so that the ground truth is not fooled by a pocket; the difference between the two is then measurable as extent recall.</p>
+  </div>
+</section>
+
+<section style="border-top:1px solid var(--line);padding-top:18px">
+  <h2>How a run of the policy reads, round by round</h2>
+  <p>Round 1 after the probe: rule 2 fetches the settlement around the site. Round 2: rule 1 queries the KPI for the sectors and backups seen so far. Rounds 3 to k: rule 2 fetches the nearest named area each round, rule 1 again whenever a new backup appears, rule 3 when a direction reaches the edge. Rule 4 only if a probe bin failed. Rule 5 once at the end, and once more after any reopening. Every round is one action, logged with its latency, so the reference's cost is the sum.</p>
+</section>
+</main>

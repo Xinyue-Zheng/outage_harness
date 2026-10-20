@@ -1,7 +1,9 @@
 # Change of 2026-10-26: the rule policy, a model-free way to run the rendered package
 
-Package `outage_harness_langgraph` only. New file `rule_policy.py`; edits in
-`langgraph_runner.py`, `run_case.py`, `completion_point.py`. Every step
+Sections 1 to 5 apply to `outage_harness_langgraph` only (new file
+`rule_policy.py`; edits in `langgraph_runner.py`, `run_case.py`,
+`completion_point.py`). Section 6, the per-hour report, applies to all
+three packages. Every step
 starts with why, then the edit with the code pasted.
 
 The policy produces the reference investigation (the extent against which
@@ -283,7 +285,90 @@ Both policies get it, since both go through `end_run`.
 
 ---
 
-## 6. Check
+## 6. `completion_point.py`: the report is per outage hour (all three packages)
+
+Why: an outage lasts several hours and the estimate is already made per
+hour (`run_redistribution` writes one `hours[]` entry per outage hour with
+the PRB of every backup and the class of every location). The report then
+collapsed it to the worst hour per backup, which hides when a backup is
+congested and when it is not, and mixes hours across backups. The report
+now shows every hour, and the worst-hour line becomes the summary of the
+table under it.
+
+### 6a. Per backup cell, a table of hours
+
+In `final_report`, section 2 ("Why: per backup cell"), find the line that
+appends the load sentence for a backup with an estimate:
+
+```python
+                     f"limit {LOAD_LIMIT_PERCENT:g}%: {'exceeded' if float(b.get('estimated_prb_percent', 0)) > LOAD_LIMIT_PERCENT else 'within limit'}"
+                     f" (worst hour {b.get('worst_hour', 'n/a')}, {b.get('additional_rrc_users', 0):.1f} additional RRC users).")
+```
+
+Directly after the `lines.append(text)` that follows it, add:
+
+```python
+        hours = (state.get("impact") or {}).get("hours") or []
+        rows = []
+        for h in hours:
+            row = next((p for p in h.get("prb", []) if str(p.get("antenna_id", "")).lower() == backup.lower()), None)
+            if row is None:
+                continue
+            est = float(row.get("new_prb", 0.0))
+            rows.append(f"     {h['hour'][11:16]}  baseline {float(row.get('historical_prb', 0.0)):5.1f}%  "
+                        f"estimated {est:5.1f}%  +{float(row.get('additional_rrc_users', 0.0)):6.1f} RRC  "
+                        f"{'EXCEEDS' if est > LOAD_LIMIT_PERCENT else 'within'}")
+        if rows:
+            lines.append("     hour   baseline      estimated      moved users   limit")
+            lines.extend(rows)
+```
+
+`hours[]` holds `hour` as an ISO timestamp; `[11:16]` prints `HH:MM`.
+
+### 6b. The class table per hour
+
+Section 1's table and sentences stay as the worst-hour view, which is
+what an operator asks first ("where is it worst"). Below the sentences,
+add one line per hour with the class totals of that hour, so the reader
+sees how the picture moves through the outage. After the loop that
+appends the per-area sentences, add:
+
+```python
+    hours = (state.get("impact") or {}).get("hours") or []
+    if hours:
+        lines.append("")
+        lines.append("   Per outage hour (locations by class across all areas):")
+        for h in hours:
+            counts = {}
+            for row in h.get("classes", []):
+                counts[row.get("classification", "unknown")] = counts.get(row.get("classification", "unknown"), 0) + 1
+            lines.append(f"   {h['hour'][11:16]}: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())))
+```
+
+The class names in `hours[].classes` are the engineering model's
+(`healthy`, `weak_coverage`, `capacity_limited`, `coverage_hole`); print
+them as they are and add one line above the table saying so, because the
+harness classes in section 1's table are computed with the harness
+thresholds and the two vocabularies differ on purpose.
+
+### 6c. The JSON twin
+
+`final_report.json` already carries `impact` with `hours[]`; nothing to
+add. The ground-truth report (to be specified next) uses the same
+per-hour table with observed PRB in place of estimated, which is why the
+per-hour form goes in now.
+
+### 6d. Check
+
+A completed run's `final_report.md` shows, under each backup with a
+baseline, one row per outage hour with baseline, estimated PRB, moved
+users and whether the limit is exceeded, and section 1 ends with one
+line per hour of class counts. The worst-hour line above the table names
+the hour of the highest estimated PRB in it.
+
+---
+
+## 7. Check
 
 1. `python -m outage_harness_langgraph.run_case --policy rules --condition rendered ... --output runs/<site>_rules`
    runs to `end_reason: complete` with no model endpoint configured.

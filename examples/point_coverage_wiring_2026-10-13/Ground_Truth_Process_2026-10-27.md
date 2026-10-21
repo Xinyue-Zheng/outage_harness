@@ -158,9 +158,14 @@ Writes: `kpi_availability.json`, read by steps 8 and 9.
 
 ## Step 2c. Technology
 
-Every cell id gives its technology by its prefix pattern, the one
-`radio.radio_technology` implements: three letters and five digits is
-LTE, four letters and five digits is NR. The outage set's technologies
+Every cell id gives its technology by its prefix pattern: three letters
+and five digits is LTE (`CCL06069...`), four letters and six digits is NR
+(`CCSN003553...`). Before anything else, check that `radio.radio_technology`
+in every package and the KPI routing in `policy.route_kpi_cells` implement
+exactly these two patterns (regular expressions `^[A-Z]{3}\d{5}` and
+`^[A-Z]{4}\d{6}`); a recent edit may have set NR to five digits, which
+would route every NR cell to the LTE tool. Fix it and add a test with the
+two example ids. The outage set's technologies
 decide which backups exist for this case:
 
 - the outage set is LTE only: only LTE cells are backup candidates;

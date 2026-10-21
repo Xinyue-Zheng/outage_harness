@@ -54,7 +54,9 @@ metadata (`query_basic_information`); the heatmap over the 30 km square
 around the site.
 
 Decides: the candidate cell set, every cell the heatmap shows as serving
-anywhere in the square. The heatmap is used only for this list; its
+anywhere in the square, with its technology from its prefix (step 2c);
+candidates of a technology absent from the ticket's site are kept in the
+list but marked, and dropped once step 2 fixes the outage set. The heatmap is used only for this list; its
 footprints are not used.
 
 Writes: `candidates.json`: the ticket as given, the site metadata, the
@@ -153,6 +155,27 @@ missing data, and the script must not read one as the other.
   of `no_backup_data` points per area. The two caveats become three.
 
 Writes: `kpi_availability.json`, read by steps 8 and 9.
+
+## Step 2c. Technology
+
+Every cell id gives its technology by its prefix pattern, the one
+`radio.radio_technology` implements: three letters and five digits is
+LTE, four letters and five digits is NR. The outage set's technologies
+decide which backups exist for this case:
+
+- the outage set is LTE only: only LTE cells are backup candidates;
+  NR cells seen in coverage are recorded (`other_technology`) and
+  neither fetched for KPI nor counted at any point;
+- the outage set is NR only: the same with the roles swapped;
+- the outage set holds both: each technology is handled separately, LTE
+  backups for LTE outage cells and NR backups for NR outage cells, with
+  separate fractions per point and separate tables in the report.
+
+This is the rule `radio.eligible_backup_cells` already applies; the
+ground-truth script applies it before any KPI call so that no call is
+made for a cell that cannot be a backup. Routing of KPI calls follows the
+same pattern: LTE ids to `query_lte_rrc_prb`, NR ids to
+`query_nr_rrc_prb`, one call per technology per step.
 
 ## Step 3. The window and the areas
 
@@ -295,9 +318,9 @@ The RRC gain is what says where the outage traffic went; the PRB says
 whether the cell could carry it.
 
 **Per covered point, per outage hour:**
-- the cells with coverage at the point: every eligible backup listed in a
-  sample together with an outage sector at or above `COVERAGE_RSRP_DBM`,
-  with its RSRP;
+- the cells with coverage at the point: every eligible backup (same
+  technology as the outage set, step 2c) listed in a sample together with
+  an outage sector at or above `COVERAGE_RSRP_DBM`, with its RSRP;
 - `prb_issue_fraction`: the share of those cells with `prb_issue` in that
   hour (cells with `no_data` excluded from the denominator and counted);
 - `rsrp_issue_fraction`: the share of those cells whose RSRP is weaker than

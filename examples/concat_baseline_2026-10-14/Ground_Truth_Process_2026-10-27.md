@@ -6,9 +6,10 @@ Build `make_ground_truth.py` in `outage_harness_langgraph`, run as
 python -m outage_harness_langgraph.make_ground_truth --ticket <ticket id or JSON> --out <results root>/ground_truth
 ```
 
-It executes the ten steps below in order, for one ticket, with no model
-anywhere. Every number it writes comes from a tool result or a State
-file; where a result is absent the field is `not recorded`, never a
+It executes the ten steps below in order, for one ticket. It is a
+measurement script: no language model, no verifier, no decision loop; the
+only rules are the fixed numbers in the table below. Every number it
+writes comes from a tool result or from a file an earlier step wrote; where a result is absent the field is `not recorded`, never a
 guess. The script is deterministic for a given set of tool results, and
 it writes a `README.md` with the command, the constants, the tool calls
 made, and the counts per step. Reuse the package's existing functions
@@ -37,9 +38,9 @@ Fixed numbers, all in one place at the top of the script:
 | `NEIGHBOUR_BAND_M` | 1,000 | step 6 |
 | `DOWN_MIN_HOURS` | 3; a ticket whose interval is shorter is dropped | step 2 |
 | `KPI_MONTH_DAYS` | 30 before the ticket start, 1 after its end | step 2 |
-| `COVERAGE_RSRP_DBM` | -110 | steps 5 to 8 (the harness's constant) |
-| `LOAD_LIMIT_PERCENT` | 80 | step 8 (the harness's constant) |
-| `SIGNAL_MARGIN_DB`, `SERVICE_RSRP_DBM` | 10, -110 | step 8 (the harness's constants) |
+| `COVERAGE_RSRP_DBM` | -110 | steps 5 to 8 (the same constant the investigation code uses) |
+| `LOAD_LIMIT_PERCENT` | 80 | step 8 (the same constant the investigation code uses) |
+| `SIGNAL_MARGIN_DB`, `SERVICE_RSRP_DBM` | 10, -110 | step 8 (the same constants the investigation code uses) |
 
 ---
 
@@ -109,8 +110,10 @@ Decides: the activity areas inside the window, derived with the same rules
 as initialization: settlements and road corridors, their grid ids on the
 fixed 60 km frame. Nothing else is an area.
 
-Writes: `state_00.json` and `geography.json` of the reference, as a harness
-run writes them, so every reader works on them; `areas_grid_ids.json`.
+Writes: `state_00.json` and `geography.json` of the reference. The file
+names are the ones the shared geometry functions write and the readers
+expect; here they hold only the areas, the grid and the site, no
+investigation record; `areas_grid_ids.json`.
 
 Functions: `state0.build_state0` with the window square in place of the
 density square (one parameter: the half width), `evidence_state.split_geography`;
@@ -158,7 +161,7 @@ Decides: the reference extent, every fetched location where a confirmed
 outage sector is listed at or above the threshold, with every cell listed
 in the same sample and its RSRP.
 
-Writes: coverage entries as a harness run writes them; `fill_passes.json`:
+Writes: coverage entries in the coverage table (the per-location record of samples the shared functions keep); `fill_passes.json`:
 per pass the areas filled, the neighbour bands fetched, the listings
 found.
 
@@ -230,7 +233,7 @@ Decides, in two layers that are recorded separately and never mixed.
 **Per backup cell, per outage hour:**
 - observed RRC and observed PRB;
 - the RRC baseline: the previous month's mean RRC at the same day of week
-  and hour of day (four samples), the harness's own baseline form;
+  and hour of day (four samples), the same baseline form `apply_kpi` computes;
 - the RRC gain: observed minus baseline, as a number and as a ratio;
 - `prb_issue`: observed PRB above `LOAD_LIMIT_PERCENT`;
 - an hour with no row is `no_data` for that cell, not zero.
@@ -309,10 +312,10 @@ source: a new `report_from_truth(ground_truth) -> str`; `end_run`'s
 
 ---
 
-## What the harness runs get from this
+## What the investigation runs get from this
 
 - The task: the confirmed outage set and the derived interval (from
-  `outage_set.json`), so the harness investigates the outage that happened.
+  `outage_set.json`), so an investigation run is given the outage that happened.
 - The scorer: `reference_extent.json` and `ground_truth.json`.
 
 ## Settled on 2026-10-21

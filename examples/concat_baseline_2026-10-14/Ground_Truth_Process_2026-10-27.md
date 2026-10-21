@@ -39,6 +39,8 @@ Fixed numbers, all in one place at the top of the script:
 | `DOWN_MIN_HOURS` | 3; a ticket whose interval is shorter is dropped | step 2 |
 | `DOWN_MAX_HOURS` | 24; a cell down longer is a long outage, not this kind of case | step 2 |
 | `KPI_MONTH_DAYS` | 30 before the ticket start, 1 after its end | step 2 |
+| `KPI_MIN_ROW_SHARE` | 0.5: a cell with rows for fewer than half the month's hours has no usable KPI | steps 2, 6b, 8 |
+| `BASELINE_MIN_SAMPLES` | 2 of the 4 same-weekday-hour samples | step 8 |
 | `COVERAGE_RSRP_DBM` | -110 | steps 5 to 8 (the same constant the investigation code uses) |
 | `LOAD_LIMIT_PERCENT` | 80 | step 8 (the same constant the investigation code uses) |
 | `SIGNAL_MARGIN_DB`, `SERVICE_RSRP_DBM` | 10, -110 | step 8 (the same constants the investigation code uses) |
@@ -116,6 +118,41 @@ Functions: `<path>.query_lte_rrc_prb`, `<path>.query_nr_rrc_prb` over the
 month window (the KPI calls with a window inside the outage are yours to
 supply); routing by id pattern from `policy.route_kpi_cells`; new helpers
 `zero_runs(rows) -> list[(start, end)]` and `regular_zero(runs, ticket_interval) -> bool`.
+
+## Step 2b. Missing KPI
+
+KPI is often missing: a cell has no rows at all for the month, or rows for
+some hours and not others. "No row" means two different things, outage or
+missing data, and the script must not read one as the other.
+
+- **Row share.** For every cell queried, the share of the month's hours
+  that returned a row. Below `KPI_MIN_ROW_SHARE` the cell's KPI is
+  unusable: verdict `no_kpi`. Such a cell is excluded from the outage set
+  (it cannot be shown down) and, as a backup, carries `no_data` in every
+  hour of step 8. It is never silently treated as zero.
+- **Gaps inside a usable month.** A missing hour in a cell that has rows
+  for most of the month counts as zero only inside a run that also has
+  explicit zero rows next to it (the gap is the tail or the middle of a
+  real outage); a missing hour with populated non-zero hours on both sides
+  is `no_data` for that hour, not zero. A run made only of missing hours
+  is `no_data`, not a down run.
+- **The site.** If every cell of the site is `no_kpi`, the ticket is
+  dropped (flagged `no_kpi`); if some are, the outage set is built from
+  the others and the `no_kpi` cells are listed in the flags.
+- **Baselines (step 8).** The same-weekday-hour baseline needs at least
+  `BASELINE_MIN_SAMPLES` of its four samples; with fewer, the month's mean
+  at the same hour of day is used and the baseline is marked `fallback`;
+  with no sample at all, `no_baseline`, and the RRC gain for that hour is
+  `no_data`.
+- **Per point (step 8).** The two fractions exclude `no_data` backups from
+  the denominator and record how many were excluded; a point whose
+  reachable backups all lack data for an hour is `no_backup_data` for that
+  hour, distinct from `no_backup`.
+- **The report.** A section "KPI availability": per cell its row share
+  and verdict; per outage hour the share of backups with data; the counts
+  of `no_backup_data` points per area. The two caveats become three.
+
+Writes: `kpi_availability.json`, read by steps 8 and 9.
 
 ## Step 3. The window and the areas
 
@@ -252,7 +289,7 @@ Decides, in two layers that are recorded separately and never mixed.
   and hour of day (four samples), the same baseline form `apply_kpi` computes;
 - the RRC gain: observed minus baseline, as a number and as a ratio;
 - `prb_issue`: observed PRB above `LOAD_LIMIT_PERCENT`;
-- an hour with no row is `no_data` for that cell, not zero.
+- an hour with no row is `no_data` for that cell, not zero (rules in step 2b).
 
 The RRC gain is what says where the outage traffic went; the PRB says
 whether the cell could carry it.
@@ -266,7 +303,8 @@ whether the cell could carry it.
 - `rsrp_issue_fraction`: the share of those cells whose RSRP is weaker than
   the outage sector by more than `SIGNAL_MARGIN_DB` or below
   `SERVICE_RSRP_DBM`;
-- `no_backup`: true when the set is empty.
+- `no_backup`: true when the set is empty; `no_backup_data`: true when the
+  set is not empty but no member has KPI for the hour (step 2b).
 
 Two fractions per point and hour, kept apart. No class is derived from
 them in this version; the class rule can read them later.

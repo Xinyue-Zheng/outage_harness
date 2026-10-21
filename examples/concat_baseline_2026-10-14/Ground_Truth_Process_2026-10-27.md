@@ -37,6 +37,7 @@ Fixed numbers, all in one place at the top of the script:
 | `SAMPLE_SPACING_M` | 1,000 | step 5 |
 | `NEIGHBOUR_BAND_M` | 1,000 | step 6 |
 | `DOWN_MIN_HOURS` | 3; a ticket whose interval is shorter is dropped | step 2 |
+| `DOWN_MAX_HOURS` | 24; a cell down longer is a long outage, not this kind of case | step 2 |
 | `KPI_MONTH_DAYS` | 30 before the ticket start, 1 after its end | step 2 |
 | `COVERAGE_RSRP_DBM` | -110 | steps 5 to 8 (the same constant the investigation code uses) |
 | `LOAD_LIMIT_PERCENT` | 80 | step 8 (the same constant the investigation code uses) |
@@ -64,8 +65,10 @@ column.
 
 ## Step 2. Who was down, and when
 
-Reads: for the ticket's sectors and every candidate cell, the hourly KPI
-(RRC, PRB) over one month: from 30 days before the ticket's start to 24
+Reads: the ticket names a site id; the cells of that site are every cell
+whose id starts with the site id (from the metadata and from the heatmap's
+candidate list). For every cell of the site and every candidate cell, the
+hourly KPI (RRC, PRB) over one month: from 30 days before the ticket's start to 24
 hours after its end. One month is what separates a real outage from a
 cell whose RRC goes to zero every night or every weekend.
 
@@ -76,14 +79,26 @@ Decides, per cell:
 - a cell with such runs at the same weekday and hours in other weeks of
   the month is a regular zero, not an outage, for those hours (flagged
   `regular_zero`, excluded from the outage set);
-- a run of at least `DOWN_MIN_HOURS` hours that overlaps the ticket
-  interval, and is not a regular zero, makes the cell down for that run;
+- a run of at least `DOWN_MIN_HOURS` and at most `DOWN_MAX_HOURS` hours
+  that overlaps the ticket interval, and is not a regular zero, makes the
+  cell down for that run: this is the kind of outage the case is about,
+  hours to one day;
+- a cell whose zero run is longer than `DOWN_MAX_HOURS`, or that is at
+  zero through most of the month, is a long outage (flagged
+  `long_outage`): excluded from the outage set and from the backups, since
+  it was not serving before the outage either;
+- a cell of the site with no qualifying run is `site_up` (flagged):
+  excluded from the outage set and from the backups (the radio rule
+  already excludes same-site sectors as backups);
 - a ticket whose own interval is shorter than `DOWN_MIN_HOURS` is dropped
   before any query (flagged `ticket_too_short`, no directory written);
 - a cell whose RRC is zero through the month is idle (flagged, excluded).
 
-The outage set is the ticket's sectors confirmed down plus every candidate
-found down; ticket sectors not found down are flagged. The outage interval
+The outage set is the site's cells with a qualifying run plus every
+candidate found down for a qualifying run. A ticket whose site has no cell
+with a qualifying run is dropped (flagged `no_short_outage`, no directory
+written): the case is either not an outage or a long one, and neither is
+what the comparison is about. The outage interval
 is the intersection of the outage set's down runs. If the runs do not
 overlap, the case is flagged `staggered`, the interval is the longest
 single run, and step 9 draws every outage-set and candidate cell's RRC and
@@ -92,9 +107,10 @@ the ticket interval and each down run marked) so the reviewer can see
 what happened.
 
 Writes: `outage_set.json`: per cell the hourly RRC and PRB over the month,
-its runs, the verdict (down, up, idle, regular_zero); the confirmed outage
-set; the derived interval; the flags (ticket sector not down; candidate
-down beyond the ticket; idle; regular_zero; staggered).
+its runs, the verdict (down, site_up, long_outage, idle, regular_zero,
+up); the confirmed outage set; the derived interval; the flags
+(no_short_outage; candidate down beyond the ticket; long_outage; idle;
+regular_zero; staggered).
 
 Functions: `<path>.query_lte_rrc_prb`, `<path>.query_nr_rrc_prb` over the
 month window (the KPI calls with a window inside the outage are yours to
@@ -337,6 +353,20 @@ source: a new `report_from_truth(ground_truth) -> str`; `end_run`'s
 - `DOWN_MIN_HOURS` is 3; a ticket shorter than 3 hours is dropped.
 - One instruction file for the whole process.
 - Map colours: green to red over 0 to 1, no-backup points black.
+
+## Progress display
+
+The script shows what it is doing with `tqdm` (already importable in the
+environment; add it to the dependencies if not). One bar per step, named
+for the step ("step 5: sampling 37 areas"), advanced once per unit of work
+the step loops over: cells for the KPI steps, areas for sampling and
+filling, locations for every point fetch (the bar inside
+`fetch_area_points` is passed in by the caller so the ground-truth script
+and the investigation packages share it), passes for the fill loop,
+figures for step 9. Each bar's postfix shows the running counts that
+matter for that step (hit areas, cache hits, api calls, errors). The bars
+go to stderr; the files are unchanged by them; `--quiet` turns them off
+for batch runs.
 
 ## Check
 

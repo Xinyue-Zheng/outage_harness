@@ -1,4 +1,21 @@
-# Ground truth: the full process, for review
+# Ground truth: the full process (instruction for the Copilot)
+
+Build `make_ground_truth.py` in `outage_harness_langgraph`, run as
+
+```
+python -m outage_harness_langgraph.make_ground_truth --ticket <ticket id or JSON> --out <results root>/ground_truth
+```
+
+It executes the ten steps below in order, for one ticket, with no model
+anywhere. Every number it writes comes from a tool result or a State
+file; where a result is absent the field is `not recorded`, never a
+guess. The script is deterministic for a given set of tool results, and
+it writes a `README.md` with the command, the constants, the tool calls
+made, and the counts per step. Reuse the package's existing functions
+where a step names them; write the new helpers it names; keep the fixed
+numbers in the one table below as module constants. Function paths in
+angle brackets are placeholders the author fills before you start; stop
+and ask if one is still a placeholder.
 
 One site, one ticket, one run of `make_ground_truth.py`. Ten steps (step 6 has two halves). Each
 step says what it reads, what it decides, what it writes, and which
@@ -317,3 +334,19 @@ source: a new `report_from_truth(ground_truth) -> str`; `end_run`'s
 - `DOWN_MIN_HOURS` is 3; a ticket shorter than 3 hours is dropped.
 - One instruction file for the whole process.
 - Map colours: green to red over 0 to 1, no-backup points black.
+
+## Check
+
+1. On the closed case: step 2 drops no ticket, finds the listed sectors
+   down, and writes `outage_set.json` with a derived interval of at least
+   three hours; `kpi_month.png` shows the zero run inside the ticket.
+2. Steps 5 and 6 end with every hit area filled and every outer-band area
+   clear; `fill_passes.json` shows the passes; `calls.json` gives the
+   point-call total, which is the cost figure for this site.
+3. If step 6b finds a new down cell, a `pass_2/` directory exists and the
+   top README names it as final.
+4. `ground_truth.json` has, for every covered point and every outage hour,
+   the two fractions and `no_backup`; the four figures exist; the report's
+   section 1 table sums match the point counts.
+5. Running the script twice on the same tool results gives identical
+   files.

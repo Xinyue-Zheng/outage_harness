@@ -92,8 +92,13 @@ Decides, per cell:
   `long_outage`): excluded from the outage set and from the backups, since
   it was not serving before the outage either;
 - a cell of the site with no qualifying run is `site_up` (flagged):
-  excluded from the outage set and from the backups (the radio rule
-  already excludes same-site sectors as backups);
+  excluded from the outage set, but a backup like any other cell of its
+  technology, flagged `same_site` in the backup tables. A surviving sector
+  of the outage site serves normally and takes traffic; the radio rule in
+  `radio.eligible_backup_cells`, which excludes every cell matching the
+  outage prefix, must be changed in all packages to exclude only the cells
+  of the confirmed outage set (the task's `outage_cell_ids`), not the
+  whole site;
 - a ticket whose own interval is shorter than `DOWN_MIN_HOURS` is dropped
   before any query (flagged `ticket_too_short`, no directory written);
 - a cell whose RRC is zero through the month is idle (flagged, excluded).

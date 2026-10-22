@@ -140,7 +140,7 @@ missing data, and the script must not read one as the other.
   that returned a row. Below `KPI_MIN_ROW_SHARE` the cell's KPI is
   unusable: verdict `no_kpi`. Such a cell is excluded from the outage set
   (it cannot be shown down) and, as a backup, carries `no_data` in every
-  hour of step 8. It is never silently treated as zero.
+  hour of step 6. It is never silently treated as zero.
 - **Gaps inside a usable month.** A missing hour in a cell that has rows
   for most of the month counts as zero only inside a run that also has
   explicit zero rows next to it (the gap is the tail or the middle of a
@@ -240,7 +240,7 @@ over the derived outage interval widened as in step 2, and apply the down
 rule. A new cell found down joins the outage set; the hits of steps 3
 and 4 are then re-evaluated with the enlarged set (a scan point that was
 clear may become a hit), and the refinement runs again. A new cell not down joins
-the backup candidates and its outage-hour KPI is kept for step 8.
+the backup candidates and its outage-hour KPI is kept for step 6.
 
 Repeat after every refinement pass until no cell is new. This closes the
 candidate list by observation.
@@ -380,7 +380,7 @@ the step loops over: cells for the KPI steps, areas for sampling and
 filling, locations for every point fetch (the bar inside
 `fetch_area_points` is passed in by the caller so the ground-truth script
 and the investigation packages share it), passes for the fill loop,
-figures for step 9. Each bar's postfix shows the running counts that
+figures for step 7. Each bar's postfix shows the running counts that
 matter for that step (hit areas, cache hits, api calls, errors). The bars
 go to stderr; the files are unchanged by them; `--quiet` turns them off
 for batch runs.

@@ -16,10 +16,33 @@ number it writes comes from a tool result or from a file an earlier step
 wrote; where a result is absent the field is `not recorded`, never a
 guess. The script is deterministic for a given set of tool results and
 writes a `README.md` with the command, the constants, the calls made and
-the counts per step. It uses the per-site point cache, the parallel calls
-and the restartable steps of `CHANGES_2026-10-28_speed_and_resume.md`;
-apply that first. Function paths in angle brackets are placeholders the
+the counts per step. Function paths in angle brackets are placeholders the
 author fills before you start; stop and ask if one is still a placeholder.
+
+### Point calls: parallel, short timeout, cached per site
+
+The scan and the refinement are about 1,300 point calls per site. They
+run through `point_coverage.fetch_area_points`, which is changed once, for
+the ground-truth script and the investigation packages alike:
+
+- `POINT_WORKERS = 8`: the calls of one fetch run on a thread pool of
+  eight (`fetch_area_points` already has the pool; set the constant and
+  use it as the default). Lower it if the API returns rate-limit errors.
+- `POINT_TIMEOUT_S = (10, 60)` in `point_by_point_cover.py` instead of
+  `(15, 300)`; a call is retried twice (`POINT_RETRIES = 2`) and then
+  recorded as an error point; the fetch continues.
+- A per-site cache, one append-only file `<results root>/<site>/point_cache.jsonl`,
+  one line per fetched point keyed by `grid_id|radius_m|epoch` (the epoch
+  is the outage start date). `fetch_area_points` reads it before calling
+  and appends to it after; a break in the scan therefore costs only the
+  uncached remainder on the rerun, and an investigation run of the same
+  site reuses the scan's points. The result summary counts `cache_hits`
+  and `api_calls` separately; `calls.json` reports both.
+
+The script's steps are restartable: each writes its output files when
+complete, and on rerun a step whose outputs exist is skipped;
+`--restart` deletes them. No OSM call and no heatmap call exist in this
+process, so nothing else is cached.
 
 The product is a directory `<out>/<site>_<window>/` with `scan.json`,
 `outage_set.json`, `kpi_availability.json`, `refinement.json`,

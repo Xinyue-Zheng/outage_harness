@@ -13,6 +13,23 @@ holds points on its scan lattice (1 km) and its refinement lattice
 confirmed outage set; a *reachable backup* at a point is an eligible cell
 listed in the same sample as an outage sector at or above -110 dBm.
 
+**Query radius.** The point API serves a 10 m radius only (the 100 m
+radius is not available). Both the ground truth and every investigation
+run query the same cell centres with the same 10 m radius, so a point's
+samples are the measurements within 10 m of the centre of its 100 m cell,
+not the cell. Three consequences run through this document:
+
+- many more points return no sample. A point with no sample is *unknown*:
+  not covered, not uncovered, not counted in any share. Every table and
+  figure carries the no-sample count next to the point count;
+- a point's verdict rests on few samples. The record keeps `n_samples`
+  per point so a reader can weigh it; no minimum is imposed;
+- a run and the truth that fetch the same point get the same samples
+  (same centre, same radius, same epoch, and the shared per-site cache
+  returns the stored result). Point-level disagreement at a fetched point
+  can then come only from the load estimate; the matching checks this
+  (section 2.1).
+
 ---
 
 ## 1. The ground-truth record, per point
@@ -21,6 +38,7 @@ For every point in the reference extent, and for every outage hour `h`:
 
 | field | definition |
 |---|---|
+| `n_samples` | the number of samples returned; `no_sample = (n_samples == 0)`, and then no other field is set |
 | `outage_rsrp` | the best RSRP of any outage sector at the point |
 | `backups[]` | the reachable backups, each with `rsrp`, `rsrp_drop = outage_rsrp - rsrp`, `rsrp_issue = rsrp_drop > 10 or rsrp < -110`, and per hour `prb_obs[h]`, `prb_issue[h] = prb_obs[h] > 80`, `rrc_gain[h]`, `data[h]` (true when the hour has a row) |
 | `n_backups` | the number of reachable backups; `no_backup = (n_backups == 0)` |
@@ -42,7 +60,8 @@ regenerate every aggregate from the record.
 
 **Aggregates**, each per hour where the field has an hour:
 
-- over all extent points: count, `no_backup` count and share, mean
+- over all extent points: count, `no_sample` count and share, and then
+  over the sampled points only: `no_backup` count and share, mean
   `f_rsrp`, mean `f_prb[h]`, share of points with `f_rsrp >= 0.5`, share
   with `f_prb[h] >= 0.5`, share with `f_rsrp == 1` (every backup degraded),
   share with `f_prb[h] == 1`;
@@ -63,12 +82,17 @@ every ground-truth point `p`:
 - **fetched**: the run's coverage table has `p` with samples. Then the
   run's reachable backups at `p` are computed by the same rule from its
   own samples, and compared with the truth's: `backup_jaccard(p)` is the
-  Jaccard index of the two sets; `f_rsrp_run(p)` is the run's share, and
+  Jaccard index of the two sets, expected to be 1 at every fetched point
+  (same centre, radius and epoch); a value below 1 means the two sides
+  queried at different epochs or one side's rule differs, and the script
+  reports it as a check failure, not as a run error. `f_rsrp_run(p)` is
+  the run's share, and
   `d_rsrp(p) = f_rsrp_run - f_rsrp`; `f_prb_run(p, h)` is the share of the
   run's reachable backups whose *estimated* PRB (from `redistribution.json`)
   exceeds 80 in hour `h`, and `d_prb(p, h) = f_prb_run - f_prb`.
 - **fetched, no sample**: the run fetched `p` and got nothing; recorded as
-  `missing_in_run`.
+  `missing_in_run`. With the shared cache this coincides with the truth's
+  `no_sample` at `p`; the point is unknown on both sides and is not scored.
 - **not fetched**: the run never fetched `p`; recorded as `not_fetched`.
   Among these, `not_fetched_in_area` when `p` lies inside an area of the
   run's geography (the run could have fetched it), and
@@ -112,7 +136,7 @@ mistakes the run makes, not only how many.
 
 | number | definition |
 |---|---|
-| extent recall | fetched truth points / truth points in areas (points outside areas excluded) |
+| extent recall | fetched truth points / truth points in areas (points outside areas excluded; no-sample points excluded from both counts) |
 | extent recall, all | fetched truth points / all truth points (the design limit shows as the gap between the two) |
 | backup agreement | mean `backup_jaccard` over fetched points |
 | RSRP-fraction error | mean absolute `d_rsrp` over fetched points |
@@ -129,8 +153,9 @@ Two maps, as now, with the same frame, limits and colours as the
 walkthrough page, plus a text panel on each.
 
 **Map A, RSRP**: every extent point coloured by `f_rsrp`, green at 0 to red
-at 1; `no_backup` points black; the site as a cross; area outlines when a
-geography file exists. Title: `<site>, outage <start> to <end>: share of
+at 1; `no_backup` points black; `no_sample` points a small hollow grey
+circle, so the reader sees where the truth is unknown; the site as a
+cross; area outlines when a geography file exists. Title: `<site>, outage <start> to <end>: share of
 reachable backups with RSRP degradation (> 10 dB or below -110 dBm)`.
 
 **Map B, PRB**: the same points coloured by `f_prb_worst`; `no_backup`
@@ -141,7 +166,7 @@ backups congested (PRB > 80 %) in the worst hour, <worst_hour>`.
 from the aggregates of section 1 and nothing else:
 
 ```
-extent          1,284 points, 500 m inside the footprint, 1 km outside
+extent          1,284 points (10 m radius at each), 500 m inside the footprint, 1 km outside; 341 (26.6 %) with no sample
 outage set      ARL02850_aa_1, _ab_1, _ac_1 (3 of 6 sectors; 3 stayed up)
 interval        2026-03-24 11:00 to 2026-03-25 02:00 UTC (15 h)
 no backup       212 points (16.5 %)
@@ -203,9 +228,9 @@ record says which:
    the investigation's choice of areas or its stop; the completion check
    and the open items of the run's last round say why the area was left.
 2. **Fetched, different backups** (`backup_jaccard < 1`): the same point
-   sampled at a different time or radius returned different cells. Not
-   the investigation's doing; it bounds how far point-level agreement can
-   go, and the rules run shows the same effect.
+   returned different cells, which with the same centre, radius and epoch
+   should not happen; it marks a different epoch or a rule mismatch and is
+   fixed, not analysed.
 3. **Same backups, different RSRP fraction**: should not occur, since the
    rule is the same on the same cells; a non-zero `d_rsrp` with
    `backup_jaccard = 1` is a bug in one side's computation.
@@ -214,13 +239,15 @@ record says which:
    estimate is biased (points off the diagonal on one side) or noisy, and
    which backups it misjudges.
 
-The analysis for the paper follows those four lines: how much of the
-run's error is extent (1), how much is sampling that no strategy can
-remove (2), and how much is the load model (4); then, across conditions,
-which of the three the input format and the completion machinery change.
-That is where the agent performs well or badly stated in terms the
-design can act on: an extent miss is a strategy problem, a load error is a
-model problem, and a sampling difference is a measurement limit.
+The analysis for the paper follows those lines: how much of the run's
+error is extent (1) and how much is the load model (4); then, across
+conditions, which of the two the input format and the completion
+machinery change. That is where the agent performs well or badly stated
+in terms the design can act on: an extent miss is a strategy problem and
+a load error is a model problem. The measurement limit that remains is
+the no-sample share: it is the same for every condition and for the
+truth, and the tables report it per case so a case with little data is
+read as such.
 
 ---
 

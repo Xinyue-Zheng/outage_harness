@@ -56,7 +56,7 @@ Fixed numbers, all in one place at the top of the script:
 |---|---|---|
 | `SQUARE_KM` | 30, centred on the site; inside the 60 km frame | step 1 |
 | `SCAN_SPACING_M` | 1,000 | step 1 |
-| `SCAN_RADIUS_M` | 100 | steps 1, 4 |
+| `SCAN_RADIUS_M` | 10: the only radius the point API serves | steps 1, 4 |
 | `REFINE_SPACING_M` | 500 | step 4 |
 | `REFINE_BLOCK_M` | 2,000: the square around a hit that is refined | step 4 |
 | `EDGE_BAND_KM` | 5: the outer band of the square that must hold no hit | step 3 |
@@ -71,7 +71,10 @@ Fixed numbers, all in one place at the top of the script:
 
 Every scan and refinement point is a cell of the 100 m frame grid (the
 nearest cell centre to the lattice point), so the point cache is shared
-with the investigation runs of the same site.
+with the investigation runs of the same site. A point call returns the
+samples within 10 m of that centre, not the cell: a point with no sample
+is unknown (neither a hit nor a miss) and every count below reports the
+no-sample points next to the sampled ones.
 
 ---
 
@@ -86,8 +89,8 @@ Decides: the scan lattice, `SCAN_SPACING_M` in both directions over the
 with `SCAN_RADIUS_M`. Every cell listed in any sample, with its RSRP, is
 recorded per point. Points with no sample are recorded as such.
 
-Writes: `scan.json`: per lattice point its grid id, the samples' cells
-with RSRP or `no_sample`; `cells_seen.json` (first version): every cell
+Writes: `scan.json`: per lattice point its grid id, `n_samples`, the
+samples' cells with RSRP or `no_sample`; `cells_seen.json` (first version): every cell
 seen, where, and its technology (step 2c's pattern).
 
 Functions: `point_coverage.fetch_area_points` with `grid_ids` (the
@@ -226,7 +229,9 @@ in step 1, still inside the frame) and the rule runs again; a hit that
 reaches the frame edge is recorded as `at_frame`.
 
 Writes: `scan.json` updated with the hit flag per point and the final
-square; `README.md` records the extensions.
+square; `README.md` records the extensions and, for the closing band,
+the count of sampled points and of no-sample points: a band closed on
+few sampled points is a weak edge, and the report says so.
 
 ## Step 4. Refinement around hits
 

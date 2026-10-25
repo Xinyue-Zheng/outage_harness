@@ -5,7 +5,8 @@ This file replaces `Evaluation_Design_2026-10-25.md` and
 earlier design, the 10 m query radius, and one new rule that governs all
 of it.
 
-**The rule: no new point calls and no new KPI calls.** Every number in
+**The rule: no new point calls, no new KPI calls, no rerun.** All runs are
+complete; the evaluation analyses them as they are. Every number in
 this instruction is computed from files that already exist: the
 ground-truth directories the scan script wrote, the run directories the
 investigation code wrote, and the per-site caches. The evaluation scripts
@@ -96,7 +97,12 @@ Both are counts over the same list `backups[]`, so a reader can verify
 either from the record. The two are never combined into one number.
 
 **KPI from stored rows only.** `prb_obs[h]` and `rrc_gain[h]` come from
-the rows already on disk. A backup with no rows is `no_data` in every
+the rows already on disk. `prb_obs[h]` is the load observed on the backup
+during the actual outage hour `h`: it is what happened, including every
+cause of load in that hour. The run's PRB for the same backup and hour is
+an estimate made from the pre-outage baseline and the redistribution
+model. The comparison in section 2 is therefore estimate against
+observation, and section 4.3 reads it that way. A backup with no rows is `no_data` in every
 hour and listed as such; a backup with rows but none for `h` is `no_data`
 for `h`. A cell seen in a sample that was never queried for KPI (a cell
 first seen in refinement after the KPI step, for example) is a reachable
@@ -124,83 +130,134 @@ be reproduced from `ground_truth.json`.
 
 ## 2. Matching a run to the ground truth
 
-### 2.1 Point level
+**Why area level first.** The run's conclusions are area statements:
+which settlements and corridors lose service, and how much of each is
+degraded by signal or by capacity. The truth is a set of points. The
+comparison that answers "did the agent get the impact right" is
+therefore made per area, from both sides' point statistics aggregated
+over the same area. The two sides fetched different points, so a
+point-by-point comparison is possible only where they overlap; it is
+kept as a secondary analysis, and the points the run fetched that the
+truth does not hold are reported on their own.
 
-Both sides are on the same 100 m grid, so matching is by grid id. The
-run's samples per location are read from its last `state_NN.json`; when
-the table holds only the derived cells and not the samples, read the
-samples from the per-site `point_cache.jsonl` by the location's cache
-key. For every ground-truth point `p`:
+Both sides are on the same 100 m grid. The run's samples per location
+are read from its last `state_NN.json`; when the table holds only the
+derived cells and not the samples, read the samples from the per-site
+`point_cache.jsonl` by the location's cache key.
 
-- **fetched**: the run's coverage table has `p` with samples. The run's
-  reachable backups at `p` are computed by the same rule from its own
-  samples and compared with the truth's. `backup_jaccard(p)` is the
-  Jaccard index of the two sets. With the same `radius_m` and epoch on
-  both sides it must be 1; a value below 1 then marks a rule mismatch
-  between the two computations and the script reports it as a check
-  failure, not as a run error. With different radii (a run fetched before
-  the API change) it is a measurement difference and is reported as such,
-  per point and as a mean. `f_rsrp_run(p)` is the run's share, and
-  `d_rsrp(p) = f_rsrp_run - f_rsrp`; `f_prb_run(p, h)` is the share of the
-  run's reachable backups whose *estimated* PRB (from `redistribution.json`)
-  exceeds 80 in hour `h`, and `d_prb(p, h) = f_prb_run - f_prb`.
-- **fetched, no sample**: the run fetched `p` and got nothing; recorded as
-  `missing_in_run`. With the same radius this coincides with the truth's
-  `no_sample` at `p`; the point is unknown on both sides and is not scored.
-- **not fetched**: the run never fetched `p`; recorded as `not_fetched`.
-  Among these, `not_fetched_in_area` when `p` lies inside an area of the
-  run's geography (the run could have fetched it), and
-  `not_fetched_outside_areas` when `p` lies in no area (the design never
-  fetches there; this is a limit of the area-based investigation, reported
-  separately and not counted as an error of the run).
-
-The truth's lattice is coarser than the run's grid, so the run's points
-that lie between truth points are not scored; the comparison is at the
-truth's points only, and the paper says so.
-
-### 2.2 Area level
+### 2.1 Area level (primary)
 
 The run's areas are sets of grid ids (`geography.json` in the run
-directory, or the geography inside the last state file). A truth point
-belongs to an area when its grid id is in the area's set; a point in two
-areas (a corridor crossing a settlement) counts in both, as the run's own
-counts do. For each area of the run:
+directory, or the geography inside the last state file). A point belongs
+to an area when its grid id is in the area's set; a point in two areas (a
+corridor crossing a settlement) counts in both, as the run's own counts
+do. The truth has no areas of its own; it is read through the run's.
 
-- the truth's aggregates over the truth points inside the area (section
-  1), and the counts of `fetched`, `missing_in_run`, `not_fetched_in_area`;
-- the run's own report numbers for the area (covered points, total loss,
-  degrade by signal, by capacity, served, unknown cause);
-- the comparison: the run's `no_backup` count against the truth's over the
-  matched points; the run's mean `f_rsrp` against the truth's; the run's
-  mean `f_prb` (estimated) against the truth's `f_prb_worst` and per hour.
+For every area, the same statistics are computed twice by the same code,
+once over the truth's sampled points inside the area and once over the
+run's sampled points inside the area, each side from its own samples:
 
-Areas the run never queried get a row with the truth's aggregates and
-`fetched = 0`: the cost of leaving them.
+| statistic | truth side | run side |
+|---|---|---|
+| `n_points`, `n_sampled`, `n_covered` | truth points in the area | run points in the area |
+| `no_backup_share` | covered points with no reachable backup | same |
+| `f_rsrp_mean`, `f_rsrp_ge_half`, `f_rsrp_all` | mean of `f_rsrp`, share of points at or above 0.5, share at 1 | same |
+| `f_prb_mean[h]`, `f_prb_ge_half[h]`, `f_prb_all[h]`, and the worst hour | from observed PRB during the outage | from the estimated PRB of `redistribution.json` |
+| `class_share[c]` | class per point by `completion_point.classify_locations` with the strongest reachable backup's observed PRB in the worst hour; backups all without data give `unknown cause` | the run's reported class per point (its own report) |
 
-### 2.3 Class level
+The per-area comparison is the difference run minus truth of every
+statistic: `d_no_backup`, `d_f_rsrp_mean`, `d_f_prb_mean[h]` and for the
+worst hour, and for the classes the per-class difference and the total
+variation distance `tv = sum(|class_share_run[c] - class_share_truth[c]|) / 2`
+(0 when the two class distributions agree, 1 when they share nothing).
+Each area row also carries `extent_recall`: the share of the truth's
+sampled points in the area that the run fetched.
 
-The run reports a class per point (total loss, degrade by signal, degrade
-by capacity, both, served, unknown cause). The truth gets the same class
-by the same rule, `completion_point.classify_locations`, with the
-strongest reachable backup's *observed* PRB in the worst hour in place of
-the estimate; a point whose backups all lack data is `unknown cause`. A
-confusion matrix over the fetched points, run class against truth class,
-is the class-level comparison; it says which mistakes the run makes, not
-only how many.
+Three kinds of area row:
+
+- **compared**: both sides have sampled points in the area;
+- **truth only**: the run never queried the area (`n_sampled_run = 0`);
+  the row carries the truth's statistics and marks the cost of leaving
+  the area;
+- **run only**: the run has sampled points there but the truth has none
+  (an area outside the truth's lattice or extent); the row carries the
+  run's statistics and is not compared. Section 2.3 reports these points.
+
+The truth's lattice is coarse (500 m inside the footprint, 1 km
+outside), so a small area rests on few truth points. Every row carries
+`n_sampled` for both sides and the tables are sorted by it; the summary
+numbers weight areas by the truth's `n_sampled`, and an area with fewer
+than five truth points is shown but excluded from the weighted means,
+with that exclusion counted in the row `areas_excluded_few_points`.
+
+### 2.2 Matched points (secondary)
+
+For every truth point `p` that the run also fetched, the run's reachable
+backups at `p` are computed by the same rule from its own samples and
+compared with the truth's. `backup_jaccard(p)` is the Jaccard index of
+the two sets. With the same `radius_m` and epoch on both sides it must be
+1; a value below 1 then marks a rule mismatch between the two
+computations and the script reports it as a check failure, not as a run
+error. With different radii (a run fetched before the API change) it is a
+measurement difference and is reported as such, per point and as a mean.
+`d_rsrp(p) = f_rsrp_run - f_rsrp` and `d_prb(p, h) = f_prb_run - f_prb`
+are the per-point differences; a confusion matrix of run class against
+truth class over the matched points is the class-level comparison. A
+truth point the run fetched that returned no sample is `missing_in_run`;
+with the same radius this coincides with the truth's `no_sample` and the
+point is unknown on both sides.
+
+Truth points the run never fetched are `not_fetched_in_area` when they lie
+in an area of the run's geography, and `not_fetched_outside_areas` when
+they lie in no area (the design never fetches there; this is a limit of
+the area-based investigation, reported separately and not counted as an
+error of the run).
+
+### 2.3 Points the run fetched that the truth does not hold
+
+The run's sampled points that are not on the truth's lattice (or lie
+outside the truth's extent) are not compared. They are reported on their
+own, because they are evidence the truth does not have:
+
+- count per area, and the count outside the truth's final square;
+- the run's statistics over them (the row-side columns of 2.1), as a
+  separate table and as a layer on the run map (section 4.1);
+- the subset that is *covered* (an outage sector at or above -110 dBm)
+  and lies beyond the truth's extent: these are places the run found
+  outage coverage where the truth's edge rule had closed, and the report
+  lists them with their distance from the nearest truth hit. They are a
+  finding about the truth's lattice as much as about the run.
 
 ### 2.4 Numbers per run
 
+Primary, area level, weighted by the truth's `n_sampled` over compared
+areas:
+
 | number | definition |
 |---|---|
-| extent recall | fetched truth points / truth points in areas (points outside areas excluded; no-sample points excluded from both counts) |
-| extent recall, all | fetched truth points / all sampled truth points (the design limit shows as the gap between the two) |
-| backup agreement | mean `backup_jaccard` over fetched points, with the share of fetched points where the radii differ |
-| RSRP-fraction error | mean absolute `d_rsrp` over fetched points |
-| PRB-fraction error | mean absolute `d_prb` over fetched points, worst hour and per hour |
-| PRB per-backup error | mean absolute (estimated minus observed PRB) over backups and hours with data; and the share of backups where estimated and observed fall on different sides of 80 |
-| class agreement | diagonal share of the confusion matrix; plus the two rates that matter to an operator: truth total loss reported as served (missed loss), and truth served reported as loss or degrade (false alarm) |
-| cost | point calls, cache hits, rounds, wall time, from `calls.json` and `run.json`; each also as a fraction of the ground truth's point calls |
-| data | the no-sample share of the truth, the share of backups without KPI, the share of outage hours without KPI rows |
+| areas | compared / truth only / run only, with the truth points in each group |
+| area extent recall | truth sampled points in compared areas / truth sampled points in all areas with truth points (truth-only areas count as unfetched) |
+| no-backup share error | weighted mean of `|d_no_backup|` |
+| RSRP share error | weighted mean of `|d_f_rsrp_mean|`, and the signed mean (bias) |
+| PRB share error | weighted mean of `|d_f_prb_mean|` for the worst hour and per hour, and the signed mean |
+| class distance | weighted mean of `tv`; plus the two rates that matter to an operator, over the compared areas' points: truth total loss reported as served (missed loss), truth served reported as loss or degrade (false alarm) |
+| area ranking | the areas ordered by truth total-loss share against the run's order: how many of the truth's top three are in the run's top three |
+
+Secondary, point level, over matched points: backup agreement (mean
+`backup_jaccard`, with the share of points where the radii differ), mean
+absolute `d_rsrp`, mean absolute `d_prb` for the worst hour and per hour,
+the confusion matrix's diagonal share, and the per-backup PRB error: mean
+absolute (estimated minus observed PRB) over backups and hours with data,
+and the share of backups where estimated and observed fall on different
+sides of 80.
+
+Run-only points: their count, the count beyond the truth's extent, and
+the covered count among those.
+
+Cost and data: point calls, cache hits, rounds, wall time from
+`calls.json` and `run.json`, each also as a fraction of the ground
+truth's point calls; the no-sample share of the truth, the share of
+backups without KPI, the share of outage hours without KPI rows.
 
 ---
 
@@ -259,19 +316,26 @@ the backups without KPI, the hours without rows, and the caveats.
 
 ### 4.1 Figures per run
 
-- **Three-panel maps**, one row for RSRP and one for PRB: truth, run,
-  difference. The run panel colours fetched truth points by the run's
-  fraction and marks `not_fetched_in_area` with a hollow circle and
-  `not_fetched_outside_areas` with a dot; the difference panel colours
-  `d_rsrp` or `d_prb` on a diverging scale, blue when the run
-  underestimates, red when it overestimates, white at zero; no-sample
-  points as on the truth maps. The text panel on the difference map:
-  extent recall (both), backup agreement, the two fraction errors, the two
-  operator rates, the no-sample share.
-- **Per-area bars**: for each area, truth and run side by side for
-  `no_backup` share, mean `f_rsrp`, mean `f_prb`; areas the run never
-  queried shaded.
-- **The confusion matrix** of classes, counts and row shares.
+- **Area maps**, the primary figure: one row for RSRP and one for PRB,
+  three panels each: truth, run, difference. Each area is filled by its
+  area statistic (`f_rsrp_mean`, `f_prb_mean` in the worst hour), green
+  at 0 to red at 1; truth-only areas hatched on the run panel, run-only
+  areas hatched on the truth panel; the difference panel on a diverging
+  scale, blue when the run underestimates, red when it overestimates,
+  white at zero, with `tv` printed in each area. The text panel on the
+  difference map: the area counts, area extent recall, the three share
+  errors with their bias, the class distance, the two operator rates.
+- **Per-area bars**: for each compared area, truth and run side by side
+  for `no_backup_share`, `f_rsrp_mean`, `f_prb_mean` (worst hour), and the
+  class shares as stacked bars; `n_sampled` of both sides under the area
+  name; truth-only areas shaded.
+- **Point maps**, secondary: the same three panels at point level, the
+  run panel marking `not_fetched_in_area` with a hollow circle,
+  `not_fetched_outside_areas` with a dot, run-only points as small
+  triangles, no-sample points as on the truth maps; the difference panel
+  over matched points only.
+- **The confusion matrix** of classes over matched points, counts and row
+  shares.
 - **Per-backup scatter**: estimated PRB against observed PRB, one point per
   backup and hour with data, the 80 % lines drawn; the four quadrants are
   the four outcomes (both congested, both clear, missed congestion, false
@@ -280,42 +344,53 @@ the backups without KPI, the hours without rows, and the caveats.
 ### 4.2 Tables across runs and conditions
 
 One table per condition (rendered, concat, concat_checked, rules), one row
-per case, the numbers of section 2.4; a last row with mean and range. One
-summary table across conditions with the means. Cases where the confirmed
-outage set differed from the ticket are listed with a flag, since every
-condition was given the confirmed set. Cases with a high no-sample share
-or many backups without KPI carry those numbers in their row, so a case
-with little data is read as such and not as a bad run.
+per case, the primary numbers of section 2.4 first, then the secondary
+and the run-only counts, then cost and data; a last row with mean and
+range. One summary table across conditions with the means of the primary
+numbers. Cases where the confirmed outage set differed from the ticket
+are listed with a flag, since every condition was given the confirmed
+set. Cases with a high no-sample share, many backups without KPI, or many
+areas excluded for few points carry those numbers in their row, so a
+case with little data is read as such and not as a bad run.
 
 ### 4.3 Reading the differences
 
-Each disagreement at a point has one of four causes, and the matching
-record says which:
+An area-level difference has one of three sources, and the per-area row
+says which:
 
-1. **Not fetched** (`not_fetched_in_area`): an extent miss. The cause is
-   the investigation's choice of areas or its stop; the completion check
-   and the open items of the run's last round say why the area was left.
-2. **Fetched, different backups** (`backup_jaccard < 1`): with the same
-   radius and epoch this is a rule mismatch and is fixed, not analysed;
-   with different radii it is a measurement difference that bounds the
-   point-level agreement of that run, and the tables say how many points
-   it affects.
-3. **Same backups, different RSRP fraction**: should not occur, since the
-   rule is the same on the same cells; a non-zero `d_rsrp` with
-   `backup_jaccard = 1` is a bug in one side's computation.
-4. **Same backups, different PRB fraction**: the redistribution estimate
-   against the observed load. The per-backup scatter says whether the
-   estimate is biased (points off the diagonal on one side) or noisy, and
-   which backups it misjudges.
+1. **Extent**: the run did not fetch the area (truth only), or fetched a
+   small part of it (`extent_recall` low). The cause is the
+   investigation's choice of areas or its stop; the completion check and
+   the open items of the run's last round say why the area was left. The
+   run's statistics over a partly fetched area rest on the part it chose,
+   which may be the roadside strip or the settlement centre; the point
+   maps show which.
+2. **Sampling**: the two sides fetched different points of the area, and
+   the area statistic moves with the points. The matched-point analysis
+   bounds this: where `backup_jaccard = 1` at every matched point, the
+   difference in `f_rsrp_mean` between the sides comes only from the
+   unmatched points, and the run-only table says what the run saw there.
+3. **Load model**: `d_f_prb_mean` with `d_f_rsrp_mean` near zero is the
+   redistribution estimate against the load observed during the outage.
+   The per-backup scatter says whether the estimate is biased (points off
+   the diagonal on one side) or noisy, and which backups it misjudges.
+   The observed load includes everything that happened in the hour, so a
+   part of this difference is not the model's to remove; the scatter's
+   spread across cases shows how large that part is.
 
-The analysis for the paper follows those lines: how much of the run's
-error is extent (1) and how much is the load model (4); then, across
-conditions, which of the two the input format and the completion
-machinery change. That is where the agent performs well or badly stated
-in terms the design can act on: an extent miss is a strategy problem and
-a load error is a model problem. The measurement limit that remains is
-the no-sample share: it is the same for every condition and for the
-truth, and the tables report it per case.
+At the point level, the same three apply, with the rule-mismatch check
+(`backup_jaccard < 1` at equal radius) fixed before any table is read.
+
+The analysis for the paper follows those lines: how much of each
+condition's area error is extent (1), how much sampling (2), how much
+load model (3); then, across conditions, which of the three the input
+format and the completion machinery change. That is where the agent
+performs well or badly stated in terms the design can act on: an extent
+miss is a strategy problem, a sampling difference is a choice of where
+to look inside an area, and a load error is a model problem. The
+measurement limit that remains is the no-sample share: it is the same
+for every condition and for the truth, and the tables report it per
+case.
 
 ---
 
@@ -361,9 +436,10 @@ Three scripts, none of which imports the point API or the KPI tools:
   figures with their text panels and the report. It overwrites earlier
   statistics files and figures and says so in the README.
 - `score_run.py <run dir> <ground truth dir>`: section 2, writing
-  `score.json` (the numbers of 2.4, the per-point records with their
-  cause from 4.3, the per-area table, the confusion matrix) and the
-  figures of 4.1 into the run directory.
+  `score.json` (the numbers of 2.4; the per-area table with both sides'
+  statistics, the differences and the source from 4.3; the matched-point
+  records; the run-only points; the confusion matrix) and the figures of
+  4.1 into the run directory.
 - `summarize_scores.py <score.json ...>`: the tables of 4.2, as one
   Markdown file.
 
@@ -379,9 +455,16 @@ Section 5 is an edit of the packages, done once.
 2. Every number on a text panel is found in `ground_truth.json` or its
    aggregates by name.
 3. For a case where the run and the truth used the same radius and
-   epoch, `score.json` has `backup_jaccard = 1` at every fetched point
+   epoch, `score.json` has `backup_jaccard = 1` at every matched point
    and `d_rsrp = 0` wherever both sides have the same backups; a
-   deviation is a bug to fix before any table is read.
+   deviation is a bug to fix before any table is read. Scoring a run
+   against a truth built from the run's own points (the same samples on
+   both sides) gives every area difference 0 and `tv = 0`.
+3b. Every run point is in exactly one of: matched, run only inside the
+   truth's square, run only beyond it; every truth point in exactly one
+   of: matched, `missing_in_run`, `not_fetched_in_area`,
+   `not_fetched_outside_areas`, `no_sample`. The counts add up to the
+   totals in `calls.json` and `ground_truth.json`.
 4. `summarize_scores.py` over all cases of one condition gives one row
    per case with the data columns filled, including the cases with
    missing KPI.

@@ -7,6 +7,13 @@ must land before the rules-vs-model experiment, the specification
 decisions, and the questions that remain. The rule-based baseline is
 double checked in part 5, after the changes.
 
+Scope: the harness is `outage_harness_langgraph` (rendered context) and
+the rule policy runs inside it with the model replaced by the rule
+selector. Only these two are compared for fairness. The two concat
+packages are external baselines: they do not use the harness, and their
+differences in validation, limits and stopping are part of what they are.
+The checklist's "concat same?" column is recorded but drives no change.
+
 Row ids (A1, E7, I11, ...) refer to the checklist.
 
 ## 1. The rule table as implemented
@@ -33,21 +40,22 @@ no change.
 
 ## 2. Changes before the rules-vs-model experiment
 
-The comparison is valid only if every decision core (rendered, concat,
-concat_checked, rules) runs against the same completion function, the same
-validator where the condition claims it, the same limits and the same stop
-rule. The review found seven places where that is not true today. Ordered
-by effect on the comparison.
+The comparison is valid only if the model and the rule selector run inside
+the same harness: the same completion function, the same validator, the
+same limits and the same stop rule. The review found six places where
+that is not true today, or where a harness defect would hit the two cores
+differently. Ordered by effect on the comparison.
 
-### 2.1 One limits set for every condition (C7-C9)
+### 2.1 One limits set for the harness and the rules runner (C7-C9)
 
-Today the rendered CLI uses 50 tool calls, 12 000 s and 1 500 locations; the
-two concat CLIs use 30 tool calls, 6 000 s and 300 000 locations. A
-200-fold location budget is a different task.
+The harness CLI uses 50 tool calls, 12 000 s and 1 500 locations, while the
+class defaults are 20, 300 s and 5 000. The rules runner has its own CLI
+(I11), and the review does not say which values it passes.
 
-Change: one module holds the limits and every `run_case` imports it. No CLI
-default may differ from it. Values (rendered CLI values, which the stored
-rendered runs used):
+Change: one module holds the limits; the harness `run_case` and the rules
+runner both import it, and the class defaults equal it, so no path can
+differ. Values (the harness CLI values, which the stored rendered runs
+used):
 
 | limit | value |
 |---|---|
@@ -58,14 +66,12 @@ rendered runs used):
 | max_consecutive_rejections | 3 |
 | max_identical_queries | None |
 
-The rules runner uses the same module.
-
 ### 2.2 Schema offers only radius 10 (B6)
 
 The active client declaration advertises 4, 10 or 100 without an enum; the
 validator accepts 10 only. A model that follows the schema is rejected and
 loses a round. The rule policy never proposes another radius, so this
-penalises the model conditions only.
+penalises the model only.
 
 Change: the live declaration gets `enum: [10]` and the description says 10 m
 only. Remove the commented-out replacement in the graph.
@@ -83,26 +89,7 @@ The checker already treats that as `missing` and non-blocking. `run.json`
 records the missing cells and hours (the `KPI-missing Backups / Hours`
 metric already exists). No dedicated KPI stop reason is needed.
 
-### 2.4 concat_checked runs the full validator (C1, C2, C4, E6, G6)
-
-Today both concat packages run a schema-only validator: no zero-cost
-rejection (C2), the empty cell list is caught by the client after dispatch
-(C4), no gap-target validation (G6), no KPI temporal and provenance
-validation (E6). concat_checked is meant to differ from rendered by context
-rendering only. With a weaker validator the rendering effect is confounded.
-
-Change: concat_checked calls the same validator as rendered. Plain concat
-keeps schema-only validation and model finish: that is its definition
-(Codex-style, no program checks). State this in the conditions table:
-
-| condition | context | validator | completion checks | finish |
-|---|---|---|---|---|
-| concat | transcript, raw tool output | schema only | none | model |
-| concat_checked | transcript, raw tool output | full | required | program |
-| rendered | rendered state | full | required | program |
-| rules | state (no text) | full | required | program |
-
-### 2.5 Same stop rule for rules and model (I11, I7)
+### 2.4 Same stop rule for rules and model (I11, I7)
 
 The rules runner adds a rule-verification completion gate and defers the
 program stop. The rule baseline therefore solves a stricter task and cannot
@@ -111,7 +98,7 @@ number would compare different tasks.
 
 Change: remove the rules-only gate and the deferred program stop. The shared
 completion function in `completion_point.py` is the only definition of
-done, for all four conditions. Rule 5 (verify depth 1, then finish) stays as
+done, for both decision cores. Rule 5 (verify depth 1, then finish) stays as
 policy behaviour: it spends a step on verification when the checks already
 pass and the round is below 5. If verification exhausts the candidates
 without usable evidence (I7), rule 5 treats the direction as terminal, the
@@ -120,23 +107,21 @@ must never reach a cap for lack of a terminal rule.
 
 See decision S2 if you want verification inside the specification instead.
 
-### 2.6 Same oversized-query behaviour (F6)
+### 2.5 Same oversized-query behaviour for both cores (F6)
 
-Rendered reports an oversized query as a rejection and continues; both
-concat packages end the run directly with `query_budget`.
+The harness reports an oversized query as a rejection and continues. The
+rules runner must do the same: reject, count the rejection, continue, and
+end with `query_budget` only when the remaining location budget is zero.
+The rejection message states the remaining budget; the budget part (later)
+renders the same number in the context every round.
 
-Change: every condition rejects, counts the rejection, and continues. The
-run ends with `query_budget` only when the remaining location budget is
-zero. The rejection message states the remaining budget; the budget part
-(later) renders the same number in the context every round.
+### 2.6 Condition label (additional clarification 4)
 
-### 2.7 Condition label (additional clarification 4)
-
-The rendered CLI defaults its condition label to `concat`. A rendered run
+The harness CLI defaults its condition label to `concat`. A harness run
 launched without `--condition rendered` is stored with the wrong label.
 
 Change: no default; the label is required, and `run.json` records it.
-Copilot confirms from the launch scripts which label the stored rendered
+Copilot confirms from the launch scripts which label the stored harness
 runs carry.
 
 ## 3. Specification decisions
@@ -154,7 +139,7 @@ same rule holds for the unobserved-direction list, which is reported but
 does not block. Same for both decision cores.
 
 **S2. Verification depth in the specification or in the policy (I6, I11).**
-Part 2.5 keeps verification as a policy step. If you believe closure with
+Part 2.4 keeps verification as a policy step. If you believe closure with
 one area beyond is not enough for "done", move verification into the
 shared completion function so the model must satisfy it too. Then the
 rendered open items must name the verification query, and the rule policy
@@ -177,18 +162,12 @@ column. This is one of the places where the agent differs from the rules.
 
 Answer from the code, with file and line; no runs, no run outputs.
 
-1. The truncation limit of the concat initialization message (A6): the
-   number of characters or rows, and which initialization facts fall off at
-   that limit. The limit is a parameter of the concat condition and goes
-   into the conditions table.
-2. Which `--condition` label the launch scripts pass for each package
-   (2.7).
-3. In the concat packages, does a zero-fetch success on a fully queried
-   area (C2) count as a tool call and a decision round?
-4. The exact requirement of the rules-only completion gate and the exact
-   round at which the deferred program stop fires (2.5).
-5. Rows whose file reference was cut off in the exported review: C1 (the
-   concat_checked validator path), C7 (start of the actual column), G3
+1. Which `--condition` label the launch script passes for the harness
+   (2.6).
+2. The exact requirement of the rules-only completion gate and the exact
+   round at which the deferred program stop fires (2.4).
+3. Rows whose file reference was cut off in the exported review: C1 (the
+   second validator path), C7 (start of the actual column), G3
    (continuation after "maximum radial"), G4 (client reference), H6
    (middle reference), and the remaining-budget note in the additional
    clarifications. Re-export those six as text.
@@ -199,7 +178,7 @@ Check each line against the code; one sentence per line, file and line.
 
 1. The rules runner imports the limits module of 2.1 and the shared
    completion function; it has no gate, no deferred stop, no own limits.
-2. The rules runner calls the same validator as rendered (2.4). Rule
+2. The rules runner calls the same validator as the harness. Rule
    decisions that fail validation are recorded as rejections and count
    toward the rejection cap, exactly as model decisions.
 3. The verifier is off for rules and `run.json` says so.
@@ -221,6 +200,6 @@ Check each line against the code; one sentence per line, file and line.
 11. A rules run ends with `complete` or `complete_program_stop` whenever the
     checks pass; it ends at a cap only for the same reasons a model run can.
 
-When these eleven lines pass, the rule baseline and the model conditions
-share the specification, the validator, the limits and the stop rule, and
-differ only in the decision core. Then the budget part.
+When these eleven lines pass, the rule baseline and the harness share the
+specification, the validator, the limits and the stop rule, and differ only
+in the decision core. Then the budget part.

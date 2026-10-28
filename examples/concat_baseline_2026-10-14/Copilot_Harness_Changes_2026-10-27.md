@@ -62,24 +62,7 @@ the CLI defaults and equal this table.
 Acceptance: validator tests for 4, 10, 100 and a repeat at the other
 radius; a rendered-context test that shows the radius in the area line.
 
-## 3. A KPI call that returns zero rows for a cell: "no usable KPI record"
-
-Whatever the cause (connection or no data for that cell), a cell that
-returns zero rows is stored once as `no usable KPI record` for that cell
-and window. It is not a tool failure, it is not re-required, it does not
-block `backup_load`, and the completion check lists it under the missing
-cells. The report and `run.json` list such cells (the existing KPI-missing
-counts). Keep the failure path only for a call that returns no result at
-all (transport or parsing error), in which case the cell stays
-`not_queried`.
-
-Same behaviour in the harness and in the rules runner.
-
-Acceptance: a fixture with one cell that has baselines and one with zero
-rows; after one KPI call `backup_load` passes and the empty cell is listed
-as `no usable KPI record`.
-
-## 4. Same completion function and stop rule for both cores
+## 3. Same completion function and stop rule for both cores
 
 In the rules runner:
 
@@ -90,14 +73,14 @@ In the rules runner:
 - Remove the closure verification step: `VERIFY_DEPTH`, the farther-area
   candidate search, and the verified/unverified direction history. Finish
   is proposed as soon as every required check passes (rule R4 below).
-- Add a test for the state where every direction is closed or terminal and
+- Add a test for the state where every direction is closed and
   the checks pass, and assert that the selector proposes finish. A rules
   run must never reach a cap because no rule fires.
 
 Before changing, report what the removed gate required and at which round
 the removed deferred stop fired, so the change log states what changed.
 
-## 5. Budget exhaustion: same behaviour in both packages
+## 4. Budget exhaustion: same behaviour in both packages
 
 Keep the harness behaviour as it is today. Report, from the code, what the
 harness does in each of these two states, then make the rules runner do the
@@ -110,14 +93,14 @@ same:
 Acceptance: one test per state, in each package, asserting the same end
 reason or the same rejection.
 
-## 6. Condition label (optional)
+## 5. Condition label (optional)
 
 The harness CLI defaults `--condition` to `concat`; a harness run launched
 without the flag is stored with that label. If the launch script always
 passes `--condition rendered`, leave the code and report the script line.
 Otherwise make the argument required.
 
-## 7. Direction status without samples
+## 6. Direction status without samples
 
 Add the direction status `closed_without_sample`: a bin that closes while
 the nearest activity area beyond its edge returned no sample at every
@@ -125,7 +108,7 @@ location. It does not block completion. It is written to the completion
 record, the report and `run.json`, with the count of such bins. Both cores
 see the same status.
 
-## 8. The rule policy
+## 7. The rule policy
 
 Replace the current five rules with these four. Each round, evaluate from
 the top and take the first rule that fires. Record the fired rule id in
@@ -135,18 +118,23 @@ the top and take the first rule that fires. Record the fired rule id in
 |---|---|---|
 | R1 | the boundary check names an area to fetch in an open direction | query the area nearest to the site (nearest grid location, then area id), radius 10 |
 | R2 | no area is left to fetch and a direction is edge-open | expand that direction by 2 000 m, clipped to the frame; strongest edge RSRP first; legacy-accepted edges excluded |
-| R3 | the boundary check passes and a required cell (outage sectors plus every co-observed backup) has no baseline and is not `no usable KPI record` | one KPI call per technology for all required cells, for the outage interval shifted back 1 to 8 weeks; a second proposal only if the call returned no result at all |
+| R3 | the boundary check passes and a required cell (outage sectors plus every co-observed backup) has no baseline | one KPI call per technology for all required cells, for the outage interval shifted back 1 to 8 weeks; at most two proposals for the same batch while the missing set is unchanged |
 | R4 | every required check passes | finish |
 
-Removed from the current policy: KPI first with the per-gap retry
-fingerprint (replaced by R3), the unobserved-direction rule (the
-completion check does not require it), and the verification step (part 4).
+Removed from the current policy: KPI first (moved after the boundary as
+R3; its retry limit of two per unchanged batch is kept), the unobserved-direction rule (the
+completion check does not require it), and the verification step (part 3).
 
 Constants: `RULE_RADIUS_M = 10.0`, `EXPAND_STEP_M = 2000.0`. Remove
 `VERIFY_DEPTH`.
 
 Inputs the selector reads: the state, the completion check records, the
 geometry file, and its own proposal history. It never reads rendered text.
+
+KPI handling itself is unchanged: a cell whose call fails stays
+`not_queried`. If it stays unresolved after two proposals, `backup_load`
+does not pass, R4 never fires, and the run ends at a cap, as the harness
+run would.
 
 Acceptance: one synthetic fixture per rule where exactly that rule fires,
 and one where R2 has no edge-open direction and R1 nothing to fetch, so
@@ -156,8 +144,8 @@ that R3 or R4 fires.
 
 1. The rules runner CLI limit values before the change (part 1).
 2. What the removed gate required and at which round the deferred stop
-   fired (part 4).
-3. The harness behaviour in the two budget states (part 5).
+   fired (part 3).
+3. The harness behaviour in the two budget states (part 4).
 4. The six rows whose file references were cut off in the exported review:
    C1 (second validator path), C7 (start of the actual column), G3
    (continuation after "maximum radial"), G4 (client reference), H6

@@ -87,11 +87,12 @@ In the rules runner:
   function in `completion_point.py` is the only definition of done.
 - Remove the deferred program stop. Program stop from round 5 applies to
   the rules runner exactly as to the harness.
-- Rule 5 behaviour is decided in the rule table below (one of the two
-  options). Rule order is also changed there: KPI moves after the boundary. Either way, a rules run must never reach a cap because no rule
-  fires: add a test for the state where every direction is closed or
-  terminal and the checks pass, and assert that the selector proposes
-  finish.
+- Remove the closure verification step: `VERIFY_DEPTH`, the farther-area
+  candidate search, and the verified/unverified direction history. Finish
+  is proposed as soon as every required check passes (rule R4 below).
+- Add a test for the state where every direction is closed or terminal and
+  the checks pass, and assert that the selector proposes finish. A rules
+  run must never reach a cap because no rule fires.
 
 Before changing, report what the removed gate required and at which round
 the removed deferred stop fired, so the change log states what changed.
@@ -124,25 +125,32 @@ location. It does not block completion. It is written to the completion
 record, the report and `run.json`, with the count of such bins. Both cores
 see the same status.
 
-## Rule table for the rules runner (confirm or change)
+## 8. The rule policy
 
-The order changes: geography first, then one KPI batch, then finish. KPI
-is no longer first.
+Replace the current five rules with these four. Each round, evaluate from
+the top and take the first rule that fires. Record the fired rule id in
+`decision.json` as before.
 
 | rule | fires when | proposes |
 |---|---|---|
-| R1 | the boundary check names an area to fetch in an open direction | query the area nearest to the site, radius 10 |
-| R2 | a direction is edge-open and R1 has nothing to fetch | expand that direction by 2 000 m; strongest edge RSRP first |
-| R3 | a direction is unobserved (keep or drop: decision below) | query the nearest activity area in that direction within reach; none in reach: terminal |
-| R4 | the boundary check passes and a required cell (outage sectors plus every co-observed backup) has no baseline and is not `no usable KPI record` | one KPI call per technology for all required cells, in one round; a second proposal only if the call returned no result at all |
-| R5 | every required check passes | option A: finish. Option B: one verification query in total (the closed direction with the fewest samples in its closing area), then finish |
+| R1 | the boundary check names an area to fetch in an open direction | query the area nearest to the site (nearest grid location, then area id), radius 10 |
+| R2 | no area is left to fetch and a direction is edge-open | expand that direction by 2 000 m, clipped to the frame; strongest edge RSRP first; legacy-accepted edges excluded |
+| R3 | the boundary check passes and a required cell (outage sectors plus every co-observed backup) has no baseline and is not `no usable KPI record` | one KPI call per technology for all required cells, for the outage interval shifted back 1 to 8 weeks; a second proposal only if the call returned no result at all |
+| R4 | every required check passes | finish |
 
-Remove the per-gap retry fingerprint from the old rule 1; it is replaced
-by the single batch in R4. Record the fired rule id in `decision.json` as
-before.
+Removed from the current policy: KPI first with the per-gap retry
+fingerprint (replaced by R3), the unobserved-direction rule (the
+completion check does not require it), and the verification step (part 4).
 
-Decisions the author will state in the reply: R3 keep or drop; R5 option A
-or B.
+Constants: `RULE_RADIUS_M = 10.0`, `EXPAND_STEP_M = 2000.0`. Remove
+`VERIFY_DEPTH`.
+
+Inputs the selector reads: the state, the completion check records, the
+geometry file, and its own proposal history. It never reads rendered text.
+
+Acceptance: one synthetic fixture per rule where exactly that rule fires,
+and one where R2 has no edge-open direction and R1 nothing to fetch, so
+that R3 or R4 fires.
 
 ## Questions to answer with the report
 

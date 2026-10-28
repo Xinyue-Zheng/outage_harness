@@ -88,7 +88,7 @@ In the rules runner:
 - Remove the deferred program stop. Program stop from round 5 applies to
   the rules runner exactly as to the harness.
 - Rule 5 behaviour is decided in the rule table below (one of the two
-  options). Either way, a rules run must never reach a cap because no rule
+  options). Rule order is also changed there: KPI moves after the boundary. Either way, a rules run must never reach a cap because no rule
   fires: add a test for the state where every direction is closed or
   terminal and the checks pass, and assert that the selector proposes
   finish.
@@ -126,15 +126,22 @@ see the same status.
 
 ## Rule table for the rules runner (confirm or change)
 
-| rule | fires when | proposes | after the change |
-|---|---|---|---|
-| R1 | a required cell has no baseline for some outage hour and is not `no usable KPI record` | one KPI call per technology for those cells | at most two proposals for the same gap; a zero-row cell is closed by rule 3 above after one call |
-| R2 | the boundary check names an area to fetch in an open direction | query the area nearest to the site, radius 10 | unchanged |
-| R3 | a direction is edge-open and R2 has nothing to fetch | expand that direction by 2 000 m; strongest edge RSRP first | unchanged |
-| R4 | a direction is unobserved | query the nearest activity area in that direction within reach; none in reach: terminal | keep or drop (decision below) |
-| R5 | every required check passes | option A: finish. Option B: one verification query in total (the closed direction with the fewest samples in its closing area), then finish | decision below |
+The order changes: geography first, then one KPI batch, then finish. KPI
+is no longer first.
 
-Decisions the author will state in the reply: R4 keep or drop; R5 option A
+| rule | fires when | proposes |
+|---|---|---|
+| R1 | the boundary check names an area to fetch in an open direction | query the area nearest to the site, radius 10 |
+| R2 | a direction is edge-open and R1 has nothing to fetch | expand that direction by 2 000 m; strongest edge RSRP first |
+| R3 | a direction is unobserved (keep or drop: decision below) | query the nearest activity area in that direction within reach; none in reach: terminal |
+| R4 | the boundary check passes and a required cell (outage sectors plus every co-observed backup) has no baseline and is not `no usable KPI record` | one KPI call per technology for all required cells, in one round; a second proposal only if the call returned no result at all |
+| R5 | every required check passes | option A: finish. Option B: one verification query in total (the closed direction with the fewest samples in its closing area), then finish |
+
+Remove the per-gap retry fingerprint from the old rule 1; it is replaced
+by the single batch in R4. Record the fired rule id in `decision.json` as
+before.
+
+Decisions the author will state in the reply: R3 keep or drop; R5 option A
 or B.
 
 ## Questions to answer with the report

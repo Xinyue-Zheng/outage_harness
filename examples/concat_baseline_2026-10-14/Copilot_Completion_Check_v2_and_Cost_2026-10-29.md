@@ -49,7 +49,7 @@ farthest covered location F; once it resolves clean, the bin closes. In
 v2:
 
 ```
-BEYOND_REACH_M = 3000
+BEYOND_REACH_M = 5000
 ```
 
 A bin closes only when every activity area in the bin whose nearest
@@ -83,7 +83,7 @@ half.
 1. With `SAMPLE_TWO_HALVES` on, ten near-edge samples clean leave the area
    open; three far-half samples added resolve it. With the switch off it
    resolves as in v1.
-2. A bin with areas A (clean), B (covered) within 3 km beyond F: v1 closes
+2. A bin with areas A (clean), B (covered) within 5 km beyond F: v1 closes
    after A; v2 names B, and after B is queried moves F outward.
 3. An unobserved bin with a village at 1.5 km: v1 ignores it; v2 names it;
    after a clean sample resolution the bin is closed; with no activity

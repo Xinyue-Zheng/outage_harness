@@ -51,7 +51,7 @@ cells are those whose grid id lies within the half-width neighbourhood
 of the location's grid id (the neighbourhood size derived from the grid
 spacing and the half-width, computed once). Distance is taken over the
 candidates only. The result must equal the all-pairs minimum whenever
-that minimum is within the half-width; test A2 checks this.
+that minimum is within the half-width; test T2 checks this.
 
 ## A2.1 Exact corridor distances for `roadside`, cached on demand
 
@@ -105,40 +105,40 @@ After an executed action, recompute only:
 Every other record is left as stored. One function returns the set of
 (area, site, bin) keys to recompute from the touched locations and the
 boundary changes; the check reads the records and never rebuilds them.
-Test A1 compares the incremental result with a full rebuild.
+Test T1 compares the incremental result with a full rebuild.
 
-## A5. Tests
+## A5. Tests (T1 to T9)
 
-- A1. Equivalence: on every synthetic fixture, after each action of a
+- T1. Equivalence: on every synthetic fixture, after each action of a
   stored run, the incremental state equals a full rebuild from the
   point records, field by field.
-- A2. Corridor distance: for every location of the largest fixture, the
+- T2. Corridor distance: for every location of the largest fixture, the
   grid-lookup result equals the all-pairs result when either is within
   the half-width, and both are null otherwise.
-- A2.1 Cache: on a synthetic run with two `roadside` requests on the
+- T3. Cache: on a synthetic run with two `roadside` requests on the
   same (area, corridor) and one on another corridor, the cache holds
   exactly two blocks after the run; the second request on the first
   block fills nothing (step record names no block, zero cache seconds);
   the selected locations equal those of the current selector on the
   same state, in the same order.
-- A2.2 Purity: the selector called twice on the same state returns the
+- T4. Purity: the selector called twice on the same state returns the
   same list and the state hash is unchanged; a `roadside` selection
   with its block absent raises.
-- A2.3 Expansion: after an expansion adds locations to an area with a
+- T5. Expansion: after an expansion adds locations to an area with a
   cached block, the next `roadside` on that area ranks the new
   locations too, and the block has one entry per area location.
-- A2.4 No `roadside` in the run: the cache is empty at the end and
+- T6. No `roadside` in the run: the cache is empty at the end and
   `program_cache` seconds is zero.
-- A3. Rendered context and `run.json` of a stored synthetic run are
+- T7. Rendered context and `run.json` of a stored synthetic run are
   identical before and after part A, timing fields excluded.
-- A4. Performance, on the largest synthetic fixture with four sites:
+- T8. Performance, on the largest synthetic fixture with four sites:
   initialization under 10 seconds; one full check under 2 seconds; one
   rejected round under 0.1 seconds of program time; one executed
   50-location action, including the incremental recompute, under 2
   seconds; the first `roadside` fill on the largest area, reported as a
   number with no target. Record the five numbers in the report and in
   the test output.
-- A5. `check_reused` is true on a rejected round and false on an
+- T9. `check_reused` is true on a rejected round and false on an
   executed one.
 
 # Part B. Decision policy for gpt-oss-safeguard-120b

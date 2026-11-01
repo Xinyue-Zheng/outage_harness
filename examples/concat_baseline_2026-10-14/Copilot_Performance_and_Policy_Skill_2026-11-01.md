@@ -192,53 +192,31 @@ probe sample is above twice the probe median. The count goes to
 
 # Part 3. Tests
 
-- T1. Equivalence: on every synthetic fixture, after each action of a
-  stored run, the incremental state (1.4, 1.5) equals a full rebuild
-  from the point records, field by field.
-- T2. Corridor distance: for every location of the largest fixture, the
-  grid-lookup result equals the all-pairs result when either is within
-  the half-width, and both are null otherwise.
-- T3. Cache: a synthetic run with two `roadside` requests on one
-  (area, corridor) and one on another corridor ends with exactly two
-  blocks; the second request on the first block fills nothing (no
-  block named, zero cache seconds); the selected locations equal those
-  of the current selector on the same state, in the same order.
-- T4. Purity: the selector called twice on the same state returns the
-  same list and the state hash is unchanged; a `roadside` selection
-  with its block absent raises.
-- T5. Expansion: after an expansion adds locations to an area with a
-  cached block, the next `roadside` on that area ranks the new
-  locations too, and the block has one entry per area location.
-- T6. No `roadside` in the run: the cache is empty at the end and
-  `program_cache` is zero.
-- T7. Rendered context and `run.json` of a stored synthetic run are
-  identical before and after part 1, timing fields excluded.
-- T8. Performance on the largest synthetic fixture with four sites:
-  initialization under 10 seconds; one full check under 2 seconds; one
-  rejected round under 0.1 seconds of program time; one executed
-  50-location action including the incremental recompute under 2
-  seconds; the first `roadside` fill on the largest area reported as a
-  number with no target. Record the five numbers in the report and in
-  the test output.
-- T9. `check_reused` is true on a rejected round and false on an
-  executed one.
-- T10. A run without `--reasoning-effort` fails to start naming the
-  flag; with it, `run.json` `limits` carries the value.
-- T11. The system message starts with the reasoning line carrying the
-  configured effort, contains the policy, and is identical on every
-  round of a synthetic run; the policy token count is under 600.
-- T12. A fake response with a usage block gives
-  `hidden_tokens = output_tokens - visible_tokens`; without one,
-  `hidden_tokens` is null.
-- T13. The budget block of the model core renders the decisions line
-  from three stored decision calls; the rule core's block has none.
-- T14. The probe CSV joins with the `decisions` entries and marks the
-  endpoint-slow calls on a synthetic pair of files.
+Four tests, all on synthetic fixtures, none on real cases. Their purpose
+is to show that part 1 changes nothing the decision cores see and that
+the cache cannot be left in a bad state. No performance targets: the
+author measures on the real cases.
+
+- T1. Same behaviour: replay the actions of one stored synthetic run
+  through the changed program. The rendered context of every round and
+  the final `run.json` are identical to the stored ones, timing fields
+  excluded. This covers 1.2, 1.4 and 1.5 together.
+- T2. Same roadside order: on the largest fixture, for each
+  (area, corridor) pair that crosses, the on-demand block gives the
+  same ordered list as the current selector. Covers 1.3.
+- T3. Cache cannot be inconsistent: a `roadside` selection with its
+  block absent raises; after an expansion adds locations to an area
+  with a cached block, the block has one entry per area location before
+  the next selection; a run without `roadside` ends with an empty cache.
+- T4. Model core wiring: a run without `--reasoning-effort` fails to
+  start naming the flag; with it, the system message starts with the
+  reasoning line, contains the policy, and is identical on every round
+  of a synthetic run.
 
 # Part 4. Report
 
 State, as file and line: where each corridor distance was computed
 before part 1 and the one place after; the field names of the usage
-block the endpoint returns, or that it returns none. No measurements on
-real cases: the author runs the cases at each reasoning effort and
-reviews the decision-time distribution and the pictures.
+block the endpoint returns, or that it returns none; the policy token
+count. No measurements and no runs on real cases: the author runs the
+cases and reviews the results.

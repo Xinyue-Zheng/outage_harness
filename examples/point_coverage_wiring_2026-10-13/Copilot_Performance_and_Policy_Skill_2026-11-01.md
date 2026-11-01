@@ -30,13 +30,16 @@ At initialization, and again only for the locations and areas an
 expansion adds, compute and store per location:
 
 - `bin` per site (v4 part 3) and `distance_m` per site;
-- `nearest_corridor`: the corridor id and distance to its nearest cell
-  within the corridor half-width, or null when none is within it.
+- `corridors_within_half_width`: every corridor with a cell within
+  the corridor half-width of the location, as (corridor id, distance)
+  sorted by distance; empty when none. A location can be within the
+  half-width of several corridors and all of them are kept, because
+  check 7 counts each as crossing today. `nearest_corridor` is the
+  first entry; keep it as a separate field only if a reader needs it.
 
 Per area: `corridors_crossing`, the corridor ids that share a grid
-cell with the area or have a cell within the half-width of any area
-location (partial-query instruction part 3 check 7), derived from
-`nearest_corridor` and the shared cells.
+cell with the area or appear in `corridors_within_half_width` of any
+area location (partial-query instruction part 3 check 7).
 
 Corridor cells are indexed by grid id. For a location, the candidate
 cells are those within the half-width neighbourhood of its grid id

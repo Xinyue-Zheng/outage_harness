@@ -111,9 +111,11 @@ skill is prose; the model was trained on a policy template.
 
 The system message is fixed for the run and holds, in this order:
 
-1. `Reasoning: low` as the first line. The value comes from a run
-   setting `reasoning_effort` (low, medium, high), recorded in
-   `run.json`. Default low.
+1. `Reasoning: <effort>` as the first line. `<effort>` is the run
+   setting `reasoning_effort`, one of `low`, `medium`, `high`, set the
+   same way as the caps: a `RunLimits` field and a CLI flag
+   `--reasoning-effort`, required with no default, recorded in
+   `run.json` under `limits`. The rule core ignores it.
 2. The policy of B3.
 
 Nothing in the system message changes between rounds. The rendered
@@ -198,8 +200,10 @@ median. `resources.decision` reports the count of endpoint-slow calls.
 
 ## B6. Tests
 
-- B1. The system message starts with the reasoning line, contains the
-  policy, and is identical on every round of a synthetic run.
+- B1. The system message starts with the reasoning line carrying the
+  configured effort, contains the policy, and is identical on every
+  round of a synthetic run; a run without `--reasoning-effort` fails to
+  start with a message naming the flag.
 - B2. `hidden_tokens` equals usage output tokens minus visible tokens on
   a fake response with a usage block, and is null without one.
 - B3. The policy token count is under 600 and reported.
@@ -208,13 +212,11 @@ median. `resources.decision` reports the count of endpoint-slow calls.
 - B5. The probe CSV joins with the decisions entries and marks the
   endpoint-slow calls on a synthetic pair of files.
 
-## Questions to answer with the report
+## Report
 
-1. Program seconds per round on the slow multi-site rule run, before
-   and after part A: median and total.
-2. File and line of every corridor distance computation today, and
-   confirmation that after part A there is one.
-3. Whether the endpoint exposes the usage block, with the field names,
-   so B2 is `hidden_tokens` or null.
-4. The decision-time distribution (p50, p95) on three synthetic runs at
-   `Reasoning: low` and at medium, same cases, with the probe running.
+State, as file and line, where each corridor distance was computed
+before part A and the one place it is computed after. State the field
+names of the usage block the endpoint returns, or that it returns none.
+No measurements on real cases: the author runs the cases at each
+reasoning effort and reviews the decision-time distribution and the
+pictures.

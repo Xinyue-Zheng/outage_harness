@@ -1,4 +1,4 @@
-# Resource caps, KPI accounting, decision-call accounting, fixed picture set
+# Resource caps, KPI accounting, decision-call accounting
 
 Apply to `outage_harness_langgraph` and `outage_harness_rule_based`.
 Synthetic fixtures and tests; no real cases. Report every change as file
@@ -119,27 +119,11 @@ of `total_s` in part 4 and `total` equal to the wall-clock the time cap
 reads. The five parts plus idle must sum to `total`; `run.json` records
 `idle` as the difference, so a gap is visible rather than hidden.
 
-## 6. Fixed picture set on every end reason
+## 6. Pictures
 
-Every run, whatever its end reason, writes the same pictures with the
-same window, layers, legend and file names:
-
-1. coverage map: queried locations by pattern, covered locations by
-   RSRP class, the down site, the activity areas;
-2. hole map: covered locations with no backup at or above -110 dBm;
-3. backup and PRB map: backup cells with a fetched baseline, their PRB
-   load class, and cells observed without a baseline marked as such.
-
-Each picture carries one margin line:
-
-```
-end: time_cap | locations 1480/1500 | KPI cell-queries 42/200 | 11 820 s (decision 6 210 s) | core: model
-```
-
-The picture code reads the values from `run.json`; nothing is computed
-in the plotting code. A run that ends by cap before any KPI call writes
-picture 3 with every observed backup marked "no baseline", not an empty
-file.
+The picture set is unchanged. Its margin line reads the three resource
+counters and the decision seconds of parts 1 and 5 from `run.json`, in
+place of any rounds or tool-call count.
 
 ## 7. Tests
 
@@ -161,10 +145,7 @@ file.
    and `resources.decision.notes` names the missing block.
 7. `resources.seconds`: the five parts plus `idle` equal `total` on a
    synthetic run.
-8. A run ended by `time_cap` before any KPI call writes all three
-   pictures, picture 3 marks every observed backup "no baseline", and
-   the margin line matches `run.json`.
-9. The rendered budget block has four lines, in the order of part 1,
+8. The rendered budget block has four lines, in the order of part 1,
    and no rounds or tool-call line.
 
 ## Questions to answer with the report

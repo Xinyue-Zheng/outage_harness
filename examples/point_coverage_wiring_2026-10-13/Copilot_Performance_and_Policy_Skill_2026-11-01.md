@@ -29,17 +29,20 @@ At initialization, and again only for the locations and areas that an
 expansion adds, compute and store in state per location:
 
 - `bin` per site (v4 part 3) and `distance_m` per site;
-- `nearest_corridor`: the corridor id and distance to its nearest cell,
-  or null when no corridor is within the corridor half-width.
+- `nearest_corridor`: the corridor id and distance to its nearest cell
+  within the corridor half-width, or null when no corridor cell is
+  within it. Computed by the grid lookup of A2.
 
 Per area: `corridors_crossing`, the list of corridor ids that share a
 grid cell with the area or have a cell within the half-width of any
 area location, with the half-width definition of the partial-query
-instruction part 3 check 7.
+instruction part 3 check 7. Derived from `nearest_corridor` and the
+shared grid cells; no other distance is computed for it.
 
-The validator (check 7), the `roadside` selector (part 4), and the area
-line ("crossed by R02") read these fields. No distance to a corridor is
-computed anywhere else. Delete the computations they replace.
+The validator (check 7) and the area line ("crossed by R02") read these
+fields. The `roadside` selector reads the cache of A2.1. No distance to
+a corridor is computed anywhere else. Delete the computations they
+replace.
 
 ## A2. Corridor distance by grid lookup, not all pairs
 
@@ -49,6 +52,34 @@ of the location's grid id (the neighbourhood size derived from the grid
 spacing and the half-width, computed once). Distance is taken over the
 candidates only. The result must equal the all-pairs minimum whenever
 that minimum is within the half-width; test A2 checks this.
+
+## A2.1 Exact corridor distances for `roadside`, cached on demand
+
+The `roadside` selector ranks every unqueried location of the area by
+its distance to the named corridor's centreline, with no half-width
+limit (partial-query instruction part 4). That ordering is unchanged.
+The distances it needs are kept in a cache keyed by (area, corridor),
+holding the exact distance of every location of the area to the
+nearest cell of that corridor.
+
+- The cache is empty at initialization. Nothing is computed for it
+  until a `roadside` request for that (area, corridor) is executed.
+- The fill happens in the execute step, before selection, for the whole
+  (area, corridor) block in one pass. The selector is a pure read of
+  the block; it never writes state. A `roadside` request whose block
+  is absent at selection time is a program error, raised, not filled
+  lazily.
+- After an expansion adds locations to an area, every cached block of
+  that area is extended with the new locations in the next execute
+  step that reads it; a block is never partially valid.
+- The step record of a round that filled or extended a block names
+  the blocks and the seconds spent; `run.json` sums them under
+  `resources.seconds.program_cache`.
+- Memory: a block is one float per location of the area; blocks are
+  never evicted during a run.
+
+The cost of exact distances therefore lands on the round that chose
+`roadside`, and a run that never issues `roadside` computes none.
 
 ## A3. The check runs only after a state change
 
@@ -84,13 +115,29 @@ Test A1 compares the incremental result with a full rebuild.
 - A2. Corridor distance: for every location of the largest fixture, the
   grid-lookup result equals the all-pairs result when either is within
   the half-width, and both are null otherwise.
+- A2.1 Cache: on a synthetic run with two `roadside` requests on the
+  same (area, corridor) and one on another corridor, the cache holds
+  exactly two blocks after the run; the second request on the first
+  block fills nothing (step record names no block, zero cache seconds);
+  the selected locations equal those of the current selector on the
+  same state, in the same order.
+- A2.2 Purity: the selector called twice on the same state returns the
+  same list and the state hash is unchanged; a `roadside` selection
+  with its block absent raises.
+- A2.3 Expansion: after an expansion adds locations to an area with a
+  cached block, the next `roadside` on that area ranks the new
+  locations too, and the block has one entry per area location.
+- A2.4 No `roadside` in the run: the cache is empty at the end and
+  `program_cache` seconds is zero.
 - A3. Rendered context and `run.json` of a stored synthetic run are
   identical before and after part A, timing fields excluded.
-- A4. Performance, on the largest synthetic fixture with four sites: one
-  full check under 2 seconds; one rejected round under 0.1 seconds of
-  program time; one executed 50-location action, including the
-  incremental recompute, under 2 seconds. Record the three numbers in
-  the report and in the test output.
+- A4. Performance, on the largest synthetic fixture with four sites:
+  initialization under 10 seconds; one full check under 2 seconds; one
+  rejected round under 0.1 seconds of program time; one executed
+  50-location action, including the incremental recompute, under 2
+  seconds; the first `roadside` fill on the largest area, reported as a
+  number with no target. Record the five numbers in the report and in
+  the test output.
 - A5. `check_reused` is true on a rejected round and false on an
   executed one.
 

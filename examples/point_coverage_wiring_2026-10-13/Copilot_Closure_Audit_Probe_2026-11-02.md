@@ -1,4 +1,4 @@
-# Closure audit probe: a post-run test of what the check closed
+# Closure audit probe: a post-run test of the territory a run never reached
 
 Apply to `outage_harness_langgraph` and `outage_harness_rule_based`: one
 implementation, run the same way on a run directory of either core.
@@ -9,21 +9,25 @@ completion rule changes, no change to either decision core.
 
 ## Why
 
-Runs that end complete still leave locations covered by the down cells
-unqueried. The run cannot see them: its state says every bin is closed.
-The audit is a program step after the run that samples unqueried
-locations in every bin and queries them, at a fixed cost that is the
-same for both cores and is not charged to the run. It estimates the miss
-rate of the closures the check accepted, and on a capped run it also
-estimates how much coverage lies in the bins still open.
+Runs leave locations covered by the down cells unqueried. Two kinds:
+locations inside the run's final active area that its samples did not
+hit, and locations outside the final active area that the run never
+extended to. The first is sampling variance and is accepted: the check
+is shared, no two runs sample the same locations, and the inside is
+judged from its samples. The second is territory the core never asked
+for, and it is where the cores differ: one may push the window outward,
+the other may not. The audit measures the second kind only.
+
+The audit is a program step after the run, at a fixed cost that is the
+same for both cores and is not charged to the run.
 
 ## 1. Invocation and scope
 
-A separate command, `audit_closure <run_dir> [--scan <file>]`, run after
-a run has ended, for any end reason. It reads the run directory
-(run.json, state, point records, geometry) and writes
+A separate command, `audit_outside <run_dir> [--scan <file>]`, run
+after a run has ended, for any end reason. It reads the run directory
+(run.json, final state, point records, geometry) and writes
 `<run_dir>/audit.json` and one picture. It never modifies run.json, the
-state, the step records or the point records, and it never changes the
+state, the step records or the point records, and never changes the
 run's end reason or resource counters. Its own calls and locations are
 recorded in audit.json only.
 
@@ -33,158 +37,147 @@ fails with a message naming the missing file. No partial audit.
 ## 2. Constants
 
 ```
-AUDIT_PER_BIN_IN_REACH = 10
-AUDIT_PER_BIN_OUT_OF_REACH = 5
+AUDIT_PER_BIN = 10
 AUDIT_RADIUS_M = 10
+AUDIT_REACH_M = 15000
 ```
 
-## 3. Sampling, per (site, bin)
+`AUDIT_REACH_M` is the distance from each site out to which the audit
+looks. It is the same for every run of a case and for both cores, so
+the two audits test the same territory.
 
-For every `site/index` key of the run, over the unqueried activity-area
-locations whose bin for that site is the key's index:
+## 3. Candidates, per (site, bin)
 
-- stratum `in_reach`: locations the check's domain covers. With a
-  boundary F in the bin: farther than F and within `BEYOND_REACH_M` of
-  it. Without a boundary: within the interior activity reach of the
-  site, as the bin test defines it.
-- stratum `out_of_reach`: the remaining unqueried activity-area
-  locations in the wedge.
+For every `site/index` key of the run: the activity-area locations of
+the case geometry (the full geometry, not the run's window) whose bin
+for that site is the key's index, that lie outside the run's final
+active area for that site, within `AUDIT_REACH_M` of the site, and that
+the run never queried. Locations inside the final active area are never
+candidates.
 
-Select `AUDIT_PER_BIN_IN_REACH` from the first stratum and
-`AUDIT_PER_BIN_OUT_OF_REACH` from the second with the existing `sparse`
-selector restricted to the wedge and stratum (farthest-point sampling
-seeded at the stratum's location nearest the site). Fewer when fewer
-exist; zero when none. Same inputs give the same sample on two calls.
+Record per bin the edge distance: the distance from the site to the
+final active area edge in that wedge, from the final state.
 
-A location that lies in the wedge of two sites is sampled once and its
-result is attributed to every site whose wedge contains it, as one
-sample record updates every site's frame in v4 part 4.
+A location in the wedges of two sites is sampled once; its result is
+attributed to every site whose candidate set contains it.
 
-## 4. Execution
+## 4. Sampling
 
-One point-coverage call per (key, stratum) at `AUDIT_RADIUS_M`, through
-the same client the run uses, with the same per-location record. A
-transport failure stops the audit with the failure recorded in
-audit.json and `complete: false`; no retry inside the audit.
+Select `AUDIT_PER_BIN` candidates with the existing `sparse` selector
+restricted to the candidate set: the first pick is the candidate
+nearest the site, each next pick is the candidate farthest from every
+location already picked. Fewer when fewer exist; zero when none. Ties
+break by ascending grid id; the same run directory gives the same
+sample on two calls.
+
+## 5. Execution
+
+One point-coverage call per key at `AUDIT_RADIUS_M`, through the same
+client the run uses, with the same per-location record. A transport
+failure stops the audit with the failure recorded in audit.json and
+`complete: false`; no retry inside the audit.
 
 Covered for site s: any cell of s at or above -110 dBm in the sample.
 Hole: covered for some site and no backup cell at or above -110 dBm.
 
-## 5. Per-bin record in audit.json
+## 6. Per-bin record in audit.json
 
 ```json
 "WTL03023/5": {
   "status_at_end": "closed",
   "closure_reason": "resolved_boundary",
-  "boundary_m": 4100,
-  "evidence_beyond_at_end": 11,
-  "evidence_margin_m": 1850,
-  "inside_unqueried_at_end": 0,
-  "in_reach":     {"candidates": 212, "sampled": 10, "covered": 2, "holes": 1},
-  "out_of_reach": {"candidates": 940, "sampled": 5,  "covered": 0, "holes": 0},
-  "samples": [{"grid_id": "...", "stratum": "in_reach", "distance_m": 4620,
+  "edge_m": 6000,
+  "farthest_queried_m": 5400,
+  "candidates": 940,
+  "sampled": 10, "covered": 2, "holes": 1,
+  "farthest_covered_past_edge_m": 2300,
+  "samples": [{"grid_id": "...", "distance_m": 8300, "past_edge_m": 2300,
                "covered": true, "rsrp_dbm": -106, "hole": true}]
 }
 ```
 
-- `status_at_end`: `closed`, `open`, `closed_no_activity` or
-  `unobserved`, from the final check record.
-- `closure_reason`: the resolution the check closed on, or null.
-- `evidence_beyond_at_end`: sampled locations beyond F in the bin at the
-  end of the run, from the (area, site, bin) records.
-- `evidence_margin_m`: over the unqueried in-reach locations of the bin,
-  the largest distance from a location to its nearest queried location
-  in the same bin, computed from the stored geometry before any audit
-  query. It measures how far the run's evidence is from the locations
-  it did not query.
-- A closed bin with `inside_unqueried_at_end > 0` is recorded with
-  `invariant_violation: true` and is still sampled.
+`status_at_end` and `closure_reason` come from the final check record
+(`closed`, `open`, `closed_no_activity`, `unobserved`; reason or null).
+`farthest_queried_m` is the run's farthest queried location in the
+wedge, for the report only.
 
-## 6. Totals in audit.json
+## 7. Totals in audit.json
 
 ```json
 "summary": {
   "run_end_reason": "complete_program_stop",
   "bins": {"closed": 31, "open": 0, "closed_no_activity": 12, "unobserved": 5},
-  "closed_in_reach":   {"sampled": 290, "covered": 9, "holes": 3, "miss_rate": 0.031},
-  "closed_out_of_reach": {"sampled": 140, "covered": 1, "holes": 0, "found_rate": 0.007},
-  "open_in_reach":     {"sampled": 0, "covered": 0, "holes": 0, "found_rate": null},
-  "by_closure_reason": {"resolved_boundary": {"sampled": 200, "covered": 8},
-                        "resolved_sample": {"sampled": 90, "covered": 1}},
-  "false_closure": true,
-  "bins_with_false_closure": ["WTL03023/5"],
-  "evidence_margin_m": {"median": 1200, "max": 3900},
-  "audit_cost": {"calls": 74, "locations": 430, "seconds": 512}
+  "outside": {"candidates": 18200, "sampled": 430, "covered": 17, "holes": 6,
+              "found_rate": 0.040},
+  "outside_closed_bins": {"sampled": 290, "covered": 12, "holes": 4, "found_rate": 0.041},
+  "outside_open_bins":   {"sampled": 140, "covered": 5,  "holes": 2, "found_rate": 0.036},
+  "bins_with_coverage_outside": ["WTL03023/5", "WTL05870/2"],
+  "farthest_covered_past_edge_m": {"median": 1400, "max": 4100},
+  "audit_cost": {"calls": 48, "locations": 430, "seconds": 290}
 }
 ```
 
-- `miss_rate`: covered divided by sampled, closed bins, in-reach
-  stratum. This is the soundness estimate of the check plus the
-  evidence the core gave it.
-- `found_rate` for open bins: on a capped run, the share of the open
-  territory that still has coverage, the remaining work the run did
-  not reach.
-- `false_closure`: true when any closed bin has a covered in-reach
-  sample.
+- `found_rate`: covered divided by sampled. It is the share of the
+  unreached territory that has coverage, the gap the run left.
+- `bins_with_coverage_outside`: every bin with at least one covered
+  sample; a closed bin in this list closed with coverage past its edge.
 - Rates are null, never 0, when `sampled` is 0.
 
-## 7. Scan mode
+## 8. Scan mode
 
-With `--scan <file>`, the ground-truth scan of the case, each bin record
-gains an `exact` block with the same four counts over every unqueried
-location of the stratum, not a sample, using the same covered and hole
-definitions, and `summary.exact` repeats the totals. The probe still
-runs, so the sampled estimate and the exact count sit side by side and
-the sample size can be judged. Locations the scan does not contain are
+With `--scan <file>`, each bin record gains an `exact` block with the
+same counts over every candidate of the bin, not a sample, using the
+same covered and hole definitions, and `summary.exact` repeats the
+totals. The probe still runs, so the sampled estimate and the exact
+count sit side by side. Candidates the scan does not contain are
 counted under `exact.not_in_scan` and are not inferred.
 
-## 8. Picture
+## 9. Picture
 
-One picture, `audit_map`, in the run's window: the closed-bin wedges,
-the run's queried locations in grey, the audit samples by stratum with
-covered in the RSRP colour of the coverage map, holes marked, and a
-margin line:
+One picture, `audit_map`, in a window of `AUDIT_REACH_M` around the
+sites: the final active area outline per site, the run's queried
+locations in grey, the audit samples with covered in the RSRP colour of
+the coverage map, holes marked, and a margin line:
 
 ```
-audit: closed bins 31 | in-reach sampled 290, covered 9, holes 3, miss rate 0.031 | false closure: WTL03023/5 | cost 430 locations
+audit outside: sampled 430, covered 17, holes 6, found rate 0.040 | coverage outside in 2 bins, farthest 4.1 km past edge | cost 430 locations
 ```
 
 The picture code reads audit.json only.
 
-## 9. Tests
+## 10. Tests
 
-1. Fixture: one closed bin resolved by boundary, with hidden coverage
-   at 4.6 km beyond a 4.1 km boundary in the fixture's service stub.
-   The audit samples the bin, reports `covered 2`, `miss_rate > 0`,
-   `false_closure true` and names the bin.
-2. Same fixture with no hidden coverage: `covered 0`, `miss_rate 0.0`,
-   `false_closure false`.
+1. Fixture: a closed bin with edge at 6 km and hidden coverage at 8.3 km
+   in the service stub. The audit samples the bin, reports `covered 2`,
+   `found_rate > 0`, and names the bin in `bins_with_coverage_outside`
+   with `farthest_covered_past_edge_m` 2300.
+2. Same fixture, no hidden coverage: `covered 0`, `found_rate 0.0`,
+   empty list.
 3. The run directory's run.json, state, step records and point records
    are identical before and after the audit; audit.json and the picture
    are the only new files.
-4. A capped run with open bins: open bins are sampled, labelled `open`,
-   and counted under `open_in_reach`; `summary.run_end_reason` is
-   `time_cap`.
-5. Sampling: every sampled location lies in the key's wedge and
-   stratum; two calls give the same sample; a stratum with 3
+4. No sampled location lies inside the final active area; every sampled
+   location is in the key's wedge, within `AUDIT_REACH_M`, and
+   unqueried by the run; two calls give the same sample; a bin with 3
    candidates gives 3.
-6. A closed bin with `inside_unqueried_at_end > 0` carries
-   `invariant_violation true` and is sampled.
+5. A capped run with open bins: open bins are sampled and counted under
+   `outside_open_bins`; `summary.run_end_reason` is `time_cap`.
+6. Two runs of one case with different final active areas are audited
+   over the same `AUDIT_REACH_M` territory: a location outside both
+   windows is a candidate in both audits.
 7. Scan mode on fixture 1: `exact.covered` equals the number of hidden
-   covered locations in the stratum, and `exact.not_in_scan` counts a
-   location removed from the scan file.
+   covered candidates, and `exact.not_in_scan` counts a candidate
+   removed from the scan file.
 8. A transport failure on the third call leaves audit.json with
    `complete false`, the two finished bins recorded, and no picture.
-9. `evidence_margin_m` on a fixture with one queried location and one
-   unqueried in-reach location 1 850 m from it is 1850.
 
 ## Questions to answer with the report
 
-1. Where the two packages can share the audit code without one
+1. Where the final active area per site and wedge is stored in the
+   final state (file and field), and whether the edge distance per bin
+   can be read from it without recomputation.
+2. The audit cost on the largest synthetic fixture: calls, locations,
+   seconds, so the fixed cost per run is known before a real case.
+3. Where the two packages can share the audit code without one
    importing the other's loop; if they cannot, say so and stop before
    duplicating it.
-2. The audit cost on the largest synthetic fixture: calls, locations
-   and seconds, so the fixed cost per run is known before it runs on a
-   real case.
-3. Whether the final check record stores the closure reason per
-   `site/index`; if not, name the field the audit would need.

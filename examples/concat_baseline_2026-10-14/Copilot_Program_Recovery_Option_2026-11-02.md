@@ -1,4 +1,4 @@
-# Program recovery at the rejection cap: an optional third condition
+# Program recovery at the rejection cap: an optional third condition, with resume from a stuck run
 
 Apply to `outage_harness_langgraph` only; the rule core has no rejection
 path that this concerns. Synthetic fixtures and tests; no real cases.
@@ -107,6 +107,54 @@ flag, not the outcome.
    under the flag even with zero interventions.
 7. With the flag off, the skill text sent to the model is byte-identical
    to the current text.
+8. Resume: a synthetic run directory ended `rejection_cap` is resumed
+   into a new directory; the source is byte-identical after the resume;
+   the copy has `resumed_from`, `resumed_at_round`, carried-over
+   counters, and its first step is a program action with
+   `decided_by program` and `resumed true`.
+9. Resume refuses an existing target directory and a source that ended
+   with any reason other than `rejection_cap`.
+
+## 6. Resume from a stuck run
+
+A run that ended `rejection_cap` is resumed as a new run under
+`RECOVERY=program`, from the state at the cap. The original run
+directory is never modified.
+
+`resume_run <source_run_dir> <new_run_dir> --recovery program`:
+
+1. Copy the source run directory to `new_run_dir` in full (run.json,
+   state, step records, point records, geometry, pictures). Refuse if
+   `new_run_dir` exists. Refuse if the source did not end
+   `rejection_cap`, with the end reason in the message.
+2. In the copy, write `run.json` fields `resumed_from: <source path>`,
+   `resumed_at_round: <last round>`, `limits.RECOVERY: "program"`, and
+   reset `end_reason` to null. Every other counter (locations, KPI
+   cell-queries, seconds elapsed, rounds, rejections) carries over, so
+   the resumed run is charged for what the source spent. The time cap
+   continues from the source's elapsed seconds.
+3. Start the loop at the point of part 2: the consecutive-rejection
+   counter is 3, so the first action of the resumed run is the program
+   recovery step of part 2 (or the run ends `rejection_cap` again with
+   `recovery_not_applicable` if the legal set is not a single action).
+   Then normal model rounds.
+4. Step records of the resumed run continue the source numbering. Each
+   carries `resumed: true` until the run ends.
+5. The condition label of the resumed run is `model+program (resumed)`
+   in every table and figure, and the report shows both runs: the source
+   as the pure model core ending `rejection_cap`, the copy as the
+   continuation.
+
+The source directory is the record of the failure; nothing in it
+changes.
+
+### Command to give the author
+
+In the report, print the exact command line to run, with the real
+source directory of the stuck run filled in and a new directory name
+beside it, plus the one command that runs the resumed run to its end
+with the same model, reasoning effort and caps as the source (read them
+from the source `run.json`). The author will paste both without edits.
 
 ## Questions to answer with the report
 

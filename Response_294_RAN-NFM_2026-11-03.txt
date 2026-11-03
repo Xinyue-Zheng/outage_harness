@@ -1,0 +1,19 @@
+RAN-specific design and novelty
+
+RAN-NFM does not claim that self-supervised pretraining or foundation models are themselves new. Its contribution is a shared representation and adaptation framework designed for RAN telemetry and operational decision support. Because configuration settings affect subsequent KPI behavior, RAN-NFM reconstructs masked KPIs conditioned on configuration context and uses dynamic KPI representations as queries during cross-modal fusion. RAN KPIs also exhibit calendar-dependent patterns and cross-channel relationships, motivating timestamp-aware patch embeddings and channel attention. Finally, EIFT separates the observed network state from a proposed operational action to support what-if prediction. Appendix A.5 shows that EIFT substantially outperforms partial and vanilla MLP adaptation heads.
+
+Pretraining and generalization
+
+The same pretrained RAN-NFM-Base is adapted to three tasks covering classification and regression, long-term configuration effects and short-term dynamics, and sector-level and eNodeB-level predictions. This demonstrates backbone reuse across tasks, but does not isolate the contribution of pretraining. TPB-TTMs evaluates transfer from cross-domain pretraining and therefore answers a different question. We agree that the direct test is the same RAN-NFM architecture trained from random initialization, and we will add this comparison.
+
+We will also narrow our generalization claims. The current evaluation demonstrates adaptation to held-out sectors and later time periods within one operator's LTE network. It does not establish transfer across providers, vendors, network generations, software changes, or unseen configuration values. Changes to the input schema or to configuration-KPI relationships require model adaptation and renewed evaluation, and may require retraining.
+
+Task choices and operational significance
+
+RANPerf uses downlink throughput because it is the provider-specified primary KPI for this configuration-tuning use case. We will clarify that it does not measure the complete network effect, including uplink performance, latency, or user fairness. EngSav uses a candidate sleep configuration and KPIs available before execution to predict post-sleep throughput. It supports sleep-policy selection under a throughput constraint as one component of the shutdown-control process. EngCon uses KPIs observed before the target week to forecast the following week's eNodeB energy consumption, with ground-truth labels obtained from equipment counters. It addresses prospective planning rather than measurement of current energy consumption. We will explicitly state each task's inputs, labels, prediction horizon, and information available at inference.
+
+Interpreting the results
+
+RANPerf is highly imbalanced: only 1.84% of test samples exceed the operator-defined 30% improvement threshold. Resampling is applied only during training, while validation and test sets retain their original distributions. We therefore emphasize AUPRC and the precision-recall curve. RAN-NFM-Pro achieves an AUPRC of 0.286, compared with the random-ranking level of 0.0184, Auric-XGB at 0.2312, and NetLLM at 0.2586. Its F1 score is 0.3180, compared with 0.2638 for Auric-XGB.
+
+Figure 6 evaluates how models rank the same logged configuration changes. The small negative result for Top-20 sectors shows that high-throughput sectors have limited optimization headroom and require group-specific deployment safeguards. The provider's operational objective prioritizes the Btm-20 and Mid-60 groups, where greater improvement opportunities exist. We will avoid interpreting Figure 6 as a network-wide causal or aggregate throughput gain.

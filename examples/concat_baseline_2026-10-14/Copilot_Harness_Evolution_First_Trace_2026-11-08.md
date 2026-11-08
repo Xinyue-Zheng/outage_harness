@@ -22,12 +22,12 @@ the harness. Report every change as file and line.
 - The outer loop never writes into a run directory. All outputs go to
   `evolution/<run_name>/` beside the run directories.
 
-## 1. Record the harness commit
+## 1. Record the harness version
 
-At run start, both runners write `harness_commit` into `run.json`: the git
-commit of the repository, read with `git rev-parse HEAD`, and `harness_dirty:
-true|false` from `git status --porcelain` of the harness packages. If git is
-not available, write `null` and `harness_commit_note`. Do not estimate.
+Add one module-level constant `HARNESS_VERSION: str` to the shared harness
+package, for example `"2026-11-08a"`. At run start, both runners write it
+into `run.json` as `harness_version`. The human changes the constant when
+the harness changes; the outer loop only reads it. No git, no file hashes.
 
 ## 2. Signal extraction
 
@@ -110,8 +110,11 @@ the renderer module, so that the engineer can still cite it),
 `ledger_tail.md` (last 10 ledger entries, or the sentence "ledger empty"),
 and `constraints.md` with the text of design sections 6 and 7.2 and this
 sentence first: "If class is core_failure, the correct output has
-`patch: null` and `component: null` and explains why no harness edit is
-warranted."
+`patched_file: null` and `component: null` and explains why no harness edit
+is warranted." The output schema in `constraints.md` replaces the design's
+`patch` field with `patched_file: {"path": "<file on the edit surface>",
+"content": "<full new content of that one file>"}`, so that no patch tool
+is needed.
 
 ## 5. One engineer call
 
@@ -121,8 +124,8 @@ system text = `constraints.md`; user text = the other packet files in the
 order signal, rounds (oldest first), component, ledger tail. It parses the
 reply as the JSON object of design section 7.2 and writes
 `engineer_response.json` beside the packet. Parsing is strict: a reply
-without `predicted_effect`, or with a `patch` when `class_agreement` is
-`agree` and class is `core_failure`, is saved as `engineer_response_invalid.txt`
+without `predicted_effect`, or with a `patched_file` when `class_agreement`
+is `agree` and class is `core_failure`, is saved as `engineer_response_invalid.txt`
 with the parse error, and the command exits non-zero. Record `model`,
 `reasoning_effort`, token usage and `total_s` in the response file.
 
@@ -134,23 +137,23 @@ The engineer model for now is the in-loop model. Record that in the ledger
 entry (`engineer_model_is_inloop_model: true`), because it changes what
 the test shows: it tests the pipeline, not a stronger reader.
 
-## 6. S0 and S1 on the engineer's patch
+## 6. S0 and S1 on the engineer's patched file
 
 `evolution replay <run_dir> <packet_dir>`:
 
-1. If `engineer_response.json` has `patch: null`, write
+1. If `engineer_response.json` has `patched_file: null`, write
    `replay_report.md` with the single line "no patch; replay not run" and
    exit zero.
-2. Copy the harness package to a scratch directory and apply the patch
-   there with `git apply --directory` or `patch -p1`. A patch that touches a
-   file outside the edit surface of design section 6, or more than one
-   component, fails S0 with the file names.
+2. Copy the harness package to a scratch directory and write the
+   engineer's `patched_file` content over the named file there. A
+   `patched_file.path` outside the edit surface of design section 6 fails
+   S0 with the file name.
 3. Run `uv run ruff format --check`, `uv run ruff check`, `uv run ty check`
    and the harness tests against the copy. Any failure is S0 fail; write
    the tool output to `s0_report.txt`.
-4. S1: for every stored run whose `harness_commit` equals this run's (or,
-   when the field is absent, every run whose directory date is on or after
-   the newest harness-package commit date; say which rule was used), and
+4. S1: for every stored run whose `harness_version` equals this run's (or,
+   when the field is absent, the runs the user names on the command line
+   with `--replay-runs <dir> ...`; say which rule was used), and
    for every round NN of it, using the patched copy: re-render the context
    from `state_NN.json` and diff against `context_NN.txt`; re-validate the
    stored decision and compare with the stored verdict; re-compute the
@@ -195,11 +198,11 @@ directory is read by a test.
 7. `engineer` parsing: a reply without `predicted_effect` produces
    `engineer_response_invalid.txt` and a non-zero exit; a valid reply is
    written with the usage fields.
-8. `replay`: a patch that changes one renderer section produces a
+8. `replay`: a patched renderer file that changes one section produces a
    changed-contexts table with exactly that section for every fixture round
    and empty changed-verdicts and changed-legal-lists tables.
-9. `replay` S0: a patch that touches the rule policy module fails S0 and
-   names the file.
+9. `replay` S0: a `patched_file.path` that names the rule policy module
+   fails S0 and names the file.
 
 ## 9. Run it once
 

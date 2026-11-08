@@ -90,9 +90,11 @@ Per the instructions implemented so far, one run directory holds:
 | `audit.json`, audit map | outside-only closure audit when run | signal `closure_leak` |
 
 If a run does not record the harness version it ran under, add one field
-now, before any evolution work: `harness_commit` in `run.json`, the git
-commit of the harness package at run start. Without it the replay study in
-section 9 cannot check out the harness that produced a trace.
+now, before any evolution work: `harness_version` in `run.json`, a string
+constant in the harness package that the human changes when the harness
+changes. The internal environment has no git for Copilot, so no commit hash
+and no file hash. Without the field the replay study in section 9 cannot
+tell which traces ran under which harness.
 
 ## 4. Failure signals
 
@@ -240,7 +242,7 @@ packet/
     decision_NN.json     as proposed
     validation_NN.json   accepted or rejected, check, message
     state_NN.summary     the state fields the check read (not the full state)
-  component/           source of the component the gate names, current commit
+  component/           source of the component the gate names, current version
   ledger_tail.md       last 10 ledger entries (section 8.5)
   constraints.md       edit surface, core- and case-agnostic rules,
                        output schema, "do not edit if class is core failure"
@@ -261,7 +263,7 @@ One JSON object per episode:
   "class_agreement": "agree | dispute",
   "dispute_reason": "null or cited reason",
   "component": "validator",
-  "patch": "unified diff against the named commit",
+  "patched_file": {"path": "one file on the edit surface", "content": "full new content"},
   "tests": ["unit tests added or changed, as code"],
   "predicted_effect": {
     "signal": "rejection_cap",
@@ -273,7 +275,7 @@ One JSON object per episode:
 }
 ```
 
-A patch without a predicted effect is rejected. The predicted effect is the
+A response with a patched file but no predicted effect is rejected. The predicted effect is the
 "falsifiable contract" of AHE 2604.25850; it is what the validation stages
 check, and the ledger keeps both the prediction and the observation.
 
@@ -295,7 +297,7 @@ S2 reruns on held-out cases, both cores, matched caps ──fail──► reject
 S3 human review if scope = specification, else auto-accept
    │
    ▼
-ledger entry, new harness commit, used by the next runs
+ledger entry, new harness version, used by the next runs
 ```
 
 ### 8.1 S0: static
@@ -352,10 +354,11 @@ counts and geometries, and keep a fixed split that the engineer never sees.
 ### 8.4 Acceptance and rollback
 
 A patch that passes S0 to S2 and has `scope = harness` is accepted and
-becomes a new harness commit. A patch with `scope = specification` waits
+becomes a new harness version (the constant is bumped, the old package is
+kept as a copy). A patch with `scope = specification` waits
 for a human. Every accepted patch has a revert path: if the next real runs
 show the predicted-absent signal again, or a new signal on the same
-component, the ledger entry is marked `reverted` and the commit is reverted.
+component, the ledger entry is marked `reverted` and the previous package copy is restored.
 Nothing is edited in place in a running experiment; the new commit is used
 from the next run pair on.
 
@@ -367,7 +370,7 @@ directory:
 | field | content |
 |---|---|
 | `episode` | run id and signal |
-| `harness_commit` | commit the trace ran under |
+| `harness_version` | harness version the trace ran under |
 | `gate` | Q1, Q2, Q3, class |
 | `engineer` | diagnosis, dispute, component, patch id |
 | `predicted_effect` | as in 7.2 |
@@ -425,8 +428,10 @@ which `rejections` entries. Where a run predates a record field, say so.
 
 For each episode in the ledger:
 
-1. Check out the harness at the run's commit (or the nearest commit if
-   `harness_commit` was not recorded; note it).
+1. Use the harness version the run recorded (or the version the human
+   names for runs that predate the field; note it). Old harness versions
+   must be kept as copies for this study, since there is no git to check
+   them out.
 2. Run signal extraction and the gate on the run directory. Record the
    class. Compare with the expected class in 9.2.
 3. Build the packet (7.1) and run the engineer once. Record component,
@@ -510,14 +515,15 @@ expected to erode the comparison.
   interface defect appears that passes all three, the gate will call it a
   core failure. Every core-failure episode must be read by a human until
   the gate has been wrong zero times over a meaningful count.
-- **Harness commit not recorded.** If old runs have no commit, the replay
-  study loses precision for them. Add the field before the next run pair.
+- **Harness version not recorded.** If old runs have no version field, the
+  replay study loses precision for them. Add the field before the next run
+  pair, and keep a copy of each harness version from then on.
 
 ## 14. Implementation phases
 
 | phase | content | needs | status |
 |---|---|---|---|
-| A | `harness_commit` in `run.json`; signal extraction from a run directory; gate Q1 to Q3; retroactive ledger | stored runs, repository history | not started |
+| A | `harness_version` in `run.json`; signal extraction from a run directory; gate Q1 to Q3; retroactive ledger | stored runs, repository history | not started |
 | B | packet builder; engineer call with the output schema; S0 and S1 | phase A, one strong model | not started |
 | C | replay study on existing episodes; report rates | phases A and B | not started |
 | D | S2 on held-out synthetic cases; acceptance; revert path; matched-budget baseline | synthetic case generator, both cores | not started |

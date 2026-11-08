@@ -1,0 +1,30 @@
+Please implement the following changes to the 5G supervised pipeline. Do NOT modify the external 4G source or the pretrained core modules (SAINT transformer, PatchTST backbone, cross-attention). Only change the 5G dataset, the input adapters (tokenizer/resampler/aligner), the classifier head configuration, and the run arguments. After each change, report exactly what you changed with file names and line numbers.
+
+1. Fix target_channel
+   - The label is a throughput-improvement label, and the 4G classification used the throughput channel.
+   - Determine the index of the throughput channel (legacy slot 7, DrbThpVolOcG6to9, sourced from NR_DL_DRB_TPUT) in the 3-channel space actually fed to PatchTST, by tracing the channel selection code. Do not assume the index; show the trace.
+   - Set target_channel to that index, and add a log line at startup that prints the selected channel index and its KPI name, so this can be verified in every run.
+
+2. Align KPI windows to a complete hourly grid
+   - Instead of taking the first 168 available rows, reindex each Week-1 KPI window onto the full 168-hour grid (7 days x 24 hours) based on actual timestamps, so every row corresponds to a real hour and timestamps used for the time embedding are correct.
+   - Before choosing a fill method, find out how the 4G KPI data was filled upstream (the producer of KPI_filled_data_existing_85) and report it. Implement the same fill method for 5G if feasible. If it cannot be determined, propose options (e.g., limited forward-fill/interpolation within short gaps) and ask me before implementing.
+   - Report, over the training set, the distribution of the number of missing hours per window before filling.
+   - Add an option to drop samples whose missing-hour fraction exceeds a configurable threshold.
+
+3. Split configuration features by number of unique values
+   - Add a configurable threshold (default 10). For every feature currently in num_list, count the number of distinct non-missing values on the TRAINING set only.
+   - Features with fewer than the threshold distinct values: move them to the categorical path (build the vocabulary from training values; unseen values map to the unknown ID, consistent with the existing categorical handling).
+   - Features at or above the threshold: keep them on the numerical path.
+   - Print a table of every feature, its distinct-value count, min/median/max, missing fraction, and its assigned path.
+
+4. SAINT-style numerical feature processing
+   - Normalize numerical features using statistics fitted on the training set only (use median/IQR, consistent with the KPI normalization, with zero scales replaced by 1). Apply the same statistics to train/val/test.
+   - For heavy-tailed non-negative features, apply log1p before fitting the statistics (detect by a configurable skewness rule, or let me specify the list; report which features were transformed).
+   - Clip normalized values to a configurable range (default [-5, 5]).
+   - Treat NaN and +/-inf as missing (set the feature mask to 0), fixing the current gap where pd.notna does not reject infinity.
+   - Replace the current per-feature affine embedding (value * weight + bias) with a separate small MLP per numerical feature, following the official SAINT implementation: Linear(1, 100) -> ReLU -> Linear(100, 64).
+   - Make sure the token resampler correctly handles the new numbers of categorical and numerical tokens.
+
+5. Save the fitted statistics, vocabularies, and feature-path assignments to files in the run directory so evaluation and embedding export use exactly the same preprocessing.
+
+Do not change any other training settings in this step. Summarize all changes at the end.

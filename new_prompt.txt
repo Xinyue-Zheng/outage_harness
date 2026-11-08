@@ -1,0 +1,32 @@
+```
+Please read the code related to the 5G transfer in this project. Only summarize; do not modify any code. Organize your summary into the following sections, and cite the file name and line numbers for every point:
+
+1. Input adapter (5G features → core model input)
+   - Architecture: number of layers, dimensions of each layer, activation functions, whether there is LayerNorm/BatchNorm/Dropout, whether there are residual connections
+   - How 5G features map to 4G features: which features correspond one-to-one, which are new in 5G, which 4G features are missing in 5G, and how the missing ones are filled
+   - Normalization of numerical features: are the 4G statistics or the 5G statistics used? On which dataset are the statistics computed (train only / all data)? Is there any log transform or clipping?
+   - Encoding of categorical features, and how new categories that appear only in 5G are handled
+   - Handling of missing values (NaN)
+   - Parameter initialization
+
+2. Output adapter (core model output → classification head)
+   - Architecture, same details as above
+   - Which layer the embeddings used for XGBoost are extracted from (core output / after the adapter / before the head)
+
+3. Training procedure
+   - Which parameters are trainable, and whether the core and the adapters use different learning rates
+   - Optimizer, learning rate, LR schedule, warmup, number of epochs, batch size
+   - Whether training is staged (e.g., freeze the core and train only the adapters first, then unfreeze everything)
+   - Loss function, and whether pos_weight or any other class weighting is used
+   - How the training set is sampled (positive:negative ratio, whether resampling happens every epoch)
+   - The metric used for early stopping and model selection
+   - The code that loads the 4G pretrained weights: confirm that the weights are loaded correctly (whether strict=False is used, and whether there are any missing or unexpected keys)
+
+4. Corresponding implementation for the LLM transfer
+   - Differences between the LLM's adapters and the core model's adapters in architecture, normalization, and training configuration
+
+5. Data processing consistency
+   - Whether train / val / test go through the same preprocessing code, and whether scalers or encoders are fit on the training set only
+
+Finally, list anything suspicious or any potential bugs you noticed while reading the code.
+```

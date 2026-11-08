@@ -312,7 +312,7 @@ attributed.
 ### 8.2 S1: replay on stored rounds
 
 This stage is new and specific to this project. For every stored run under
-the same harness commit, and for every round of it:
+the same harness version, and for every round of it:
 
 1. re-render the context from `state_NN.json` with the patched renderer and
    diff it against `context_NN.txt`;
@@ -359,7 +359,7 @@ kept as a copy). A patch with `scope = specification` waits
 for a human. Every accepted patch has a revert path: if the next real runs
 show the predicted-absent signal again, or a new signal on the same
 component, the ledger entry is marked `reverted` and the previous package copy is restored.
-Nothing is edited in place in a running experiment; the new commit is used
+Nothing is edited in place in a running experiment; the new version is used
 from the next run pair on.
 
 ### 8.5 Ledger

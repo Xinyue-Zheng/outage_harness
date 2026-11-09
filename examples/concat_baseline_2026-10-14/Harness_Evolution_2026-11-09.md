@@ -4,7 +4,7 @@ Date: 2026-11-09. This file replaces `Harness_Evolution_Design_2026-11-08.md`
 as the single description of the outer loop. It has three parts: the defect
 track, which is partly implemented and has run once; the efficiency track,
 which is a proposal; and the validation, evaluation and study plan that both
-tracks share. Section 15 lists the references. Citations are numbers in
+tracks share. Section 15 summarizes how related work solves each sub-problem; section 16 lists the references. Citations are numbers in
 square brackets.
 
 Status markers used in this file:
@@ -623,7 +623,81 @@ erode the comparison.
    extension share can be computed exactly? If not, items absent at step 0
    are the approximation.
 
-## 15. References
+## 15. How related work solves the same problem
+
+This section answers one question per sub-problem of the outer loop: who
+has solved it, how, and what is different here. The two closest systems
+are HarnessFix [24] and Grow the Harness [25]; both run the whole loop
+(diagnose from failed trajectories, repair the harness with a model,
+validate, accept) for benchmark agents that have a pass signal.
+
+### 15.1 Is the failure in the harness or in the model?
+
+| work | how it attributes | what is different here |
+|---|---|---|
+| Model or Harness? [26] | 41 failure modes, each on an interaction edge (model-context, model-memory, model-tool) with a fault side. Rule: a failure is model-side when "a more capable model could have avoided or recovered from the failure under the same conditions"; harness-side when the harness drove it. Labels by the authors, tracing the earliest unrecovered failure; model judges reach κ 0.76 and "judge accuracy remains limited". No budget or timeout family | the rule is a counterfactual judgment. The gate replaces it with three mechanical checks, which is possible because the interface is a rendered legal-action list with a validator and a typed rejection record |
+| Who&When [27] | automated attribution of the responsible agent and step in multi-agent logs; the best method finds the agent in 53.5 percent of cases and the step in 14.2 percent; strong reasoning models "fail to achieve practical usability" | the reason the gate is computed by the program and the model is only a second reader; the step-28 misattribution to round 11 is the same effect |
+| MAST [28] | 14 failure modes in three categories from grounded theory on over 1 600 traces, one category being system design issues; a model annotator | the system-design category is the analog of the specification class, without a human-acceptance rule |
+| Trial by Trace [29] | scores agent performance and harness reliability separately over seven harness components; run-level attribution through explicit mechanism chains; 31.1 percent of runs succeed while failing a harness criterion | supports measuring the harness apart from the core; the mechanism chain is a human-written causal path, the gate is a fixed test |
+| The Scaffold Effect [30] | three harnesses, two models, 50 tasks: harness choice moves tokens per solved task by 40 times while pass rate moves at most 8 points; failure fingerprints (max turns, time, no-action turns) replicate across models and are read as harness properties | the cap-type endings on your traces are such fingerprints; the recommended reporting (tokens per solved task, no-action turns, failure categories per harness-model pair) is what the waste profile gives per round |
+| Harness design study [31] | ablates context management, planning and action space over four models; attributes a failure to the earliest failed stage; "harness design is a conditional systems problem" whose right choices depend on model strength | the in-loop model is weak, so renderer and legal-action-list edits are expected to matter more than for a frontier model |
+| AgentOccam [32] | changes only the observation and action space of a web agent, no new strategy, and gains 26.6 points on WebArena | the renderer and the legal action list are the same two objects; the paper shows that these edits alone carry large effects |
+
+### 15.2 Repair the harness from failed trajectories
+
+| work | loop | validation | what is different here |
+|---|---|---|---|
+| HarnessFix [24] | a trace is converted to an intermediate representation with provenance and control-flow links; a diagnosis agent does symptom localization, evidence backtracking, adjudication and mapping to seven harness layers; records with one layer and root cause merge into a flaw record; a repair agent picks a repair operator from a catalog distilled from human version changes of agent repositories and writes a repair specification with allowed and forbidden edits | scope and static checks, then held-out reruns; accept when the target flaw falls by at least a threshold and new regressions stay under a bound; accepted and rejected repairs go into a harness memory; relative gains of 15 to 50 percent on four benchmarks; prompt-only repair did not help on one benchmark; removing regression checks hurts everywhere | no test for whether the failure is model capability (the paper leaves this open); reruns only, no replay; one core. The operator catalog from human changes is worth borrowing: your instruction files are that catalog |
+| Grow the Harness [25] | start from a scaffold with no controller; each failed run gives a function-level execution graph; edits are limited to the entry function and the functions the trace touched plus a small helper budget; parsing, validation, state updates, error recovery and stopping move into code, the model does the semantic work | a bounded window of recent failures (4 to 8); a candidate must fix at least a threshold of them; a held-out gate keeps a candidate only if success is not below the last checkpoint, else rollback; 76 to 92 percent fewer model calls | the same responsibility split as this project's inner loop; the failure window and the function-level edit locality are worth borrowing; validation is success on a benchmark |
+| Darwin Gödel Machine [33] | an agent edits its own code; an archive of versions; children are benchmarked and added | empirical benchmark score replaces proof; archive ablation matters; sandboxing | needs a pass signal; edits the whole agent, not a closed surface |
+| AgentDebug [34] | taxonomy over memory, reflection, planning, action and system operations; root-cause isolation on annotated failed trajectories; targeted feedback lets the agent recover, up to 26 percent relative | the repair target is the agent's next attempt, not the harness |
+| Tool-description refinement (DRAFT and successors, as surveyed in [35]) | tool documentation and error messages are revised from execution feedback instead of the tool code | the renderer wording and the validator message text are tool documentation in this sense |
+| Self-improvement survey [35] | an agent is (θ, Σ) with Σ = prompts, memory, tools, control logic; scaffold updates are "faster and more easily reversible" than weight updates; offline and batched loops are in scope; validation with rollback; the critic as governed infrastructure and layered gating as open problems | the gate plus S0 to S3 is layered gating; the ledger with revert is the rollback |
+
+### 15.3 Budget and time caps
+
+| work | finding or method | use here |
+|---|---|---|
+| HALT [36] | stopping as evidence coverage: a verification-aware policy outside the agent stops the search when cumulative evidence covers each required claim; the host agent is unchanged; a small agent otherwise runs to its full search budget on most questions | the completion check is already a program-side coverage test. The missing counterpart is on the budget side: a program-side end when the floor exceeds the remaining locations (section 6.3) |
+| Budget tracker and budget-aware scaling [16], [37] | per-step debit of tool and token cost; the remaining budget in the context; stop at exhaustion or at the agent's own termination | present since 2026-10-28; the waste profile measures whether the core uses it |
+| BAGEN [17] | frontier agents are over-optimistic and keep spending on tasks that will not complete; early stopping saves 28 to 64 percent of tokens on failed trajectories | the post-infeasibility share is this quantity |
+| Learned stopping studies [38], [39] | a learned stopper cuts searches but can stop too early; calibrated fixed exits win on some tasks | a reason to make the budget-side end a program condition under human acceptance, not a learned policy |
+| Low-yield tails [18], [21] | budget is lost after the useful evidence is in hand; 58 percent of tokens after the first warning in failed runs | the zero-yield share |
+| Diminishing returns [40] | a model makes more mistakes when its context contains its own earlier errors | relevant to how rejections are shown in the context, which is on the edit surface |
+
+### 15.4 What remains specific to this project
+
+HarnessFix [24] and Grow the Harness [25] solve the loop for agents with a
+benchmark pass signal and one model. The attribution taxonomies [26] to
+[29] classify by judgment, human or model. Against that background the
+specific parts here are: the gate as a mechanical interface test instead of
+a counterfactual judgment; replay of stored rounds as a validation stage for
+interface edits; two cores on one harness as the constraint the loop must
+not break; the specification class with human acceptance; and the budget
+decomposition from the program's cost-to-go. The honest statement for the
+paper is that the loop itself is HarnessFix's loop adapted to a setting
+without a pass signal, and that the five parts above are what the adaptation
+required.
+
+### 15.5 Borrowed into the plan from this section
+
+1. **Repair operator catalog** [24]: derive the operators from the
+   instruction files of 2026-10-28 to 2026-11-02 (add a state field to the
+   context, unify a legality function between renderer and validator, add an
+   affordability guard, change a completion constant, add a cache). The
+   engineer names an operator before it writes the file; a patch outside its
+   operator's scope fails S0.
+2. **Failure window** [25]: an efficiency edit is accepted only if it
+   improves the flagged rounds of at least k of the last n runs with the same
+   finding, not one episode.
+3. **Edit locality** [25]: within the one file, the patch may change only
+   the functions the flagged rounds executed; S0 checks the function names.
+4. **Reporting** [30]: tokens per completed case, zero-yield rounds and the
+   end-reason breakdown per harness-and-core pair, on the evaluation slides.
+5. **Budget-side stop** [36]: the program end condition "floor exceeds
+   remaining locations", as a specification change with human acceptance.
+
+## 16. References
 
 Identifiers are arXiv ids as found in the surveys of 2026-11-08 and
 2026-11-09. Verify title, authors and version on arXiv before citing in a
@@ -685,3 +759,38 @@ Surveys consulted:
 
 23. Dynamic Agent Skills: A Lifecycle Survey and Taxonomy of Evolving Skill
     Libraries. arXiv 2607.10113 (TMLR 2026).
+
+Closest systems and attribution (added 2026-11-09):
+
+24. From Failed Trajectories to Reliable LLM Agents: Diagnosing and
+    Repairing Harness Flaws (HarnessFix). arXiv 2606.06324.
+25. Grow the Harness, Not the Context: From Strategy-Free Scaffolds to
+    Reusable Specialist Agents. arXiv 2609.26760.
+26. Model or Harness? An Interaction-Centric Taxonomy for Localizing Agent
+    Failures. arXiv 2607.28802.
+27. Zhang et al. Which Agent Causes Task Failures and When? On Automated
+    Failure Attribution of LLM Multi-Agent Systems (Who&When). arXiv
+    2505.00212, ICML 2025.
+28. Cemri et al. Why Do Multi-Agent LLM Systems Fail? (MAST). arXiv
+    2503.13657, v3.
+29. Trial by Trace: Benchmarking AI Agent Harnesses for Reliability and
+    Failure Attribution. arXiv 2610.32285.
+30. The Scaffold Effect in Coding Agents: Harness Choice as a Hidden
+    Variable in Coding-Agent Evaluation. arXiv 2607.22585.
+31. An Empirical Study of Harness Design for Coding Agents. arXiv
+    2609.20804.
+32. Yang et al. AgentOccam: A Simple Yet Strong Baseline for LLM-Based Web
+    Agents. arXiv 2410.13825, ICLR 2025.
+33. Zhang et al. Darwin Gödel Machine: Open-Ended Evolution of
+    Self-Improving Agents. arXiv 2505.22954, ICLR 2026.
+34. Where LLM Agents Fail and How They Can Learn From Failures
+    (AgentDebug, AgentErrorBench). arXiv 2509.25370.
+35. Self-Improvements in Modern Agentic Systems: A Survey. arXiv
+    2607.13104.
+36. HALT: Verification-Aware Stopping for Retrieval-Augmented Search
+    Agents. arXiv 2608.02009.
+37. Inference-Time Budget Control for LLM Search Agents. arXiv 2605.05701.
+38. When Does Learning to Stop Help? A Cost-Aware Study. arXiv 2606.30852.
+39. When Should Multi-Round RAG Stop? Structured Stopping Judgments and
+    Retrieval Reduction in Search-R1. arXiv 2608.13237.
+40. The Illusion of Diminishing Returns. arXiv 2509.09677, ICLR 2026.

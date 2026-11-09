@@ -7,12 +7,21 @@ parts; the feasibility report is answered here, not a reason to stop.
 ## State alignment
 
 The context of round r was rendered from the state as it stood at the
-start of round r. Use that state file, whatever its name is. If the runner
-writes the state after each round as `state_NN.json`, the state for the
-context of round r is `state_{r-1}.json`, and `state_00.json` is the
-initial state. Write the mapping you used into the gate record and the
-packet (`state_for_round: {"28": "state_27.json"}`) so that nobody has to
-guess it later. Do not re-render from the state after the round.
+start of round r. The runs store that state as
+`steps/step_NN/state_before.json`. Use it for Q2, Q3 and the replay.
+`state_NN.json` is the state after the round and is not used for
+re-rendering. Write the file used into the gate record and the packet
+(`state_for_round: {"28": "steps/step_28/state_before.json"}`).
+
+## Fields that older runs lack
+
+| missing in the trace | use instead |
+|---|---|
+| `harness_version` | the runs named with `--replay-runs`; the field is written from the next run on (part 1) |
+| `max_consecutive_rejections` | `budget_at_end.rejections_limit` |
+
+Read the replacement field; do not hard-code 3. A trace with neither
+field fails with both names.
 
 ## Per-round records are assembled, not expected
 
@@ -31,16 +40,24 @@ inside the packet. That file is an output of the outer loop, never a file
 in the run directory. If a fact is in none of these places, fail with the
 fact name and the round.
 
-## Q2 for expansion
+## Q2 for expansion, and no cost for expansion in Q1
 
 `legal_requests` produces coverage requests only. For a rejected
 `expand_study_area`, Q2 calls the function the runner itself uses to
-accept or reject an expansion direction, on the aligned state, with the
+accept or reject an expansion direction, on `state_before.json`, with the
 proposed direction, and compares with the recorded verdict. Name that
 function in the report.
+
+Q1 for expansion has no cost. The context line "expand_study_area may name
+one of: <keys>; cost unknown until the wedge is built" is the legality
+sentence; Q1 is true when it lists at least one key. Do not define an
+expansion-cost procedure. Affordability applies to coverage requests and
+KPI queries only, as the gate amendment's table says.
 
 ## Then run part 9 as written
 
 With the two amendments, the step 28 trace has what the gate needs:
-contexts 26 to 28, the aligned states, the three `rejections` entries, and
-the expansion validator. Run it and paste the gate record.
+contexts 26 to 28, the `state_before.json` files, the three `rejections`
+entries, `budget_at_end.rejections_limit`, and the expansion validator.
+This is the implementation, not a legacy adapter: these are the records as
+they are. Run part 9 and paste the gate record and the engineer response.

@@ -1,0 +1,10 @@
+Do NOT run anything related to XGBoost or embedding export, and do NOT train anything.
+
+For the core model with its MLP classifier head (the 5G supervised model trained with all samples and positive weighting):
+1. Load the best saved checkpoint of this MLP-head model.
+2. Using the same evaluation code, batch size, and settings that were used for the final test evaluation, run inference on the validation set and on the test set.
+3. Print only these numbers:
+   - validation AUPRC (from this reloaded-checkpoint evaluation)
+   - test AUPRC (from this reloaded-checkpoint evaluation)
+   - the best validation AUPRC that was logged during training, for comparison
+   - the checkpoint file path that was loaded and the batch size used

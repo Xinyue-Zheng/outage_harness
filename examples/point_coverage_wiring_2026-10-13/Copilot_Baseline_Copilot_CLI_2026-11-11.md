@@ -114,6 +114,9 @@ completion; those are harness constructs. It knows the budget.
 | `budget` | none | the budget record below | none |
 | `final_report` | the report body (part 4) | `{"accepted": true}` or the schema errors | none |
 
+A point whose call fails after the client's own retries is returned as
+`error` and is not charged, as in the harness.
+
 Every request snaps each coordinate to the nearest grid centre with the
 harness grid function and fetches that centre; the response says which
 grid id and centre were used so Copilot can see the snapping. A radius
@@ -300,9 +303,10 @@ on the new package only.
 
 ## 8. Run it
 
-1. Dry run: `--dry-run` points the server at the synthetic case of
-   `synthetic_case.py` with a location limit of 300 and a time limit of
-   600 seconds, and sends at most 2 prompts. This checks the flags, the
+1. Dry run: `--dry-run` points the server at fixture F1 of the
+   completion check tests, served through the fake point source those
+   tests use, with a location limit of 300 and a time limit of 600
+   seconds, and sends at most 2 prompts. This checks the flags, the
    confinement, the transcript location and the usage source. Read
    `audit.json` and `usage.md`. Fix mechanical defects only. Record the
    premium requests it consumed.

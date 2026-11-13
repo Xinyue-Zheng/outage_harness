@@ -218,9 +218,9 @@ Gate on the changed and new files: `uv run ruff format`,
 
 ## 6. Run it once, on the synthetic case
 
-Run the rule core on the synthetic case of `synthetic_case.py` three
-times, once per `RULE_SCORE`, with the limits the synthetic tests
-already use. Do not run a real case.
+Run the rule core from initialization to its end on fixtures F1 and F2
+of the completion check tests, once per `RULE_SCORE`, with the fake
+point source and the limits those tests use. Do not run a real case.
 
 ## 7. Report back
 

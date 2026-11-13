@@ -153,8 +153,8 @@ A round:
 2. Read the batch through the same point fetch helper the harness uses,
    at radius 10, with its own retries. Charge one location per grid id
    not charged before in this run, cached or live. A location whose call
-   still fails is recorded as `error`, stays charged, and is not read
-   again.
+   still fails is recorded as `error`, is not charged, as in the
+   harness, and is not read again in this run.
 3. Record the results and repeat.
 
 Reading ends when no location is left in the limit (`query_budget`),
@@ -266,15 +266,15 @@ No reference is used. No pictures.
    batch is chosen; a batch never holds a location twice; a batch is cut
    at the locations left.
 8. Charging: a grid id is charged once; cached and live are both
-   charged; an `error` location stays charged.
+   charged; an `error` location is not charged and is not chosen again.
 9. `query_budget` still runs the KPI step; `time_cap` does not.
 10. KPI under the limit: one call per technology names every required
     cell once. Over the limit, with backup A at 5 covered locations, B
     at 4 of the same 5, C at 2 others: the order is the outage sectors,
     A, C, B, and the run ends `kpi_budget` with the cells left out
     recorded.
-11. End to end on the synthetic case of `synthetic_case.py`, both
-    policies: every file of part 5 exists, every read location has a
+11. End to end on fixture F1 of the completion check tests, with its
+    fake point source, both policies: every file of part 5 exists, every read location has a
     class, and a second run gives the same `reads.jsonl` apart from the
     seconds.
 12. `compare.py` on that run and a synthetic harness run directory
@@ -285,8 +285,8 @@ Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
 
 ## 8. Run it
 
-1. `--dry-run`: the synthetic case, a location limit of 300, a time
-   limit of 600 seconds, both policies. Read `run.json` and
+1. `--dry-run`: fixture F1 of the completion check tests, a location
+   limit of 300, a time limit of 600 seconds, both policies. Read `run.json` and
    `rounds.json`, the selection seconds first.
 2. One real run with `--policy ens` on the case that has a stored model
    run and a stored rule run, with `--harness-run` set to the model run.
@@ -308,7 +308,5 @@ the three comparison files, and the answers to these questions:
    whether any numeric library was already available and used.
 4. Where the harness starts the clock of its time limit, and where this
    runner starts its own.
-5. How the harness charges a location whose point call fails, and what
-   this runner did.
-6. Which harness functions produced the classes and the load estimate,
+5. Which harness functions produced the classes and the load estimate,
    and which State fields they needed.

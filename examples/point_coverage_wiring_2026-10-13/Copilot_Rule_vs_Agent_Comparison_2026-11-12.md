@@ -130,13 +130,13 @@ calls. Record that in every `run.json` under `replay: true`. The tables
 compare locations and `calibrated_seconds` (counts times the unit costs,
 as `run.json` already records), not wall time.
 
-The harness has no round cap, so a rule that proposes the same failing
-query every round would spin until the stored time limit. A replayed
-rule run finishes in seconds when it works, so its time limit is
-`RULE_REPLAY_SECONDS`. A rule run that ends `time_cap` in replay
-therefore repeated itself without progress; the tables show it as that,
-and it is a result, not an error to repair. Model runs keep the stored
-time limit.
+The rule does not send again a request that read nothing
+(`Copilot_Rule_Scores_Followup_2026-11-13.md` part 2): it takes the next
+item, and the run ends `rule_request_failed` when nothing is left. A
+replayed rule run finishes in seconds, so its time limit is
+`RULE_REPLAY_SECONDS`. A rule run that still ends `time_cap` in replay
+is shown as that in the tables; it is a result, not an error to repair.
+Model runs keep the stored time limit.
 
 ## 2. Two literature scores inside the rule core
 
@@ -361,8 +361,7 @@ before the status is used in any result.
     `best_rule` prefers a closed run over an open one with higher
     recall.
 11. A replayed rule run whose only open item fails on every call ends
-    `time_cap` at `RULE_REPLAY_SECONDS` (use a 2-second limit in the
-    test).
+    `rule_request_failed` after one attempt.
 12. `backup_activity`: hand-built KPI state gives each of the four
     statuses; with no other cell of the technology returning rows, a
     cell without rows is `no_data`, not `inactive`; with rows in 3 weeks

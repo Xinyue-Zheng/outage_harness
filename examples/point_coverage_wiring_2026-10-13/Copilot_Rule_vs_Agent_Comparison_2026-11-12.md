@@ -1,13 +1,21 @@
 # Rule against agent: published selection rules adapted to the harness, and one comparison on shifted conditions (instruction for the Copilot)
 
+> **On hold. Do not apply this file yet.** The reference it replays from
+> is being regenerated. The two rule scores are no longer defined here:
+> they are in `Copilot_Rule_Scores_2026-11-13.md`, which is applied
+> first and on its own. This file keeps the parts that wait for the
+> reference: replay, the method without the harness, the shifted
+> conditions, the tables, and the inactive backup status. It will be
+> revised when the reference is ready.
+
 Apply to the repository that holds `outage_harness_langgraph`,
 `outage_harness_rule_based` and `outage_harness_evolution`. This
 instruction does three things, in this order:
 
-1. It adds selection rules taken from the literature, in two forms: two
-   scores inside the rule core, which keep the harness's completion check
-   and legal requests, and one method that runs without the harness and
-   stops by a statistical rule.
+1. It adds one selection method taken from the literature that runs
+   without the harness and stops by a statistical rule. The two scores
+   inside the rule core are added earlier, by
+   `Copilot_Rule_Scores_2026-11-13.md`.
 2. It adds one status for backup cells, `inactive`: a cell that coverage
    samples list and the KPI data has no row for (part 8).
 3. It runs one comparison of every rule and the model core on the same
@@ -36,14 +44,12 @@ say so.
 - Do not edit any file a run reads per round: skill text, templates,
   configuration, `unit_costs.json`, any run directory.
 - Do not run `uv sync` and do not add dependencies.
-- Harness edits are limited to two: in `outage_harness_rule_based`, one
-  new file `scores.py` and one dispatch in rule R1 (part 2); and the
-  backup activity function with its call sites in the classification and
-  report code (part 8). With `RULE_SCORE=domain`, the default, every
-  proposal is the same as today. Neither edit changes the rendered
-  context, the skill text, the completion check or any query a run
-  sends. Bump `HARNESS_VERSION` by hand, once, and record the old and
-  new strings. The concat packages are not edited.
+- The only harness edit of this file is the backup activity function
+  with its call sites in the classification and report code (part 8).
+  It does not change the rendered context, the skill text, the
+  completion check or any query a run sends. Bump `HARNESS_VERSION` by
+  hand, once, and record the old and new strings. The concat packages
+  are not edited.
 - Everything else is new modules in `outage_harness_evolution`:
   `replay.py`, `freeform.py`, `matrix.py`.
 - Tests write only under `tmp_path`.
@@ -136,104 +142,12 @@ time limit.
 
 ## 2. Two literature scores inside the rule core
 
-Rules R2 (expand), R3 (KPI) and R4 (finish) stay as they are, and so
-does the order R1 to R4. Only R1 changes: which open coverage items it
-takes and which request it builds for each. `RULE_SCORE`, read once at
-run start and written to `run.json`, selects the score:
-
-| `RULE_SCORE` | source | what is taken from it |
-|---|---|---|
-| `domain` (default) | the current rule | nearest item first, fixed pattern and count |
-| `expected_cost` | adaptive greedy for minimum-cost cover (Golovin and Krause, JAIR 2011; Hellerstein et al., Mathematics of Operations Research 2024) | each round, take the request with the largest expected progress toward closing everything, per unit of cost |
-| `budget_aware` | cost-effective active search (Jiang, Garnett, Moseley, NeurIPS 2019) | the same, with the remaining budget in the decision: keep closure affordable while it is, and switch to finding covered locations when it is not |
-
-What is replaced, and say so in the module docstring: those papers assume
-a known probability model of outcomes and give bounds under it. Here the
-two probabilities below are estimated from the run's own queried
-locations, so the scoring form is theirs and the bounds do not carry
-over.
-
-### 2.1 Two estimates, from the run's own state only
-
-Both are pure functions of the state and the geometry file. They use no
-other run, no reference, no training.
-
-- `p_samp(x)`, the probability that location `x` returns a sample. The
-  stratum of `x` is one fact: whether `x` lies in any road corridor area
-  or not. The estimate is `(1 + sampled) / (2 + queried)` over the
-  queried locations of that stratum inside the area of the request being
-  scored, when there are at least `MIN_OBS` of them; else over the
-  stratum in the whole run; else, when the run has queried no location
-  of the stratum, 0.5. The method of part 3 has no request area and uses
-  the run-wide stratum.
-- `p_cov(x)`, the probability that `x`, if it returns a sample, shows an
-  outage sector at or above the coverage threshold. The stratum is (the
-  `site/index` bin of `x`, the `BAND_M` distance band of `x` from that
-  site). The estimate is `(1 + covered) / (2 + sampled)` over the sampled
-  locations of the first of these that has any: the stratum; the nearest
-  band toward the site in the same bin; the same band in all bins of
-  that site; every sampled location of the run. It is 0.5 only when the
-  run has no sampled location at all. The second step assumes that
-  coverage does not become more likely with distance; state that in the
-  docstring.
-
-`p_cov` is used only by the scarce mode of part 2.3 and by the ordering
-of part 3. It is not part of `P_close`. A sampled request that finds
-coverage is not wasted: the boundary moves and those locations would
-have been read as interior locations anyway. Charging for it would also
-make every sampled request score near zero in a band with no
-observation yet, and the rule would fall back to reading whole areas.
-
-### 2.2 `expected_cost`
-
-Candidates: for every open coverage item (area, bin) of the completion
-check, every template `legal_requests(area_id, bin_key, state)` returns.
-For a template with a count range, try every `n` from the range minimum
-up to the range maximum or eight times the
-samples still needed, whichever is smaller. For each candidate, get the
-location set `X` the program's own selector would choose for it. If the
-selectors cannot return the set without executing the query, stop and
-report.
-
-Per candidate:
-
-- `cost` = the new locations in `X`.
-- `P_close`: for an `inside` request or `all`, 1. For a sampled request
-  on a beyond item, `P(Binomial(|X|, mean p_samp over X) >= need)`,
-  where `need` is `N_MIN_SAMPLED` minus the locations of that (area,
-  bin) that already returned a sample, not below 0. It is the chance of
-  getting the samples the item still needs.
-- `progress` = `P_close` times the cost the floor record counts for that
-  item (`inside_unqueried` for an inside item, the item's
-  `min_action_locations` for a beyond item).
-- `score` = `progress / cost`.
-
-Selection: sort candidates by score, highest first; ties by the area's
-distance from the site, then area id. Take the best candidate of the
-best item, then of the next item, up to `MAX_REQUESTS_PER_ACTION` items,
-and send one action. The rejection rule of
-`Copilot_Rejection_Handling_2026-10-31.md` part 3 is unchanged: a
-rejected item is skipped for the round.
-
-### 2.3 `budget_aware`
-
-Read `left` (locations left) and the floor's `locations` from the state.
-
-- While the floor is at most `left`: use `expected_cost`, after removing
-  every candidate whose cost exceeds `left` minus the floor cost of all
-  other open items. If that removes every candidate, keep them all.
-- When the floor exceeds `left`: closing everything is not affordable.
-  Rank every candidate with `cost <= left` by expected covered locations
-  per location, the sum over `X` of `p_samp(x) * p_cov(x)` divided by
-  `cost`, and take the best ones as above. `run.json` records the round
-  of the switch as `scarce_from_round`. If no candidate fits, R1
-  proposes nothing and the existing rules and guards apply.
-
-The step record of every R1 round under either score holds the chosen
-candidates with `cost`, `need`, `P_close`, `score` and the mean
-`p_samp`, so a reader can recompute the choice. The next step record of
-the same item holds the samples the request returned, so predicted and
-realized can be compared (part 6).
+Defined in `Copilot_Rule_Scores_2026-11-13.md` and already applied
+before this file: the setting `RULE_SCORE` with the values `domain`,
+`expected_cost` and `budget_aware`, the two estimates `p_samp` and
+`p_cov` (its part 1), and the step record fields (its part 4). Where
+this file says "part 2.1", read part 1 of that file; where it says
+"part 2.3", read its part 3. Nothing in this file changes the scores.
 
 ## 3. One literature method without the harness
 
@@ -473,26 +387,7 @@ before the status is used in any result.
 
 ## 9. Tests, synthetic only
 
-1. `RULE_SCORE=domain`: every existing rule-core test passes unchanged,
-   and R1's proposals on every fixture equal the proposals before the
-   change.
-2. `p_samp`: a fixture with 30 queried and 6 sampled locations in one
-   stratum gives 7/32; with 5 queried it falls back to the run-wide
-   stratum; with none, 0.5.
-3. `p_cov`: a stratum with observations uses them; an empty stratum
-   uses the nearest band toward the site in the same bin; then the same
-   band over all bins; then the run-wide rate; 0.5 only with no sampled
-   location in the run.
-4. `expected_cost` on a beyond item of 12 unread locations: `all` scores
-   10/12 and is chosen over a sampled request whose `P_close` is 0.3.
-5. `expected_cost` with `need` 10, on an item with at least 80 unread
-   locations, picks `n` from 12 to 14 when `p_samp` is 0.9, from 23 to
-   27 when it is 0.5, and from 60 to 68 when it is 0.2. The score is
-   nearly flat around its maximum, so the test checks a range.
-6. `budget_aware`: with the floor above `left`, the selection maximizes
-   expected covered locations per location and `scarce_from_round` is
-   set; with the floor below, it equals `expected_cost` when no
-   candidate is removed.
+1. to 6. Moved with the scores to `Copilot_Rule_Scores_2026-11-13.md`.
 7. Replay: a stored point returns its samples; a `no_sample` point an
    empty list; an `error` point raises the client exception; a location
    without a record, and a coordinate more than 1 m from a cell centre,
@@ -526,7 +421,7 @@ Gate on the changed and new files: `uv run ruff format`,
 
 ## 10. Order of work
 
-1. Parts 1 to 3 and part 8 with their tests. The gate. Write
+1. Parts 1, 3 and 8 with their tests. The gate. Write
    `inactive_backups.md` and report it.
 2. `--plan`. Stop if any location is missing or a launch seam is absent.
 3. `--run rules`, `--run freeform`, `--tables`. Report.

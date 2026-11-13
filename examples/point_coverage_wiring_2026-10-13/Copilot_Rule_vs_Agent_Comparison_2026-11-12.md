@@ -2,13 +2,15 @@
 
 Apply to the repository that holds `outage_harness_langgraph`,
 `outage_harness_rule_based` and `outage_harness_evolution`. This
-instruction does two things, in this order:
+instruction does three things, in this order:
 
 1. It adds selection rules taken from the literature, in two forms: two
    scores inside the rule core, which keep the harness's completion check
    and legal requests, and one method that runs without the harness and
    stops by a statistical rule.
-2. It runs one comparison of every rule and the model core on the same
+2. It adds one status for backup cells, `inactive`: a cell that coverage
+   samples list and the KPI data has no row for (part 8).
+3. It runs one comparison of every rule and the model core on the same
    case, replayed from the full-read reference of
    `Copilot_Reference_Full_Scan_2026-11-10.md`, under the stored
    conditions and under six shifted conditions.
@@ -34,11 +36,14 @@ say so.
 - Do not edit any file a run reads per round: skill text, templates,
   configuration, `unit_costs.json`, any run directory.
 - Do not run `uv sync` and do not add dependencies.
-- The only harness package edited is `outage_harness_rule_based`: one new
-  file `scores.py` and one dispatch in rule R1 (part 2). With
-  `RULE_SCORE=domain`, the default, every proposal is the same as today.
-  Bump `HARNESS_VERSION` by hand and record the old and new strings.
-  `outage_harness_langgraph` and the concat packages are not edited.
+- Harness edits are limited to two: in `outage_harness_rule_based`, one
+  new file `scores.py` and one dispatch in rule R1 (part 2); and the
+  backup activity function with its call sites in the classification and
+  report code (part 8). With `RULE_SCORE=domain`, the default, every
+  proposal is the same as today. Neither edit changes the rendered
+  context, the skill text, the completion check or any query a run
+  sends. Bump `HARNESS_VERSION` by hand, once, and record the old and
+  new strings. The concat packages are not edited.
 - Everything else is new modules in `outage_harness_evolution`:
   `replay.py`, `freeform.py`, `matrix.py`.
 - Tests write only under `tmp_path`.
@@ -74,6 +79,8 @@ Constants, at the top of `matrix.py` unless a module is named:
 | rule setting | read from `--rule-run` | the setting of rule R1 that run used (`run.json`) |
 | `MODEL_REPEATS` | 3 | model runs per world; `--repeats` overrides |
 | `SHIFT_SEED` | 20261112 | seed of every random choice in part 4 |
+| `RULE_REPLAY_SECONDS` | 900 | time limit of a replayed rule-core run; see part 1 |
+| `INACTIVE_MIN_WEEKS` | 4 | baseline weeks a cell must have been queried for, with no row, before it is `inactive` (part 8; defined beside the function) |
 | `MIN_OBS` | 20 | observations a stratum needs before its own rate is used (`scores.py`) |
 | `BAND_M` | 1000 | width of a distance band from the site (`scores.py`) |
 | `FF_BATCH` | 50 | locations the free-form method reads per round (`freeform.py`) |
@@ -88,19 +95,25 @@ Constants, at the top of `matrix.py` unless a module is named:
 through the same callable signature the runners already pass to
 `make_point_query`: `(lat, lon, r) -> list of samples`.
 
-- The callable maps the coordinate to the reference key (`lat,lon`
-  rounded to 6 decimals; the harness grid id joins through
-  `grid_map.json`) and returns the stored samples of that point,
-  unchanged. A `no_sample` point returns an empty list. An `error` point
-  raises the same exception the point client raises after its retries,
-  so the harness's own failure path handles it.
+- The callable maps the coordinate to a reference grid cell by the grid
+  arithmetic of `window.json` (row and column from local metres). The
+  centre of that cell must lie within 1 m of the coordinate, else
+  `OutsideReference`. Do not join by comparing rounded coordinate
+  strings, and do not use `grid_map.json` here: it covers the 30 km grid
+  only, and an expansion leaves it. The callable returns the stored
+  samples of the point, unchanged. A `no_sample` point returns an empty
+  list. An `error` point raises the same exception the point client
+  raises after its retries, so the harness's own failure path handles
+  it.
 - A location that has no reference record raises `OutsideReference` with
   the key. The matrix runner ends that run with
   `end_reason: outside_reference` and the location. Nothing is fetched.
 - A replayed run gets a scratch point cache path inside its own run
   directory. The per-site cache is neither read nor written.
 - OpenStreetMap comes from the stored copy of `--model-run` through the
-  reuse path the harness already has. KPI is not replayed.
+  reuse path the harness already has. If an expansion needs map data the
+  copy does not hold, the harness's own path fetches it; count those
+  calls in the tables. KPI is not replayed.
 
 Launch seam. Start replayed runs from a launch function in `matrix.py`
 that calls the same entry point `run_case.py` calls, with the replay
@@ -112,6 +125,14 @@ Replay serves a point at once, so the time cap does not bind on point
 calls. Record that in every `run.json` under `replay: true`. The tables
 compare locations and `calibrated_seconds` (counts times the unit costs,
 as `run.json` already records), not wall time.
+
+The harness has no round cap, so a rule that proposes the same failing
+query every round would spin until the stored time limit. A replayed
+rule run finishes in seconds when it works, so its time limit is
+`RULE_REPLAY_SECONDS`. A rule run that ends `time_cap` in replay
+therefore repeated itself without progress; the tables show it as that,
+and it is a result, not an error to repair. Model runs keep the stored
+time limit.
 
 ## 2. Two literature scores inside the rule core
 
@@ -138,11 +159,13 @@ Both are pure functions of the state and the geometry file. They use no
 other run, no reference, no training.
 
 - `p_samp(x)`, the probability that location `x` returns a sample. The
-  stratum of `x` is (kind of its area, whether `x` lies in any road
-  corridor area). The estimate is `(1 + sampled) / (2 + queried)` over
-  the queried locations of the same area when the area has at least
-  `MIN_OBS` queried locations in that stratum, else over the stratum in
-  the whole run, else 0.5.
+  stratum of `x` is one fact: whether `x` lies in any road corridor area
+  or not. The estimate is `(1 + sampled) / (2 + queried)` over the
+  queried locations of that stratum inside the area of the request being
+  scored, when there are at least `MIN_OBS` of them; else over the
+  stratum in the whole run; else, when the run has queried no location
+  of the stratum, 0.5. The method of part 3 has no request area and uses
+  the run-wide stratum.
 - `p_cov(x)`, the probability that `x`, if it returns a sample, shows an
   outage sector at or above the coverage threshold. The stratum is (the
   `site/index` bin of `x`, the `BAND_M` distance band of `x` from that
@@ -203,7 +226,8 @@ Read `left` (locations left) and the floor's `locations` from the state.
   Rank every candidate with `cost <= left` by expected covered locations
   per location, the sum over `X` of `p_samp(x) * p_cov(x)` divided by
   `cost`, and take the best ones as above. `run.json` records the round
-  of the switch as `scarce_from_round`.
+  of the switch as `scarce_from_round`. If no candidate fits, R1
+  proposes nothing and the existing rules and guards apply.
 
 The step record of every R1 round under either score holds the chosen
 candidates with `cost`, `need`, `P_close`, `score` and the mean
@@ -229,7 +253,10 @@ Source and adaptation:
 Input: the world, the site position and outage sectors of the case, the
 activity locations of every reference ring that is complete, the
 location limit of part 0. A wedge is a `BIN_DEGREES` direction bin from
-the site, as in the completion check.
+the site, as in the completion check. With more than one outage site,
+there is one set of wedges per site, keyed as the completion check keys
+them, and a location is covered for a site when it shows a sector of
+that site.
 
 Loop:
 
@@ -247,9 +274,12 @@ Loop:
    A location with no sample does not count toward `m`. A covered
    location beyond `F` moves `F` and the count starts again.
 4. Read the `FF_BATCH` candidates with the highest
-   `p_samp(x) * p_cov(x)` over all wedges; ties nearer first. Within a
-   wedge, a location beyond `F` is not read before a nearer unread
-   location beyond `F`.
+   `p_samp(x) * p_cov(x)` over all wedges; ties nearer first. The
+   locations beyond `F` of one wedge enter a batch in distance order: a
+   location may be in a batch only if every nearer unread location
+   beyond `F` of its wedge is in the same batch. A failed call is
+   charged, recorded as `error`, does not count toward `m`, and is not
+   retried.
 5. Stop when every wedge is closed (`end_reason: closed`) or the limit
    is reached (`query_budget`).
 
@@ -275,15 +305,16 @@ condition.
 | `W2` | every location outside all road corridor areas loses all its samples with probability 0.9 | measurements along roads only |
 | `W3` | the location limit is half the stored limit | tight budget |
 | `W4` | the location limit is a quarter of the stored limit | closure not affordable |
-| `W5` | every point call for a location of one area fails; the area is the settlement or corridor with the most locations among those whose nearest location is 3 to 8 km from the site | a data source that does not answer |
+| `W5` | every point call for a location of one area fails; the area is taken from the reference `areas.json`: the settlement or corridor with the most locations among those whose nearest location is 3 to 8 km from the site | a data source that does not answer |
 | `W6` | every location within 2 km of the site loses all its samples | a measurement gap at the site: no sample is not no coverage |
 
 Nothing tells a selector which world it is in. The model core sees the
 world only through the rendered state, the rules only through the state.
 
-Freeze. Before any run on `W1` to `W6`, write `frozen.json`: the
-`HARNESS_VERSION`, the skill text file name and length, the rule
-setting, the constants of part 0. Change none of them until the tables
+Freeze. Parts 2, 3 and 8 are complete before any replayed run. Before
+any run on `W1` to `W6`, write `frozen.json`: the `HARNESS_VERSION`, the
+skill text file name and length, the rule setting, the constants of
+part 0. Change none of them until the tables
 are written. If a defect forces a change, discard every run made before
 it and say so.
 
@@ -329,6 +360,7 @@ Every run writes a normal run directory under
 | `required_locations` | for a closed harness run, from its final completion record: the interior locations of its inside items plus, per beyond item closed by sample, `N_MIN_SAMPLED` or the item's size if smaller |
 | `excess_share` | `1 - required_locations / locations_used`, closed harness runs only |
 | `covered_found` | read locations that show an outage sector at or above the threshold |
+| `covered_no_backup`, `covered_no_backup_active` | among `covered_found`: locations with no reachable backup by coverage alone, and with inactive backups not counted (part 8) |
 | `recall_true` | `covered_found` over the covered locations of the unshifted reference, in the rings present |
 | `recall_observable` | the same against the shifted world |
 | `open_items_at_end` | harness runs |
@@ -368,8 +400,9 @@ coverage action, compute what `expected_cost` selects from that round's
 `state_before` (the score is a pure function of the state). Then, for
 the model's action and for the rule's selection, look up in the world
 what the location sets return: locations, samples, covered locations,
-and whether each item closes. The rule's selection is evaluated, not
-executed.
+and whether each item closes by the counts the check uses (the samples
+still needed are returned and none is covered, or the area is read in
+full). The rule's selection is evaluated, not executed.
 
 Report per world: rounds where the two name the same items; rounds where
 the model named an area that was not an open item; and, for the rounds
@@ -378,7 +411,67 @@ per location, and how often more closed items per location. List the ten
 rounds with the largest difference either way, with round number, both
 actions and both outcomes.
 
-## 8. Tests, synthetic only
+## 8. Inactive backup cells
+
+Why. Building the ground truth showed backup cells that coverage samples
+list and that have no KPI row at all over the stored period. Such a cell
+is not shown to carry traffic, so counting it as a backup understates
+the locations without one. The data does not say why the rows are
+absent: the cell may be retired or renamed, the table may have a gap, or
+the cell id may have gone to the wrong technology table. The status is
+therefore named for what is observed, and the counts are written both
+ways.
+
+One function, in the module that defines backup eligibility today,
+returning a `Literal`:
+
+```
+backup_activity(cell_id, kpi) -> "active" | "inactive" | "no_data" | "not_queried"
+```
+
+| status | condition |
+|---|---|
+| `not_queried` | no successful KPI call named the cell |
+| `active` | at least one row for the cell |
+| `inactive` | successful calls named the cell over at least `INACTIVE_MIN_WEEKS` distinct baseline weeks, and over the outage interval when it was queried; the cell has no row in any of them; and at least one other cell of the same technology has rows in the same period |
+| `no_data` | named and without rows, but a condition of `inactive` fails: fewer weeks, or no other cell of that technology returned rows, so the source cannot be told from the cell |
+
+An `active` cell with rows missing for some hours keeps today's per-hour
+`no_data` handling. `kpi` is the run's KPI state in a harness report and
+the stored KPI rows in the reference and the evaluation; the function is
+the same.
+
+Use. A reachable backup counts toward a location's class unless its
+status is `inactive`. `not_queried` and `no_data` backups count as they
+do today. Every place that counts reachable backups calls the function;
+list those places in the report. Every existing field keeps today's
+meaning, coverage alone, and each gets a companion:
+
+- the per-point record of `Evaluation_From_Stored_Data_2026-10-25.md`
+  section 1: `backups[]` entries get `activity`; the record gets
+  `n_backups_active` and `no_backup_active`;
+- the reference classes (step 7 of the full-scan instruction): `class`
+  stays, `class_active` is added, and the per-area and per-ring counts
+  are written for both. Recompute from the stored files; no call;
+- the harness final report: the class counts for both, and the list of
+  inactive backups with the weeks checked;
+- the tables of part 6: the two columns named there.
+
+Not changed: the rendered context, the skill text, rule R3, the
+completion check, the selectors, the concat packages. A run sends the
+same queries with or without this part.
+
+Check before trusting the status. Write
+`<out>/<site>/inactive_backups.md` from the reference: per inactive
+cell its id, technology, site prefix, the number of reference locations
+that list it and the weeks checked; then the number of co-observed
+backups, the inactive count and share, by technology and by site
+prefix; then the number of locations whose `class_active` differs from
+`class`. If the inactive cells share a technology or an id pattern, the
+cause may be the routing of ids to tables, and the author decides
+before the status is used in any result.
+
+## 9. Tests, synthetic only
 
 1. `RULE_SCORE=domain`: every existing rule-core test passes unchanged,
    and R1's proposals on every fixture equal the proposals before the
@@ -392,17 +485,20 @@ actions and both outcomes.
    location in the run.
 4. `expected_cost` on a beyond item of 12 unread locations: `all` scores
    10/12 and is chosen over a sampled request whose `P_close` is 0.3.
-5. `expected_cost` with `need` 10 picks `n` 13 when `p_samp` is 0.9, 25
-   when it is 0.5 and 64 when it is 0.2, on an item with at least 80
-   unread locations.
+5. `expected_cost` with `need` 10, on an item with at least 80 unread
+   locations, picks `n` from 12 to 14 when `p_samp` is 0.9, from 23 to
+   27 when it is 0.5, and from 60 to 68 when it is 0.2. The score is
+   nearly flat around its maximum, so the test checks a range.
 6. `budget_aware`: with the floor above `left`, the selection maximizes
    expected covered locations per location and `scarce_from_round` is
    set; with the floor below, it equals `expected_cost` when no
    candidate is removed.
 7. Replay: a stored point returns its samples; a `no_sample` point an
    empty list; an `error` point raises the client exception; a location
-   without a record raises `OutsideReference`; the per-site cache file
-   is untouched.
+   without a record, and a coordinate more than 1 m from a cell centre,
+   raise `OutsideReference`; a coordinate outside the 30 km grid and
+   inside the reference window is served; the per-site cache file is
+   untouched.
 8. Shifts: `W1` removes the same locations on two builds; `W2` leaves
    corridor locations unchanged; `W5` fails only the chosen area; `W6`
    empties exactly the locations within 2 km.
@@ -413,23 +509,36 @@ actions and both outcomes.
 10. Tables: two synthetic run directories give the columns of part 6;
     `best_rule` prefers a closed run over an open one with higher
     recall.
+11. A replayed rule run whose only open item fails on every call ends
+    `time_cap` at `RULE_REPLAY_SECONDS` (use a 2-second limit in the
+    test).
+12. `backup_activity`: hand-built KPI state gives each of the four
+    statuses; with no other cell of the technology returning rows, a
+    cell without rows is `no_data`, not `inactive`; with rows in 3 weeks
+    queried and `INACTIVE_MIN_WEEKS` 4, the same.
+13. A location whose only reachable backup is inactive has class
+    `covered_backup` and `class_active` `covered_no_backup`.
+14. With part 8 in place, the rule core's proposals and the rendered
+    context are the same as before on every fixture.
 
 Gate on the changed and new files: `uv run ruff format`,
 `uv run ruff check --fix`, `uv run ty check`.
 
-## 9. Order of work
+## 10. Order of work
 
-1. Parts 1 to 3 with their tests. The gate.
+1. Parts 1 to 3 and part 8 with their tests. The gate. Write
+   `inactive_backups.md` and report it.
 2. `--plan`. Stop if any location is missing or a launch seam is absent.
 3. `--run rules`, `--run freeform`, `--tables`. Report.
 4. Wait for the author's choice of worlds and repeats. Then
    `--run model`, `--tables`.
 
-## 10. Report back
+## 11. Report back
 
 Change list as file and line, and the old and new `HARNESS_VERSION`.
-Then `plan.md`, `summary.md`, `calibration.md`, `cost_recall.md`, `rounds.md` when it
-exists, and the answers to these questions:
+Then `inactive_backups.md`, `plan.md`, `summary.md`, `calibration.md`,
+`cost_recall.md`, `rounds.md` when it exists, and the answers to these
+questions:
 
 1. Where each runner takes its point client, and whether the replay
    callable went in without an edit to a harness package.
@@ -442,3 +551,6 @@ exists, and the answers to these questions:
    always centred on the site. This decides whether other sites inside
    the reference window can serve as further cases without new point
    calls.
+6. Every place that counted reachable backups before part 8, as file
+   and line, and how a failed point call is charged against the
+   location budget today.

@@ -2,20 +2,21 @@
 
 > **On hold. Do not apply this file yet.** The reference it replays from
 > is being regenerated. The two rule scores are no longer defined here:
-> they are in `Copilot_Rule_Scores_2026-11-13.md`, which is applied
-> first and on its own. This file keeps the parts that wait for the
-> reference: replay, the method without the harness, the shifted
-> conditions, the tables, and the inactive backup status. It will be
+> they are in `Copilot_Rule_Scores_2026-11-13.md`. The method without the
+> harness is in `Copilot_Baseline_Algorithm_Only_2026-11-13.md`. Both
+> are applied first and on their own. This file keeps the parts that
+> wait for the reference: replay, the shifted conditions, the tables,
+> and the inactive backup status. It will be
 > revised when the reference is ready.
 
 Apply to the repository that holds `outage_harness_langgraph`,
 `outage_harness_rule_based` and `outage_harness_evolution`. This
 instruction does three things, in this order:
 
-1. It adds one selection method taken from the literature that runs
-   without the harness and stops by a statistical rule. The two scores
-   inside the rule core are added earlier, by
-   `Copilot_Rule_Scores_2026-11-13.md`.
+1. It replays the method without the harness, which
+   `Copilot_Baseline_Algorithm_Only_2026-11-13.md` adds earlier, and the
+   two scores inside the rule core, which
+   `Copilot_Rule_Scores_2026-11-13.md` adds earlier.
 2. It adds one status for backup cells, `inactive`: a cell that coverage
    samples list and the KPI data has no row for (part 8).
 3. It runs one comparison of every rule and the model core on the same
@@ -51,7 +52,7 @@ say so.
   hand, once, and record the old and new strings. The concat packages
   are not edited.
 - Everything else is new modules in `outage_harness_evolution`:
-  `replay.py`, `freeform.py`, `matrix.py`.
+  `replay.py`, `matrix.py`.
 - Tests write only under `tmp_path`.
 - Outputs go to `<results root>/rule_vs_agent/<site>/`.
 - No point API call is made by anything in this instruction. KPI calls go
@@ -89,10 +90,7 @@ Constants, at the top of `matrix.py` unless a module is named:
 | `INACTIVE_MIN_WEEKS` | 4 | baseline weeks a cell must have been queried for, with no row, before it is `inactive` (part 8; defined beside the function) |
 | `MIN_OBS` | 20 | observations a stratum needs before its own rate is used (`scores.py`) |
 | `BAND_M` | 1000 | width of a distance band from the site (`scores.py`) |
-| `FF_BATCH` | 50 | locations the free-form method reads per round (`freeform.py`) |
-| `FF_ALPHA` | 0.05 | one minus the confidence of the stopping bound (`freeform.py`) |
-| `FF_EPS` | (0.26, 0.10, 0.05) | the bound at which a wedge closes; one run per value (`freeform.py`) |
-| `FF_PROBE_SHARE` | (0.0, 0.1) | share of the budget spent on a sparse probe first; one run per value (`freeform.py`) |
+| `GAMMA`, `K_NEIGHBORS`, `BATCH` | as `outage_harness_active_search.policy` defines them | the method without the harness (part 3) |
 | thresholds, `N_MIN_SAMPLED`, `BIN_DEGREES`, `MAX_REQUESTS_PER_ACTION` | imported from the harness modules that define them | one definition |
 
 ## 1. Replay
@@ -151,58 +149,17 @@ this file says "part 2.1", read part 1 of that file; where it says
 
 ## 3. One literature method without the harness
 
-`freeform.py` is the method the literature would run in place of the
-whole harness: no areas as actions, no completion check, no legal
-requests. It reads activity locations of the reference one batch at a
-time and stops by a confidence bound. It exists only in replay.
+Defined in `Copilot_Baseline_Algorithm_Only_2026-11-13.md` and already
+applied before this file: the package `outage_harness_active_search`,
+its probability model, its two policies (`ens` and `one_step`) and its
+KPI step.
+Nothing in this file changes the method.
 
-Source and adaptation:
-
-| source | what is taken | what is replaced |
-|---|---|---|
-| level-set estimation (Gotovos et al., IJCAI 2013) | classify every location against a threshold; sample where the class is undecided; stop a region when a confidence bound decides it | the Gaussian process is replaced by a binomial bound per wedge, because the project has no such library and adds none |
-| active search (Garnett et al., UAI 2012; Jiang et al., ICML 2017) | among undecided places, read first where a covered location is most likely | the probability model is the two estimates of part 2.1 |
-| global phase before local phase | a sparse probe over the whole window before the outward sweep | optional, `FF_PROBE_SHARE` |
-
-Input: the world, the site position and outage sectors of the case, the
-activity locations of every reference ring that is complete, the
-location limit of part 0. A wedge is a `BIN_DEGREES` direction bin from
-the site, as in the completion check. With more than one outage site,
-there is one set of wedges per site, keyed as the completion check keys
-them, and a location is covered for a site when it shows a sector of
-that site.
-
-Loop:
-
-1. Probe, only when `FF_PROBE_SHARE` is above 0: read
-   `FF_PROBE_SHARE` times the limit locations chosen by farthest-point
-   sampling over all activity locations, starting from the one nearest
-   the site.
-2. Per wedge, `F` is the distance of the farthest covered location found
-   so far, 0 when none. Candidates of the wedge are its unread locations
-   nearer than `F`, and the unread locations beyond `F` while the wedge
-   is not closed.
-3. A wedge closes when the `m` sampled locations nearest beyond `F`, in
-   distance order with no covered one among them, give
-   `1 - FF_ALPHA ** (1 / m) <= eps`, or when it has no unread location.
-   A location with no sample does not count toward `m`. A covered
-   location beyond `F` moves `F` and the count starts again.
-4. Read the `FF_BATCH` candidates with the highest
-   `p_samp(x) * p_cov(x)` over all wedges; ties nearer first. The
-   locations beyond `F` of one wedge enter a batch in distance order: a
-   location may be in a batch only if every nearer unread location
-   beyond `F` of its wedge is in the same batch. A failed call is
-   charged, recorded as `error`, does not count toward `m`, and is not
-   retried.
-5. Stop when every wedge is closed (`end_reason: closed`) or the limit
-   is reached (`query_budget`).
-
-Output per run: the read locations in order with their class, the
-closing bound and `m` per wedge, `end_reason`, locations used. With the
-three `FF_EPS` values and two `FF_PROBE_SHARE` values, six runs per
-world. Record in the summary that `eps = 0.26` is the bound that 10
-sampled locations give at 95 percent, the count the completion check
-uses.
+In replay, `matrix.py` calls the loop function of that package's
+`runner.py` with the replay callable of part 1 in place of the point
+query, and with the activity locations of every complete reference ring
+as the pool. The KPI step runs through the KPI client and cache,
+unchanged. One run per policy: two runs per world.
 
 ## 4. Shifted worlds
 
@@ -241,7 +198,7 @@ Conditions:
 | `R-domain` | current rule, stored setting | yes | 1 |
 | `R-cost` | `expected_cost` | yes | 1 |
 | `R-budget` | `budget_aware` | yes | 1 |
-| `FF` | free-form method | no | 6 |
+| `FF` | active search without the harness, `ens` and `one_step` | no | 2 |
 | `M` | model core, stored flags | yes | `MODEL_REPEATS` |
 
 `--plan` runs nothing. It writes `plan.md` with:
@@ -268,7 +225,7 @@ Every run writes a normal run directory under
 
 | column | definition |
 |---|---|
-| `end_reason`, `closed` | from `run.json`; `closed` is true when the completion check passed, or `end_reason: closed` for `FF` |
+| `end_reason`, `closed` | from `run.json`; `closed` is true when the completion check passed; `not applicable` for `FF`, which has no completion rule |
 | `locations_used` | charged locations |
 | `locations_no_sample` | charged locations that returned no sample |
 | `required_locations` | for a closed harness run, from its final completion record: the interior locations of its inside items plus, per beyond item closed by sample, `N_MIN_SAMPLED` or the item's size if smaller |
@@ -296,15 +253,16 @@ median, minimum and maximum over its repeats, and three derived lines:
    under the stored conditions.
 
 Then `calibration.md`, for `R-cost` and `R-budget`: every sampled
-request grouped by predicted `P_close` in five equal bins, with the
-share that did return the needed samples, and the mean predicted and
-realized sample rate per stratum. The binomial treats locations as
+request grouped by its predicted sample rate in five equal bins, with
+the predicted gain and the samples that did come back and count, and the
+mean predicted and realized sample rate per stratum. The binomial treats locations as
 independent; samples cluster along roads, so this table shows how far
 that assumption is off.
 
-Then `cost_recall.md`: for each world, every run as a point
-(`locations_used`, `recall_true`), so the six free-form runs form a
-curve and the harness runs are points beside it. Write the same data as
+Then `cost_recall.md`: for each world, every harness run as a point
+(`locations_used`, `recall_true`), and every `FF` run as one point per
+round from its `rounds.json`, so each `FF` run forms a curve and the
+harness runs are points beside it. Write the same data as
 `cost_recall.json`. No figure.
 
 ## 7. Round-level comparison, from the model runs, no extra model call
@@ -397,10 +355,8 @@ before the status is used in any result.
 8. Shifts: `W1` removes the same locations on two builds; `W2` leaves
    corridor locations unchanged; `W5` fails only the chosen area; `W6`
    empties exactly the locations within 2 km.
-9. Free-form: a wedge with 10 sampled, uncovered locations beyond `F`
-   closes at `eps` 0.26 and stays open at 0.10; a location with no
-   sample does not count; a covered location beyond `F` resets the
-   count.
+9. Moved with the method to
+   `Copilot_Baseline_Algorithm_Only_2026-11-13.md`.
 10. Tables: two synthetic run directories give the columns of part 6;
     `best_rule` prefers a closed run over an open one with higher
     recall.
@@ -421,7 +377,7 @@ Gate on the changed and new files: `uv run ruff format`,
 
 ## 10. Order of work
 
-1. Parts 1, 3 and 8 with their tests. The gate. Write
+1. Parts 1 and 8 with their tests. The gate. Write
    `inactive_backups.md` and report it.
 2. `--plan`. Stop if any location is missing or a launch seam is absent.
 3. `--run rules`, `--run freeform`, `--tables`. Report.

@@ -37,7 +37,7 @@ beside it.
 | `RULE_SCORE` | source | what is taken from it |
 |---|---|---|
 | `domain` (default) | the current rule | nearest item first, fixed pattern and count; the current setting applies |
-| `expected_cost` | adaptive greedy for minimum-cost cover (Golovin and Krause, JAIR 2011; Hellerstein et al., Mathematics of Operations Research 2024) | each round, take the request with the largest expected progress toward closing everything, per unit of cost |
+| `expected_cost` | adaptive greedy for minimum-cost cover (Golovin and Krause, JAIR 2011; Al-Thani, Cui and Nagarajan, Mathematics of Operations Research, arXiv 2208.08351) | each round, take the request with the largest expected progress toward closing everything, per unit of cost |
 | `budget_aware` | cost-effective active search (Jiang, Garnett, Moseley, NeurIPS 2019) | the same, with the remaining budget in the decision: keep closure affordable while it is, and switch to finding covered locations when it is not |
 
 With `expected_cost` or `budget_aware`, the score chooses the pattern
@@ -49,11 +49,19 @@ sample rate or the cost, and never changes a count. Those statements
 hold for `domain` and stay true for it. The two new scores read the
 sample rate, and `budget_aware` reads the budget; that is their purpose.
 
-Say in the module docstring what is replaced: the papers assume a known
-probability model of outcomes and give bounds under it. Here the two
-probabilities of part 1 are estimated from the run's own queried
-locations, so the scoring form is theirs and the bounds do not carry
-over.
+Say in the module docstring how the papers' terms map and what is
+replaced. In the minimum-cost cover papers an item is one thing to
+select, it has a cost and a random outcome, a function `f` measures
+progress, and the policy stops when `f` reaches its goal value. Here an
+item is one valid request, its cost is its new locations, its outcome is
+the samples it returns, `f` is the progress count of part 2, and the
+goal is reached when the completion check passes. The greedy
+rule is theirs: take the item with the largest expected increase of `f`
+per unit of cost. Their bound needs two conditions that do not hold
+here, so it does not carry over. The outcome probabilities must be
+known, and here the two probabilities of part 1 are estimated from the
+run's own queried locations. `f` must never decrease, and here a covered
+location beyond the boundary adds new required locations.
 
 Constants, at the top of `scores.py`:
 
@@ -87,7 +95,7 @@ other run, no stored result of another case, no training.
   docstring.
 
 `p_cov` is used only by the scarce mode of part 3. It is not part of
-`P_close` in part 2. A sampled request that finds coverage is not
+the gain in part 2. A sampled request that finds coverage is not
 wasted: the boundary moves and those locations would have been read as
 interior locations anyway. Charging for it would also make every sampled
 request score near zero in a band with no observation yet, and the rule
@@ -95,11 +103,22 @@ would fall back to reading whole areas.
 
 ## 2. `expected_cost`
 
+This is the greedy rule of the minimum-cost cover papers, with nothing
+added: take the request with the largest expected gain of `f` per unit
+of cost.
+
+The progress count `f`: the interior locations already read, plus, for
+every beyond item, its locations that returned a sample, counted up to
+the `N_MIN_SAMPLED` the item needs. A beyond item that is read in full
+counts as `N_MIN_SAMPLED`. `f` is not stored; only the gain of a
+candidate is computed.
+
 Candidates: for every open coverage item (area, bin) of the completion
 check, every template `legal_requests(area_id, bin_key, state)` returns.
-For a template with a count range, try every `n` from the range minimum
-up to the range maximum or eight times the samples still needed,
-whichever is smaller. For each candidate, get the location set `X` the
+For a template with a count range, the candidate is its smallest valid
+count only. The expected gain per location of a sampled request cannot
+rise with its count, so a larger count never scores higher; say so in
+the docstring. For each candidate, get the location set `X` the
 program's own selector would choose for it. If the selectors cannot
 return the set without executing the query, stop and report.
 
@@ -108,13 +127,11 @@ Per candidate:
 - `cost` = the new locations in `X`.
 - `need` = `N_MIN_SAMPLED` minus the locations of that (area, bin) that
   already returned a sample, not below 0.
-- `P_close`: for an `inside` request or `all`, 1. For a sampled request
-  on a beyond item, `P(Binomial(|X|, mean p_samp over X) >= need)`. It
-  is the chance of getting the samples the item still needs.
-- `progress` = `P_close` times the cost the floor record counts for that
-  item (`inside_unqueried` for an inside item, the item's
-  `min_action_locations` for a beyond item).
-- `score` = `progress / cost`.
+- `gain`: for an `inside` request, `cost`. For `all` on a beyond item,
+  `need`. For a sampled request on a beyond item, the expected number of
+  samples that count: `E[min(need, Binomial(|X|, mean p_samp over X))]`,
+  computed exactly from the binomial terms.
+- `score` = `gain / cost`.
 
 Selection: sort candidates by score, highest first; ties by the area's
 distance from the site, then area id. Take the best candidate of the
@@ -125,10 +142,14 @@ rejected item is skipped for the round. This score does not read the
 budget, so a request above the budget is rejected by the validator and
 the rule takes the next item, as today.
 
-What the score does, for a beyond item that needs 10 samples: with a
-sample rate of 0.9 it asks for about 13 locations, with 0.5 about 25,
-with 0.2 about 64. The current rule asks for the same count in all
-three.
+What the score does. Interior reads score 1 and go first. Among beyond
+items, the one with the highest sample rate goes first. Each request has
+the smallest valid count, the rule sees how many samples came back, and
+asks again while the item is open. A small area is read in full when
+that costs less per counted sample. For an item that needs 10 samples,
+the expected locations to close it are about 17 at a sample rate of 0.9,
+24 at 0.5 and 55 at 0.2. The current rule, 20 at a time, needs about 20,
+28 and 60.
 
 ## 3. `budget_aware`
 
@@ -147,7 +168,7 @@ Read `left` (locations left) and the floor's `locations` from the state.
 ## 4. Records
 
 The step record of every R1 round under either new score holds, per
-chosen candidate: the item, the request, `cost`, `need`, `P_close`,
+chosen candidate: the item, the request, `cost`, `need`, `gain`,
 `score`, the mean `p_samp` and, in scarce mode, the mean `p_cov`. A
 reader can recompute the choice from the step's `state_before` and these
 values. The next step record of the same item already holds the samples
@@ -169,14 +190,17 @@ switch did not happen). Nothing else is added.
    uses the nearest band toward the site in the same bin; then the same
    band over all bins; then the run-wide rate; 0.5 only with no sampled
    location in the run.
-4. `expected_cost` on a beyond item of 12 unread locations: `all` scores
-   10/12 and is chosen over a sampled request whose `P_close` is 0.3.
-5. `expected_cost` with `need` 10, on an item with at least 80 unread
-   locations, picks `n` from 12 to 14 when `p_samp` is 0.9, from 23 to
-   27 when it is 0.5, and from 60 to 68 when it is 0.2. The score is
-   nearly flat around its maximum, so the test checks a range.
+4. `expected_cost` on a beyond item of 12 unread locations that needs
+   10 samples: with `p_samp` 0.5, `all` scores 10/12, the sampled
+   request of 10 scores 0.5, and `all` is chosen. With `p_samp` 0.9 the
+   sampled request scores 0.9 and is chosen.
+5. `expected_cost` on a beyond item with at least 80 unread locations:
+   the request has the smallest valid count at `p_samp` 0.9, 0.5 and
+   0.2. With 6 samples already in, `need` is 4 and the gain of a request
+   of 10 at `p_samp` 0.5 equals `E[min(4, Binomial(10, 0.5))]`.
 6. `expected_cost`: an inside item and a beyond item open together; the
-   inside item is taken first.
+   inside item is taken first. Two beyond items with `p_samp` 0.8 and
+   0.3: the first is taken first.
 7. `budget_aware`: with the floor below `left` and no candidate removed,
    the selection equals `expected_cost`; a candidate whose cost would
    leave the other items unaffordable is removed; with the floor above

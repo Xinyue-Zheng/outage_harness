@@ -74,14 +74,14 @@ query for an area and the function that classifies one location from
 its samples (coverage may not be an MCP tool today); where the areas of
 the map tool are built; the function that computes the KPI windows and
 the one that turns hourly rows into the per-hour baseline; and where
-the stored harness run keeps the ticket and `run.json.limits`.
+the stored harness run keeps `run.json.limits`.
 
 Continue with part 2 in the same session. Stop and report only if a
 requirement of part 2 cannot be met without editing an existing package.
 
 ## 2. The server (`server.py`)
 
-`python -m outage_harness_copilot.server --run-dir <run folder> --harness-run <stored harness run of the case>`
+`python -m outage_harness_copilot.server --run-dir <run folder> --harness-run <stored harness run, for the limits and the caches>`
 
 VS Code starts it. It serves over stdio and prints nothing else to
 standard output.
@@ -162,7 +162,9 @@ model reads.
   down sites with their positions, the planned outage interval, the
   outage hours, the eight KPI baseline windows and the limits of this
   run. Pass the skill version that the outage-investigation skill
-  gives." It reads the ticket from `--harness-run` and computes the
+  gives." It reads the case from `<run folder>/case.json`, which the
+  author writes (down cells, outage start, outage end), and from no
+  other source, and computes the
   windows with the harness function. A `skill_version` other than
   `outage-skill-1` is rejected with "Load the outage-investigation skill
   first." That is the check that the skill was loaded. The outage
@@ -196,8 +198,9 @@ index, grid id, centre, area id, class, `cached`, seconds),
 `samples.jsonl` (every sample of every location read, by grid id),
 `kpi.json` (per call: cells, status per cell, rows, seconds),
 `areas.jsonl` (every area a map call returned, with its locations),
-`report.json`. At its first start in a run folder the server writes
-`case.json`: the ticket and the limits it uses.
+`report.json`. The server never writes `case.json`. If that file is
+missing or a field is missing, the server exits with an error that
+names the field.
 
 ## 3. The skill (`SKILL.md`)
 
@@ -398,7 +401,8 @@ repository. No script does this.
     PROMPT.md
     records/                          written by the server
     session/                          empty; the author saves the exported chat here
-    case.json, run.json, summary.md   written by the server and by summary.py
+    case.json                         written by the author: down_cells, outage_start, outage_end
+    run.json, summary.md              written by summary.py
 ```
 
 `.vscode/mcp.json`:
@@ -409,7 +413,7 @@ repository. No script does this.
     "command": "<absolute path of the project environment's python>",
     "args": ["-m", "outage_harness_copilot.server",
              "--run-dir", "<this run folder>",
-             "--harness-run", "<stored harness run of this case>"],
+             "--harness-run", "<stored harness run, for the limits and the caches>"],
     "env": {"PYTHONPATH": "<repository root>",
             "REQUESTS_CA_BUNDLE": "<value from the current environment>",
             "SSL_CERT_FILE": "<value from the current environment>"}}}}
@@ -418,8 +422,8 @@ repository. No script does this.
 VS Code starts the server, so the server does not inherit the
 terminal's variables. Add every other variable the data clients read.
 If one of them is a secret, do not write it into the file; stop and
-report. If a case has no stored harness run, do not create its folder
-and do not type a ticket or a limit; report it.
+report. Do not write `case.json`; the author does. No path of the
+reference folder appears anywhere in the baseline.
 
 One run folder is one run. The server refuses to start in a folder
 whose `records/` already holds an accepted report.
@@ -428,7 +432,8 @@ whose `records/` already holds an accepted report.
 
 `python -m outage_harness_copilot.summary <run folder> [--credits-before <n> --credits-after <n>]`
 
-From `case.json` and `records/` only:
+From `case.json` (the case) and `records/` (everything else, the
+limits included, from the last budget record) only:
 
 - `run.json`: `end_reason` (`report` when a report was accepted, else
   `no_report`), the limits that were hit, the limits, the final budget

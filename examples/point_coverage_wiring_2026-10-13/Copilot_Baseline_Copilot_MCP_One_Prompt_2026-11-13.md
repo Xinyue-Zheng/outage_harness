@@ -73,15 +73,15 @@ Also find, and name in the report: the function that runs a coverage
 query for an area and the function that classifies one location from
 its samples (coverage may not be an MCP tool today); where the areas of
 the map tool are built; the function that computes the KPI windows and
-the one that turns hourly rows into the per-hour baseline; and where
-the stored harness run keeps `run.json.limits`.
+the one that turns hourly rows into the per-hour baseline; and how the
+harness packages find the point, KPI and map caches by default.
 
 Continue with part 2 in the same session. Stop and report only if a
 requirement of part 2 cannot be met without editing an existing package.
 
 ## 2. The server (`server.py`)
 
-`python -m outage_harness_copilot.server --run-dir <run folder> --harness-run <stored harness run, for the limits and the caches>`
+`python -m outage_harness_copilot.server --run-dir <run folder>`
 
 VS Code starts it. It serves over stdio and prints nothing else to
 standard output.
@@ -125,9 +125,12 @@ report. Add a tool only where the table of part 1 shows none.
    this baseline runs without them. The only running values are the
    budget record and, in a coverage result, the count of locations of
    that area not yet read.
-4. **The limits are those of the stored harness run**, read from
-   `--harness-run` and never retyped: locations, KPI cell-queries,
-   seconds. Charging is as in the harness: one per new location, cached
+4. **The limits come from `case.json`**, which the author writes with
+   the values of the harness run to compare with: locations, KPI
+   cell-queries, seconds, tool calls. A missing limit is an error; the
+   server has no default. The server takes no path of a harness run or
+   of the reference, and finds the caches the way the harness packages
+   find them by default. Charging is as in the harness: one per new location, cached
    or live, never twice; one per cell named in a KPI call; the map is
    free. A call that costs more than is left is rejected whole and
    charges nothing. The clock starts at the first tool call. A fourth
@@ -163,7 +166,7 @@ model reads.
   outage hours, the eight KPI baseline windows and the limits of this
   run. Pass the skill version that the outage-investigation skill
   gives." It reads the case from `<run folder>/case.json`, which the
-  author writes (down cells, outage start, outage end), and from no
+  author writes (down cells, outage start, outage end, limits), and from no
   other source, and computes the
   windows with the harness function. A `skill_version` other than
   `outage-skill-1` is rejected with "Load the outage-investigation skill
@@ -357,7 +360,8 @@ the outage-baseline server. Work until `submit_report` is accepted.
 ## 4. The prompt
 
 The prompt states the case exactly and prescribes no step. The author
-fills in the two values. They must equal the case the server uses: the
+fills in the case and the limits. They must equal `case.json`, which the
+server uses: the
 server decides from the exact down cell IDs which cells are outage
 cells, and computes the outage hours and the KPI windows from the
 interval. Do not write a prompt that tells the agent to look the case up
@@ -372,8 +376,14 @@ Case: a planned outage of cells.
   down.
 - Planned outage interval: <start> to <end>, <time zone>
 
-The tool `get_case` returns the KPI baseline windows and the limits of
-this run.
+Limits of this run:
+- Coverage: <n> locations
+- KPI: <n> cell-queries
+- Time: <n> seconds from your first tool call
+- Tool calls: 200
+
+The tool `get_case` returns the down sites and the KPI baseline
+windows.
 
 Investigate the case as the skill describes, and submit the report.
 
@@ -401,7 +411,7 @@ repository. No script does this.
     PROMPT.md
     records/                          written by the server
     session/                          empty; the author saves the exported chat here
-    case.json                         written by the author: down_cells, outage_start, outage_end
+    case.json                         written by the author: down_cells, outage_start, outage_end, limits
     run.json, summary.md              written by summary.py
 ```
 
@@ -412,8 +422,7 @@ repository. No script does this.
     "type": "stdio",
     "command": "<absolute path of the project environment's python>",
     "args": ["-m", "outage_harness_copilot.server",
-             "--run-dir", "<this run folder>",
-             "--harness-run", "<stored harness run, for the limits and the caches>"],
+             "--run-dir", "<this run folder>"],
     "env": {"PYTHONPATH": "<repository root>",
             "REQUESTS_CA_BUNDLE": "<value from the current environment>",
             "SSL_CERT_FILE": "<value from the current environment>"}}}}
@@ -432,8 +441,8 @@ whose `records/` already holds an accepted report.
 
 `python -m outage_harness_copilot.summary <run folder> [--credits-before <n> --credits-after <n>]`
 
-From `case.json` (the case) and `records/` (everything else, the
-limits included, from the last budget record) only:
+From `case.json` (the case and the limits) and `records/` (the
+records) only:
 
 - `run.json`: `end_reason` (`report` when a report was accepted, else
   `no_report`), the limits that were hit, the limits, the final budget

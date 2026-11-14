@@ -1,8 +1,9 @@
 # Copilot baseline: the prompt
 
 Paste the text in the box into the Copilot chat (agent mode, only the
-`outage-baseline` tools enabled). Fill in the two values first. They
-must equal the case the MCP server uses.
+`outage-baseline` tools enabled). Fill in the case and the limits first.
+They must equal `case.json` in the run folder. The server enforces the
+limits of `case.json`; the prompt only tells the agent what they are.
 
 ```
 Use the outage-investigation skill and the tools of the
@@ -13,8 +14,14 @@ Case: a planned outage of cells.
   down.
 - Planned outage interval: <start> to <end>, <time zone>
 
-The tool `get_case` returns the KPI baseline windows and the limits of
-this run.
+Limits of this run:
+- Coverage: <n> locations
+- KPI: <n> cell-queries
+- Time: <n> seconds from your first tool call
+- Tool calls: 200
+
+The tool `get_case` returns the down sites and the KPI baseline
+windows.
 
 Investigate the case as the skill describes, and submit the report.
 

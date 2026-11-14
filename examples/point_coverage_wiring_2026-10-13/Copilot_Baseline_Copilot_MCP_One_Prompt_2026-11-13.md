@@ -345,17 +345,26 @@ confirmation and do not stop to present a plan. Use only the tools of
 the outage-baseline server. Work until `submit_report` is accepted.
 ```
 
-## 4. The prompts
+## 4. The prompt
 
-The prompt names the case and prescribes no step. The case details come
-from `get_case`, so nothing is typed by hand.
+The prompt states the case exactly and prescribes no step. The author
+fills in the three values. They must equal the case the server uses: the
+server decides from the down cells and the prefixes which cells are
+outage cells, and computes the outage hours and the KPI windows from the
+interval. Do not write a prompt that tells the agent to look the case up
+in a folder; the agent has no file tools.
 
 ```markdown
 Use the outage-investigation skill and the tools of the
 `outage-baseline` MCP server.
 
-Case: the planned outage of cell WTL03023. The tool `get_case` returns
-the details of the case and the limits of this run.
+Case: a planned cell site outage.
+- Down cells: <cell IDs, comma separated>
+- Outage prefixes supplied: <prefixes>
+- Planned outage interval: <start> to <end>, <time zone>
+
+The tool `get_case` returns the KPI baseline windows and the limits of
+this run.
 
 Investigate the case as the skill describes, and submit the report.
 
@@ -365,7 +374,8 @@ and why this call answers it. After the report is accepted, reply with
 your summary and stop.
 ```
 
-The prompt of the second case is the same text with `FSL00169`.
+One prompt per case. The cases are run one at a time, each in its own
+run folder.
 
 ## 5. The run folders
 

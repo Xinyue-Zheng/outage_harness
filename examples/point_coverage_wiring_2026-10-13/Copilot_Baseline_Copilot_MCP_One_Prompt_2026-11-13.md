@@ -165,7 +165,10 @@ model reads.
   gives." It reads the ticket from `--harness-run` and computes the
   windows with the harness function. A `skill_version` other than
   `outage-skill-1` is rejected with "Load the outage-investigation skill
-  first." That is the check that the skill was loaded. If an existing
+  first." That is the check that the skill was loaded. The outage
+  cells are the exact down cell IDs of the case. No prefix is matched:
+  a cell of the same site that the case does not list is in service
+  and can be a backup. Every tool classifies with exactly this set. If an existing
   tool already returns the site of a cell, keep that tool as well.
 - `submit_report(outage_cells, areas, extent, backups, unknown, summary)`,
   free. "Submit the final report. Call it once: when the investigation
@@ -208,7 +211,7 @@ in the report.
 ```markdown
 ---
 name: outage-investigation
-description: Investigate where a planned cell site outage removes service, which neighbouring cells can take over, and how loaded those cells are, with the tools of the outage-baseline MCP server. Use it for every case that names a down cell.
+description: Investigate where a planned outage of cells removes service, which neighbouring cells can take over, and how loaded those cells are, with the tools of the outage-baseline MCP server. Use it for every case that names a down cell.
 ---
 
 # Outage investigation
@@ -217,7 +220,8 @@ Skill version: outage-skill-1. Pass this value to `get_case`.
 
 ## Purpose
 
-A cell site is planned to go down. From stored measurements, find:
+Some cells are planned to go down. The case lists them. From stored
+measurements, find:
 
 1. where the down cells cover places that people use;
 2. at which of those places another cell can take over, and at which
@@ -240,11 +244,13 @@ present a prediction as a result.
   above -110 dBm, as the serving sector or as a neighbour.
 - Coverage shows where a cell can be received. It does not show that
   the cell carries traffic there.
+- The outage cells are exactly the down cells that the case lists, and
+  no others. An outage cell is never a backup. Another cell of the same
+  site that the case does not list stays in service and can be a
+  backup.
 - A cell ID with three letters and five digits is LTE; with four
-  letters and six digits it is NR. Every observed cell that matches a
-  supplied outage prefix is an outage cell and is never a backup. An
-  LTE outage cell has LTE backups only; an NR outage cell has NR
-  backups only.
+  letters and six digits it is NR. An LTE outage cell has LTE backups
+  only; an NR outage cell has NR backups only.
 - A backup at a location is an eligible cell listed in the same sample
   as an outage cell that covers the location. This shows that the
   backup can be received there, not that it has capacity.
@@ -348,9 +354,9 @@ the outage-baseline server. Work until `submit_report` is accepted.
 ## 4. The prompt
 
 The prompt states the case exactly and prescribes no step. The author
-fills in the three values. They must equal the case the server uses: the
-server decides from the down cells and the prefixes which cells are
-outage cells, and computes the outage hours and the KPI windows from the
+fills in the two values. They must equal the case the server uses: the
+server decides from the exact down cell IDs which cells are outage
+cells, and computes the outage hours and the KPI windows from the
 interval. Do not write a prompt that tells the agent to look the case up
 in a folder; the agent has no file tools.
 
@@ -358,9 +364,9 @@ in a folder; the agent has no file tools.
 Use the outage-investigation skill and the tools of the
 `outage-baseline` MCP server.
 
-Case: a planned cell site outage.
-- Down cells: <cell IDs, comma separated>
-- Outage prefixes supplied: <prefixes>
+Case: a planned outage of cells.
+- Down cells: <exact cell IDs, comma separated>. Only these cells are
+  down.
 - Planned outage interval: <start> to <end>, <time zone>
 
 The tool `get_case` returns the KPI baseline windows and the limits of

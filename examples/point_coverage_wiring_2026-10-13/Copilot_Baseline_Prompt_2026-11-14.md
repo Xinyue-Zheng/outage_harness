@@ -1,16 +1,16 @@
 # Copilot baseline: the prompt
 
 Paste the text in the box into the Copilot chat (agent mode, only the
-`outage-baseline` tools enabled). Fill in the three values first. They
+`outage-baseline` tools enabled). Fill in the two values first. They
 must equal the case the MCP server uses.
 
 ```
 Use the outage-investigation skill and the tools of the
 `outage-baseline` MCP server.
 
-Case: a planned cell site outage.
-- Down cells: <cell IDs, comma separated>
-- Outage prefixes supplied: <prefixes>
+Case: a planned outage of cells.
+- Down cells: <exact cell IDs, comma separated>. Only these cells are
+  down.
 - Planned outage interval: <start> to <end>, <time zone>
 
 The tool `get_case` returns the KPI baseline windows and the limits of

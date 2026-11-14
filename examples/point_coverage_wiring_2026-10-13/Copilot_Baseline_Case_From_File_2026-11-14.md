@@ -12,7 +12,7 @@ and no directory of a harness run or of the reference appears in
 
 ## 1. The file
 
-The author writes `<run folder>/case.json` before the run:
+`<run folder>/case.json` exists before the run:
 
 ```json
 {
@@ -29,7 +29,8 @@ The author writes `<run folder>/case.json` before the run:
 ```
 
 The two times use the format of the harness task (`start_time`,
-`end_time`). The server never writes or changes this file.
+`end_time`). The server never writes or changes this file. Part 3 says
+who fills in which part.
 
 ## 2. The server
 
@@ -64,10 +65,29 @@ The two times use the format of the harness task (`start_time`,
 If `summary.py` reads the limits from another place, change it to take
 them from `case.json`.
 
-## 3. Report back
+## 3. Prepare the run folder for the author
+
+Do this for every run folder under the baseline root whose `records/`
+is empty or absent. Do not touch a folder that has records.
+
+1. Write `case.json` with the `limits` block filled in. Take
+   `max_query_locations`, `max_kpi_cell_queries` and `max_time_seconds`
+   from the limit settings of the harness: the values a harness run on
+   this case uses (its configuration, or `run.json.limits` of the most
+   recent stored harness run). Copy the numbers; store no path. Set
+   `max_tool_calls` to 200.
+2. Leave the case for the author. Write `"down_cells": []`,
+   `"outage_start": ""` and `"outage_end": ""`. The server then refuses
+   to start until the author has filled them in, which is intended.
+3. Set the `args` of `workspace/.vscode/mcp.json` to the new argument
+   list: `--run-dir` and this run folder, nothing else. Keep the `env`
+   block as it is.
+
+## 4. Report back
 
 The changed lines as file and line. The output of a search for
 "reference", "harness_run" and "prefix" in the package after the
-change. How the server now finds the caches. Whether the server started
-with a `case.json` and listed its tools. The new argument list of the
-server, as its help text prints it.
+change. How the server now finds the caches. The new argument list of
+the server, as its help text prints it. Per run folder prepared: its
+path, the three limit values written and where each was taken from, so
+that the author can copy them into the prompt.

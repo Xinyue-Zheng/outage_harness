@@ -26,8 +26,8 @@ instruction does three things, in this order:
 
 The Copilot baseline of
 `Copilot_Baseline_Copilot_MCP_One_Prompt_2026-11-13.md` is independent of
-this instruction and adds one row to the tables through its own compare
-script.
+this instruction. It writes its own summary; a comparison with the
+harness runs is a later step.
 
 Why. The current rule core takes the open items nearest first with a
 fixed pattern and a fixed count. It never reads the budget, the sample

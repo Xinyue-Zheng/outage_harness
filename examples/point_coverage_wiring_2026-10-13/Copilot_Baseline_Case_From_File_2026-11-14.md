@@ -44,12 +44,17 @@ who fills in which part.
    argument, and every read of a harness run directory or of the
    reference folder. After the change, a search for "reference" and for
    "harness_run" in the package finds nothing.
-3. The caches. The server still reads coverage, KPI and map data
-   through the same caches as the harness. Find them the way the
-   harness packages find them by default (their own configuration or
-   functions), not through a run directory and not through a new
-   argument. If the caches can only be found through a run directory,
-   stop and report; do not add a path argument.
+3. The caches. The cache root of the baseline is the baseline root:
+   the parent folder of the run folder. Derive it from `--run-dir`; add
+   no argument and store no path. Pass it to the harness cache
+   functions wherever they need a root or a run directory, for the
+   point cache, the KPI cache and the map copy. The point cache of the
+   baseline is then `<baseline root>/point_cache.jsonl`, in the same
+   format and with the same key as the harness cache. A location that
+   is not in it is fetched live and appended, as in a harness run. The
+   server never reads a cache of a harness run or of the reference. The
+   author may copy an existing cache file into the baseline root before
+   a run; that is a file copy outside this package.
 4. The outage cells are exactly `down_cells`. No prefix is matched. A
    cell of the same site that is not in the list is in service and can
    be a backup. Pass exactly this set to the classification function
@@ -87,7 +92,7 @@ is empty or absent. Do not touch a folder that has records.
 
 The changed lines as file and line. The output of a search for
 "reference", "harness_run" and "prefix" in the package after the
-change. How the server now finds the caches. The new argument list of
+change. The cache files the server now uses, by name. The new argument list of
 the server, as its help text prints it. Per run folder prepared: its
 path, the three limit values written and where each was taken from, so
 that the author can copy them into the prompt.

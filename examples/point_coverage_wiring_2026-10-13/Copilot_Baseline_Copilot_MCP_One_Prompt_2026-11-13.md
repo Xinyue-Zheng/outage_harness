@@ -33,7 +33,7 @@ what Copilot needs.
 ## Rules
 
 - New code goes only into a new package `outage_harness_copilot/`:
-  `server.py`, `summary.py`, `SKILL.md`, `tests/`. Import the existing
+  `server.py`, `summary.py`, `SKILL.md`. Import the existing
   packages read-only. Do not copy their code.
 - Keep this baseline apart from everything else:
   - Do not edit or move the existing MCP server, its client, or any
@@ -48,8 +48,11 @@ what Copilot needs.
     repository. The server refuses a `--run-dir` inside the repository.
 - A run may be in progress. Do not edit any file a run reads per round
   (skill text, templates, configuration, `unit_costs.json`, run
-  directories). Do not run `uv sync`. Do not add dependencies. Tests
-  write only under `tmp_path`.
+  directories). Do not run `uv sync`. Do not add dependencies.
+- Write no test suite and make no data call. The author runs the real
+  cases. Check only that the server starts and lists its tools. Run the
+  gate on the new package: `uv run ruff format`,
+  `uv run ruff check --fix`, `uv run ty check`.
 - Point, KPI and map calls go through the caches the harness uses, as a
   harness run does. Do not start a real run while another run is using
   the point API.
@@ -78,7 +81,7 @@ requirement of part 2 cannot be met without editing an existing package.
 
 ## 2. The server (`server.py`)
 
-`python -m outage_harness_copilot.server --run-dir <run folder> --harness-run <stored harness run of the case> [--dry-run]`
+`python -m outage_harness_copilot.server --run-dir <run folder> --harness-run <stored harness run of the case>`
 
 VS Code starts it. It serves over stdio and prints nothing else to
 standard output.
@@ -139,9 +142,6 @@ report. Add a tool only where the table of part 1 shows none.
               "seconds_elapsed": 412, "seconds_limit": 12000,
               "tool_calls_used": 31, "tool_calls_limit": 200}
    ```
-
-   With `--dry-run` the limits are 60 locations, 10 cell-queries, 900
-   seconds and 15 tool calls.
 5. **A failure is not an empty result.** A location whose call fails
    after the client's retries is `error`: not charged, not read again. A
    KPI cell is `rows`, `no_rows` (the query succeeded and found no data)
@@ -200,9 +200,10 @@ index, grid id, centre, area id, class, `cached`, seconds),
 
 Use this text. Fill the one placeholder, under "Tools", from the final
 tool list. The numbers in the text must equal the constants of
-`completion_point`; test 8 checks that. If a statement about the data or
-a completion rule differs from the current harness skill text, do not
-change either; list the difference in the report.
+`completion_point`; check them once. If a number, a statement about the
+data or a completion rule differs from `completion_point` or from the
+current harness skill text, do not change either; list the difference
+in the report.
 
 ```markdown
 ---
@@ -368,11 +369,10 @@ The prompt of the second case is the same text with `FSL00169`.
 
 ## 5. The run folders
 
-Create these three folders by hand, in a baseline root outside the
+Create these two folders by hand, in a baseline root outside the
 repository. No script does this.
 
 ```
-<baseline root>/WTL03023_dryrun/      mcp.json args end with --dry-run
 <baseline root>/WTL03023/
 <baseline root>/FSL00169/
     each:
@@ -381,7 +381,7 @@ repository. No script does this.
         .github/skills/outage-investigation/SKILL.md     (or where the installed VS Code loads skills)
     PROMPT.md
     records/                          written by the server
-    session/                          the author saves the exported chat here
+    session/                          empty; the author saves the exported chat here
     case.json, run.json, summary.md   written by the server and by summary.py
 ```
 
@@ -408,24 +408,7 @@ and do not type a ticket or a limit; report it.
 One run folder is one run. The server refuses to start in a folder
 whose `records/` already holds an accepted report.
 
-## 6. The author's steps
-
-1. Open `workspace/` in a new VS Code window, in a profile with no other
-   MCP server and no user-level instruction file.
-2. In the chat view select agent mode and the model (GPT-6 Sol).
-3. In the tools list enable only `outage-baseline`. Disable the
-   terminal, the file tools and every other tool. If the skill does not
-   load without a file tool, enable the file read tool only.
-4. Write down the credit count from the billing page.
-5. Start a new chat, paste `PROMPT.md` unchanged, send. Allow the tools
-   of `outage-baseline` when asked. Type nothing else.
-6. The run is over when the agent replies after an accepted report, or
-   stops for any other reason, or VS Code asks whether to continue. Do
-   not continue.
-7. Run **Chat: Export Chat** and save the file in `session/`. Write
-   down the credit count again. Run `summary.py`.
-
-## 7. `summary.py`
+## 6. `summary.py`
 
 `python -m outage_harness_copilot.summary <run folder> [--credits-before <n> --credits-after <n>]`
 
@@ -450,52 +433,12 @@ From `case.json` and `records/` only:
 of `Copilot_Baseline_Algorithm_Only_2026-11-13.md`, so that a later
 comparison with the harness runs needs no new run.
 
-## 8. Tests, synthetic only, with the fake point source and a fake KPI client
-
-1. A location in two areas is charged once.
-2. A partial coverage read returns the locations computed by hand for
-   nearest first, farthest first, evenly spread, and a bearing range
-   that crosses north.
-3. A call over the location limit is rejected whole, charges nothing
-   and counts as a tool call.
-4. An `error` location is not charged and not read again.
-5. Each row's class equals the harness classification of the same
-   samples.
-6. KPI: a raised call is `failed` and is not stored as zero rows; an
-   empty success is `no_rows`.
-7. After the seconds limit and after the tool-call limit only
-   `submit_report` is accepted; after an accepted report nothing is;
-   `get_case` with a wrong skill version is rejected.
-8. `submit_report` names the field for: an area with no charged
-   location, counts that do not add up, a missing field. The numbers in
-   `SKILL.md` equal the constants of `completion_point`.
-9. A second server start on the same run folder continues the budget.
-10. No response contains a file path or a grid id.
-11. `summary` on synthetic records with one wrong reported count gives
-    that count as different.
-
-Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
-`uv run ty check`.
-
-## 9. Run it
-
-1. The author runs the session in `WTL03023_dryrun`. This one small run
-   checks that the server starts, the skill loads, the agent works
-   without a question and the records are written.
-2. Read the credits the dry run used. If credits per tool call times
-   200 is above 1500, stop and report.
-3. One real run in `WTL03023`. Then one in `FSL00169`.
-
-Before a real run the author confirms that the data policy allows the
-coverage classes, cell IDs and KPI baselines of the case to pass
-through Copilot's model provider.
-
-## 10. Report back
+## 7. Report back
 
 The table of part 1. The change list as file and line. Per tool of the
 new server: kept as it was, changed (what and for which requirement),
-or new. Then, per run: `run.json`, `summary.md` and `report.json`. Then,
-briefly: how the installed VS Code loaded the skill; each difference
-between the skill text and the current harness skill text; and anything
-that could not be done as written. State it; do not work around it
-silently.
+or new. The paths of the two run folders. Then, briefly: where the
+installed VS Code loads a skill from; each difference between the skill
+text and `completion_point` or the current harness skill text; and
+anything that could not be done as written. State it; do not work
+around it silently.

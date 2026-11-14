@@ -1,5 +1,7 @@
 # Baseline: GitHub Copilot CLI as the whole agent, one case, end to end (instruction for the Copilot)
 
+**Replaced on 2026-11-13 by `Copilot_Baseline_Copilot_MCP_One_Prompt_2026-11-13.md`. Do not apply this file.** It assumes billing per prompt; Copilot is billed by tokens since June 2026. The new design uses agent mode in the VS Code chat view with MCP tools and a skill, and one prompt.
+
 Apply to the repository that holds `outage_harness_langgraph`,
 `outage_harness_rule_based` and `outage_harness_evolution`. This adds one
 baseline condition: a frontier coding agent (GitHub Copilot CLI) given the

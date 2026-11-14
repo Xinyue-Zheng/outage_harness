@@ -24,9 +24,10 @@ instruction does three things, in this order:
    `Copilot_Reference_Full_Scan_2026-11-10.md`, under the stored
    conditions and under six shifted conditions.
 
-The Copilot CLI baseline of `Copilot_Baseline_Copilot_CLI_2026-11-11.md`
-comes after this instruction and adds one row to the tables through its
-own compare script. Do not start it now.
+The Copilot baseline of
+`Copilot_Baseline_Copilot_MCP_One_Prompt_2026-11-13.md` is independent of
+this instruction and adds one row to the tables through its own compare
+script.
 
 Why. The current rule core takes the open items nearest first with a
 fixed pattern and a fixed count. It never reads the budget, the sample

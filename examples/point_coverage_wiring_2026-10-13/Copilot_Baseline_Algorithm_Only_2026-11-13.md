@@ -24,8 +24,11 @@ caches, as a harness run does.
 - Do not run `uv sync` and do not add dependencies. Use only what the
   environment already has.
 - New code goes into a new package `outage_harness_active_search/` with
-  three modules, `policy.py`, `runner.py`, `compare.py`, and a `tests/`
-  directory. It imports the harness packages read-only. If a harness
+  two modules, `policy.py` and `runner.py`, and a `tests/` directory.
+  The comparison module is `outage_harness_copilot/compare.py`, built by
+  `Copilot_Baseline_Copilot_MCP_One_Prompt_2026-11-13.md`, which is
+  applied first. Do not write a second one. It imports the harness
+  packages read-only. If a harness
   function cannot be called without the harness state, stop and report
   which one. Do not copy harness code.
 - Tests write only under `tmp_path`.
@@ -42,7 +45,7 @@ Run as
 
 ```
 python -m outage_harness_active_search.runner --harness-run <run dir of a harness run on this case> --out <results root>/active_search [--policy ens|one_step] [--dry-run]
-python -m outage_harness_active_search.compare <active search run dir> <harness run dir> [<harness run dir> ...]
+python -m outage_harness_copilot.compare <active search run dir> <harness run dir> [<harness run dir> ...]
 ```
 
 Every number written comes from a tool result or from a file an earlier
@@ -222,10 +225,12 @@ I/O.
 
 ## 6. Comparison
 
-`compare.py <active search run dir> <harness run dir> [...]` writes
-`<active search run dir>/compare/`. It reads `run.json`, the read
-records and the samples of each run and nothing else, so that a later
-baseline that writes the same files can use it unchanged.
+`outage_harness_copilot.compare <active search run dir> <harness run dir> [...]`
+writes `<active search run dir>/compare/`. It reads `run.json`, the read
+records and the samples of each run and nothing else, so that every
+baseline that writes the same files uses it unchanged. The three outputs
+below are defined here; the module itself is built with the Copilot
+baseline.
 
 1. `resources.md`: one column per run. Rows: locations charged, of
    which no sample, covered locations found, KPI cell-queries, rounds,
@@ -277,8 +282,8 @@ No reference is used. No pictures.
     fake point source, both policies: every file of part 5 exists, every read location has a
     class, and a second run gives the same `reads.jsonl` apart from the
     seconds.
-12. `compare.py` on that run and a synthetic harness run directory
-    writes the three outputs.
+12. The comparison module on that run and a synthetic harness run
+    directory writes the three outputs and no `claims.md`.
 
 Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
 `uv run ty check`.
@@ -290,7 +295,7 @@ Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
    `rounds.json`, the selection seconds first.
 2. One real run with `--policy ens` on the case that has a stored model
    run and a stored rule run, with `--harness-run` set to the model run.
-3. `compare.py` with both stored runs.
+3. The comparison module with both stored runs.
 4. Stop and report. The author decides whether to run
    `--policy one_step`. That run is charged in full and reads partly
    from the cache.

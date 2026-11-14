@@ -2,22 +2,22 @@
 
 This is the full instruction. It replaces every earlier Copilot baseline
 instruction, the CLI one included. Build exactly what is here and
-nothing more. A log audit and a comparison with the harness runs are not
-part of this instruction.
+nothing more.
 
 The baseline: GitHub Copilot in agent mode in the VS Code chat view gets
 a case in one prompt, the domain knowledge in one skill, and the data
-through one MCP server. It works alone until it submits a report. Three
-things are built, and one folder per run holds everything:
+through one MCP server. It decides every step by itself and works alone
+until it submits a report. Nothing is computed for it before the run.
 
 ```
-  1 skill    SKILL.md            what is true for every case
-  2 MCP      server `outage-baseline`, five tools, enforces the limits
-  3 prompt   PROMPT.md           names the case, nothing else
+  1 skill    SKILL.md      what is true for every case; prescribes no order of steps
+  2 MCP      server `outage-baseline`: the tools the packages already have,
+             served to Copilot, with the limits enforced and every call recorded
+  3 prompt   PROMPT.md     names the case, nothing else
 
   The author pastes PROMPT.md once
        v
-  Copilot agent --- tool call ---> MCP server ---> the caches, the point API, KPI
+  Copilot agent --- tool call ---> MCP server ---> the caches, the point API, KPI, the map
        ^                               | charges, rejects past a limit
        +------- compact result --------+ records every call
        | ... no human input ...
@@ -26,267 +26,183 @@ things are built, and one folder per run holds everything:
   summary.py: run.json and summary.md from the server records
 ```
 
+The tools are not designed here. The packages already have an MCP
+server with tool definitions. Part 1 finds them, and part 2 changes only
+what Copilot needs.
+
 ## Rules
 
 - New code goes only into a new package `outage_harness_copilot/`:
-  `server.py`, `prepare.py`, `summary.py`, `SKILL.md`,
-  `PROMPT_TEMPLATE.md`, `tests/`. Import the harness packages read-only.
-  If a harness function cannot be called without the harness State,
-  stop and report which one. Do not copy harness code.
+  `server.py`, `summary.py`, `SKILL.md`, `tests/`. Import the existing
+  packages read-only. Do not copy their code.
 - Keep this baseline apart from everything else:
-  - Do not edit, move or register the existing MCP server, its client,
-    or any skill text of the harness and concat packages.
-  - The server name is `outage-baseline`. It is registered only in the
-    `.vscode/mcp.json` of a run folder's workspace. Never register it at
-    user level or in the repository.
+  - Do not edit or move the existing MCP server, its client, or any
+    skill text of the existing packages.
+  - The new server is named `outage-baseline`. It is registered only in
+    the `.vscode/mcp.json` of a run folder's workspace. Never register
+    it at user level or in the repository.
   - The skill exists only as `outage_harness_copilot/SKILL.md` and as
     its copy in a run folder's workspace. Never put it in the
     repository's `.github` folder or at user level.
   - Every output goes into the baseline root, a folder outside the
-    repository. `prepare.py` refuses an `--out` inside the repository.
+    repository. The server refuses a `--run-dir` inside the repository.
 - A run may be in progress. Do not edit any file a run reads per round
   (skill text, templates, configuration, `unit_costs.json`, run
-  directories). Do not run `uv sync`. Do not add dependencies; use the
-  MCP library the existing server uses. Tests write only under
-  `tmp_path`.
-- Point and KPI calls go through the caches the harness uses, as a
+  directories). Do not run `uv sync`. Do not add dependencies. Tests
+  write only under `tmp_path`.
+- Point, KPI and map calls go through the caches the harness uses, as a
   harness run does. Do not start a real run while another run is using
   the point API.
 - `COPILOT_BASELINE_VERSION` is a string at the top of `server.py`,
   bumped by hand at every change of the tools, the skill or the prompt.
 
-Commands:
+## 1. Check the existing MCP server first
 
-```
-python -m outage_harness_copilot.prepare --harness-run <run dir of a harness run on the case> --out <baseline root> [--dry-run]
-python -m outage_harness_copilot.server --run-dir <run folder>          (started by VS Code)
-python -m outage_harness_copilot.summary <run folder> [--credits-before <n> --credits-after <n>]
-```
+Find every MCP server module and tool definition in the packages
+(`mcp_server`, `mcp_client`, the tool declarations). Use the one of
+`outage_harness_langgraph` if it has one, else the one of the concat
+package. Write this table into the report, one row per existing tool:
 
-One run folder is one run:
+| tool name | parameters | what the model receives back | charges the budget | needs the harness State |
+|---|---|---|---|---|
 
-```
-<baseline root>/<down cell ID>[_dryrun]/
-    workspace/                      the folder the author opens in VS Code
-        .vscode/mcp.json
-        .github/skills/outage-investigation/SKILL.md
-    PROMPT.md
-    case.json                       ticket and limits, copied from the harness run
-    pool.json                       areas and locations
-    records/                        written by the server
-    session/                        the author saves the exported chat here
-    run.json, summary.md            written by summary.py
-```
+Also find, and name in the report: the function that runs a coverage
+query for an area and the function that classifies one location from
+its samples (coverage may not be an MCP tool today); where the areas of
+the map tool are built; the function that computes the KPI windows and
+the one that turns hourly rows into the per-hour baseline; and where
+the stored harness run keeps the ticket and `run.json.limits`.
 
-`prepare.py` refuses a run folder that already exists.
+Continue with part 2 in the same session. Stop and report only if a
+requirement of part 2 cannot be met without editing an existing package.
 
-## 1. `prepare.py`
+## 2. The server (`server.py`)
 
-1. Read the ticket (down cells, outage interval, supplied prefixes) and
-   `run.json.limits` (`max_query_locations`, `max_kpi_cell_queries`,
-   `max_time_seconds`) from `--harness-run`. Write them to `case.json`
-   with `max_tool_calls: 200`. With `--dry-run`, write these limits
-   instead: 60 locations, 10 cell-queries, 900 seconds, 15 tool calls.
-2. Sites: map every down cell to its site with the harness lookup. A
-   cell without a site or a site without coordinates is a named error.
-   Number the sites 1, 2, ... in ticket order.
-3. Build the activity areas, settlement areas and road corridors and
-   their 100 m locations for the harness frame with the harness's own
-   builder. Per location store: grid id, centre, nearest site, distance
-   and bearing from it (degrees clockwise from north). Per area store:
-   id, kind, name, count of locations, nearest site, the range of
-   distances and of bearings of its locations (`all` when the area
-   surrounds the site), and the feature description the harness context
-   prints, cut at 80 characters. Write `pool.json`.
-4. Write the workspace: the skill copy, and `.vscode/mcp.json`:
+`python -m outage_harness_copilot.server --run-dir <run folder> --harness-run <stored harness run of the case> [--dry-run]`
+
+VS Code starts it. It serves over stdio and prints nothing else to
+standard output.
+
+**Start from the existing tools.** Serve the existing tools for the site
+lookup, the map, coverage and KPI under their existing names, with
+their existing parameters and descriptions. Reach them by import, or
+through the existing in-process client; do not edit them. Change a tool
+only where a requirement below needs it, and list each change in the
+report. Add a tool only where the table of part 1 shows none.
+
+**Requirements.** They hold for every tool the model can call.
+
+1. **The agent chooses.** The map tool takes the place and the extent
+   the agent asks for; no area is built before the run. The coverage
+   tool lets the agent read part of an area: how many locations, nearest
+   first, farthest first or evenly spread, and optionally only a range
+   of bearings and distances from the down site. If the existing
+   coverage tool has parameters that do this, keep them. If one of its
+   parameters needs the harness State (a direction bin, an open item),
+   leave that parameter out. A coverage call reads at most 50 new
+   locations.
+2. **The result is what this one call observed, as text the model can
+   read.** The agent has no file tools, so a file path is not a result.
+   - Map: one row per area: id, kind, name, count of 100 m locations,
+     distance range and bearing range from the nearest down site, main
+     map features. Not the raw map elements. At most 50 rows per call,
+     with a way to get the next rows.
+   - Coverage: the count per class, the complete list of backup cells of
+     this call with their counts, and one row per location: distance and
+     bearing from the nearest down site, class, the outage cells that
+     cover it, the strongest backups. The class comes from the harness
+     classification function: `no_sample`, `not_covered`,
+     `covered_backup`, `covered_no_backup`. Rows carry no grid id.
+   - KPI: per cell and outage hour, the mean RRC and the mean PRB over
+     the weeks in the span, from the harness baseline function. Not the
+     hourly rows.
+3. **No tool returns the state of the run.** Not what was read so far,
+   not what is still open, not which call would be valid, not whether
+   the investigation is complete. Those are what the harness adds, and
+   this baseline runs without them. The only running values are the
+   budget record and, in a coverage result, the count of locations of
+   that area not yet read.
+4. **The limits are those of the stored harness run**, read from
+   `--harness-run` and never retyped: locations, KPI cell-queries,
+   seconds. Charging is as in the harness: one per new location, cached
+   or live, never twice; one per cell named in a KPI call; the map is
+   free. A call that costs more than is left is rejected whole and
+   charges nothing. The clock starts at the first tool call. A fourth
+   limit, 200 tool calls, protects the credit budget; the harness has
+   none. After the seconds limit or the tool-call limit, only
+   `submit_report` is accepted. Every response carries the budget
+   record:
 
    ```json
-   {"servers": {"outage-baseline": {
-       "type": "stdio",
-       "command": "<absolute path of the project environment's python>",
-       "args": ["-m", "outage_harness_copilot.server", "--run-dir", "<run folder>"],
-       "env": {"PYTHONPATH": "<repository root>",
-               "REQUESTS_CA_BUNDLE": "<value from the current environment>",
-               "SSL_CERT_FILE": "<value from the current environment>"}}}}
+   "budget": {"locations_used": 640, "locations_limit": 1500,
+              "kpi_cell_queries_used": 12, "kpi_cell_queries_limit": 200,
+              "seconds_elapsed": 412, "seconds_limit": 12000,
+              "tool_calls_used": 31, "tool_calls_limit": 200}
    ```
 
-   VS Code starts the server, so the server does not inherit the
-   terminal's variables. Add every other variable the data clients read.
-   If one of them is a secret, do not write it into the file; stop and
-   report.
-5. Write `PROMPT.md` from the template (part 4) with the down cell ID.
-6. Print the workspace path and the author's steps of part 5.
+   With `--dry-run` the limits are 60 locations, 10 cell-queries, 900
+   seconds and 15 tool calls.
+5. **A failure is not an empty result.** A location whose call fails
+   after the client's retries is `error`: not charged, not read again. A
+   KPI cell is `rows`, `no_rows` (the query succeeded and found no data)
+   or `failed` (the query did not succeed). `failed` is never returned
+   or stored as zero rows.
+6. **A rejection names its reason**: the budget that is short with the
+   cost and what is left, or the parameter that is wrong with the
+   allowed values. The server never repairs or guesses a parameter. A
+   rejected call counts as a tool call.
+7. **The server keeps no fact only in memory.** At start it rebuilds its
+   counters from the run folder, so that a restart by VS Code does not
+   reset the budget.
 
-## 2. The MCP server (`server.py`)
+**Two new tools.** The text in quotation marks is the description the
+model reads.
 
-The server serves over stdio and prints nothing else to standard
-output. It keeps no fact in memory that is not in its files: at start
-it reads `case.json`, `pool.json` and `records/`, and rebuilds its
-counters, so that a restart by VS Code does not reset the budget.
+- `get_case(skill_version)`, free. "Return the case: the down cells, the
+  down sites with their positions, the planned outage interval, the
+  outage hours, the eight KPI baseline windows and the limits of this
+  run. Pass the skill version that the outage-investigation skill
+  gives." It reads the ticket from `--harness-run` and computes the
+  windows with the harness function. A `skill_version` other than
+  `outage-skill-1` is rejected with "Load the outage-investigation skill
+  first." That is the check that the skill was loaded. If an existing
+  tool already returns the site of a cell, keep that tool as well.
+- `submit_report(outage_cells, areas, extent, backups, unknown, summary)`,
+  free. "Submit the final report. Call it once: when the investigation
+  is complete, or when the limits leave nothing more to do. `areas`: one
+  entry per area in which you read a location, with `area_id`,
+  `locations_read`, `covered_backup`, `covered_no_backup`,
+  `not_covered`, `no_sample`, and `read_in_full`. `extent`: one entry
+  per down site and per 30 degree sector in which you read a location,
+  with `site`, `bearing_from_deg`, `farthest_covered_m` (null when no
+  covered location was found) and `edge` (`established` or
+  `not_established`). `backups`: one entry per backup cell found, with
+  `cell_id`, `kpi_status` (`rows`, `no_rows`, `failed`, `not_queried`)
+  and `peak_prb_mean_percent` (only with `rows`). `unknown`: what the
+  evidence leaves unknown, at most 1500 characters. `summary`: the
+  result in plain words, at most 2000 characters. If the format is
+  wrong, the response names the field; correct it and call again. After
+  a report is accepted, no tool answers." Format checks only: field
+  names and types; the four class counts add up to `locations_read`;
+  every `area_id` has at least one charged location in this run.
 
-Rule for every tool: **it returns what this one call observed.** It
-never returns what the run has read so far, what is still open, which
-call would be valid, or whether the investigation is complete. The two
-exceptions are the budget record and the unread counts of
-`read_coverage`.
-
-Constants at the top of the file: `LOCATIONS_PER_CALL_MAX = 50`,
-`AREAS_PER_CALL = 50`, `CELLS_PER_KPI_CALL_MAX = 20`,
-`CELLS_PER_ROW = 3`, `SKILL_VERSION = "outage-skill-1"`. The coverage
-threshold and the other thresholds are imported from
-`completion_point`.
-
-The text in quotation marks is the tool description the model reads.
-Use it word for word.
-
-**`get_case(skill_version)`**, free. "Return the case: the down cells,
-the down sites with their positions, the planned outage interval, the
-outage hours, the eight KPI baseline windows and the limits of this
-run. Call it first. Pass the skill version that the
-outage-investigation skill gives."
-
-A `skill_version` other than `SKILL_VERSION` is rejected with "Load the
-outage-investigation skill first." This is the check that the skill was
-loaded. The KPI windows come from the harness function that computes
-them.
-
-**`list_areas(min_distance_m, max_distance_m, offset)`**, free. "List
-the areas where people are likely, from OpenStreetMap, sorted by
-distance from the nearest down site. Each row gives the area ID, its
-kind (activity, settlement or road corridor), its name, the number of
-100 m locations in it, the nearest down site, the range of distances
-and bearings of its locations from that site, and its main map
-features. Returns at most 50 areas per call; pass `next_offset` to get
-the next 50. The list does not show what you have read."
-
-```json
-{"matching": 137, "returned": 50, "next_offset": 50,
- "columns": ["area_id", "kind", "name", "locations", "site", "distance_m", "bearing_deg", "features"],
- "rows": [["A01", "activity", "", 412, 1, [0, 1900], "all", "building 310, shop 6, amenity 9"]],
- "budget": {}}
-```
-
-**`read_coverage(area_id, count, order, bearing_from_deg, bearing_to_deg, min_distance_m, max_distance_m)`**,
-one location per row returned. "Read stored coverage at locations of
-one area. The server takes up to `count` (1 to 50) locations of the
-area that this run has not read yet and returns one row per location:
-the nearest down site, the distance and bearing from it, the class, the
-outage cells that cover it and the backup cells there. `order` is
-`nearest_first`, `farthest_first`, or `spread` (evenly spaced by
-distance). The bearing pair and the distance pair are optional filters:
-bearings run clockwise from the first value to the second, 0 is north.
-Cost: one location per row. A location is never charged twice. A call
-that costs more than the locations left is rejected whole and costs
-nothing."
-
-- Selection, in order: the area's locations; minus those charged in
-  this run through any area; minus those that returned `error`; the
-  filters; the order; the first `count`. `spread` takes every k-th
-  location by distance, k = remaining count divided by `count`, rounded
-  down, at least 1. Ties by grid id.
-- Read each location with the harness point fetch helper at radius 10,
-  and classify it with the harness classification function:
-  `no_sample`, `not_covered`, `covered_backup`, `covered_no_backup`. A
-  location whose call fails after the client's retries is `error`: not
-  charged, not selected again.
-
-```json
-{"area_id": "A01", "area_locations": 412, "area_unread_left": 327, "filter_unread_left": 41, "returned": 25,
- "counts": {"covered_backup": 9, "covered_no_backup": 2, "not_covered": 5, "no_sample": 9, "error": 0},
- "backup_cells": {"WTL04411": 8, "WTL05102": 3},
- "columns": ["site", "distance_m", "bearing_deg", "class", "outage_cells", "backup_cells"],
- "rows": [[1, 1840, 75, "covered_backup", "WTL03023:-101", "WTL04411:-96 WTL05102:-103"],
-          [1, 1910, 77, "not_covered", "", ""],
-          [1, 1985, 78, "no_sample", "", ""]],
- "budget": {}}
-```
-
-  A row prints the `CELLS_PER_ROW` strongest reachable backups and then
-  `+n`. The header list `backup_cells` is complete: every reachable
-  backup of this call with its count of locations. Rows carry no grid
-  id.
-
-**`read_kpi(cell_ids, start_time, end_time)`**, one cell-query per cell
-named. "Read hourly KPI of 1 to 20 cells for a time span and return the
-baseline for the outage hours: per cell and outage hour, the mean RRC
-connected users and the mean PRB use over the weeks in the span on the
-same weekday and hour. Take the start of one baseline window of the
-case and the end of the same or a later one. Cost: one cell-query per
-cell named, each time it is named. A cell comes back as `rows`, as
-`no_rows` (the query succeeded and found no data) or as `failed` (the
-query did not succeed; nothing is known about the cell)."
-
-Send each cell to the LTE or NR client by its ID, with the parameter
-checks of the harness KPI tools, and compute the baseline with the
-harness function. A call that raised is `failed`; never return or store
-it as zero rows. Charge a failed cell as the harness does.
-
-```json
-{"cells": [{"cell_id": "WTL04411", "status": "rows", "weeks_with_rows": 4,
-            "hours": [["02:00", 41.2, 37.5]]},
-           {"cell_id": "WTL05102", "status": "no_rows"},
-           {"cell_id": "WTL07730", "status": "failed", "error": "<error name>"}],
- "columns_of_hours": ["hour", "rrc_mean", "prb_mean_percent"], "budget": {}}
-```
-
-**`submit_report(outage_cells, areas, extent, backups, unknown, summary)`**,
-free. "Submit the final report. Call it once: when the investigation is
-complete, or when the limits leave nothing more to do. `areas`: one
-entry per area in which you read a location, with `area_id`,
-`locations_read`, `covered_backup`, `covered_no_backup`, `not_covered`,
-`no_sample`, and `read_in_full`. `extent`: one entry per down site and
-per 30 degree sector in which you read a location, with `site`,
-`bearing_from_deg`, `farthest_covered_m` (null when no covered location
-was found) and `edge` (`established` or `not_established`). `backups`:
-one entry per backup cell found, with `cell_id`, `kpi_status` (`rows`,
-`no_rows`, `failed`, `not_queried`) and `peak_prb_mean_percent` (only
-with `rows`). `unknown`: what the evidence leaves unknown, at most 1500
-characters. `summary`: the result in plain words, at most 2000
-characters. If the format is wrong, the response names the field;
-correct it and call again. After a report is accepted, no tool
-answers."
-
-Format checks only: field names and types; the four class counts add up
-to `locations_read`; every `area_id` has at least one charged location
-in this run. The server does not check that a number is right.
-
-**Budget and rejections.** Every response carries
-
-```json
-"budget": {"locations_used": 640, "locations_limit": 1500,
-           "kpi_cell_queries_used": 12, "kpi_cell_queries_limit": 200,
-           "seconds_elapsed": 412, "seconds_limit": 12000,
-           "tool_calls_used": 31, "tool_calls_limit": 200}
-```
-
-The clock starts at the first tool call. Rejections, each with its
-reason in the response, each counted as a tool call, none charged:
-`query_budget` and `kpi_budget` (the call costs more than is left; the
-response gives the cost and what is left), `invalid_parameter` (names
-the parameter and the allowed values), `time_limit` and
-`tool_call_limit` (from then on only `submit_report` is accepted),
-`report_submitted` (every tool is rejected). The server never repairs
-or guesses a parameter.
-
-The tool-call limit protects the credit budget; the harness has none.
-`summary.md` says so when a run ends on it.
-
-**Records**, in `records/`: `calls.jsonl` (per call: index, tool, time,
-seconds, parameters, rejection, charge, and the response as returned),
-`reads.jsonl` (per charged location, in order: index, call index, grid
-id, centre, area id, class, `cached`, seconds), `samples.jsonl` (every
-sample of every location read, by grid id), `kpi.json` (per call:
-cells, status per cell, rows, seconds), `report.json`. `reads.jsonl`,
-`samples.jsonl` and `kpi.json` use the layout of part 5 of
-`Copilot_Baseline_Algorithm_Only_2026-11-13.md`, so that its comparison
-script can read this run later.
+**Records**, in `<run folder>/records/`: `calls.jsonl` (per call: index,
+tool, time, seconds, parameters, rejection, charge, and the response as
+returned), `reads.jsonl` (per charged location, in order: index, call
+index, grid id, centre, area id, class, `cached`, seconds),
+`samples.jsonl` (every sample of every location read, by grid id),
+`kpi.json` (per call: cells, status per cell, rows, seconds),
+`areas.jsonl` (every area a map call returned, with its locations),
+`report.json`. At its first start in a run folder the server writes
+`case.json`: the ticket and the limits it uses.
 
 ## 3. The skill (`SKILL.md`)
 
-Use this text. The numbers in it must equal the constants of
-`completion_point`; test 9 checks that. If a statement about the data
-or a completion rule differs from the current harness skill text, do
-not change either; list the difference in the report.
+Use this text. Fill the one placeholder, under "Tools", from the final
+tool list. The numbers in the text must equal the constants of
+`completion_point`; test 8 checks that. If a statement about the data or
+a completion rule differs from the current harness skill text, do not
+change either; list the difference in the report.
 
 ```markdown
 ---
@@ -337,7 +253,7 @@ present a prediction as a result.
 
 ## Classes
 
-`read_coverage` gives each location one class. Use it as given.
+The coverage tool gives each location one class. Use it as given.
 
 | class | meaning |
 |---|---|
@@ -348,25 +264,21 @@ present a prediction as a result.
 
 ## Tools
 
-- `get_case`: the case and the limits. Call it first. Free.
-- `list_areas`: the areas, nearest first. Free.
-- `read_coverage`: reads locations of one area that you have not read
-  yet. Cost: one location per row.
-- `read_kpi`: the KPI baseline of cells. Cost: one cell-query per cell
-  named, each time you name it.
-- `submit_report`: the final report. It ends the run.
+{one line per tool of the server: its name, what it is for, its cost}
 
 The tools report what one call returned. They keep no record of your
 investigation. Keep that record yourself: what you read in each area
-and each direction, and what it showed.
+and each direction, and what it showed. You choose which tool to call,
+in which order, and when to stop.
 
 ## Where to look
 
+- The map tool shows the areas around a place, as far out as you ask.
+  You choose where and how far to look, and you can look farther later.
 - Work outward from the down site. An area near the site matters more
   than an area of the same kind farther away.
 - Activity areas are groups of mapped buildings, shops and amenities.
-  More features mean more users. Start with the activity area at the
-  down site or nearest to it.
+  More features mean more users.
 - Settlement areas are discs around mapped place names. They show that
   a settlement exists, not where its users are.
 - Road corridors carry travellers. A corridor within a few kilometres
@@ -388,8 +300,9 @@ covers.
    to it, and rules 1 and 2 apply again.
 4. A sector in which no location has returned a sample is not finished.
    Read the nearest area within 2000 m of the site in that sector.
-5. If the boundary reaches the outermost areas of the list, the edge of
-   that sector is not established.
+5. If the boundary lies at the edge of the map you looked at, look
+   farther out. A sector is not established while its boundary lies at
+   that edge.
 
 The investigation also needs the KPI baseline of every outage cell and
 of every backup that you found.
@@ -413,13 +326,13 @@ cell with `failed` is unknown; it is not a cell without data.
 - A call that does not fit is rejected whole and costs nothing.
 - Use as few locations as the completion rules allow. To learn whether
   coverage continues in a direction, a small count is enough.
-- Collect the backups first, then query their KPI once.
+- A cell named in two KPI calls is charged twice.
 - Keep enough tool calls to submit the report.
 
 ## Report
 
 Report only what your tool results support. Every count in `areas` is
-the sum of the classes that `read_coverage` returned to you for that
+the sum of the classes that the coverage tool returned to you for that
 area. `unknown` names what you did not establish. An honest "not
 established" is a correct result; a claim without evidence is an
 error. Do not invent a cell ID, an area ID, a count or a measurement.
@@ -431,34 +344,71 @@ confirmation and do not stop to present a plan. Use only the tools of
 the outage-baseline server. Work until `submit_report` is accepted.
 ```
 
-## 4. The prompt (`PROMPT_TEMPLATE.md`)
+## 4. The prompts
 
-The prompt names the case and holds no advice. Everything about the
-case comes from `get_case`, so nothing is typed by hand and the prompts
-of two cases differ in one word.
+The prompt names the case and prescribes no step. The case details come
+from `get_case`, so nothing is typed by hand.
 
 ```markdown
 Use the outage-investigation skill and the tools of the
 `outage-baseline` MCP server.
 
-Case: the planned outage of cell {down cell ID}.
+Case: the planned outage of cell WTL03023. The tool `get_case` returns
+the details of the case and the limits of this run.
 
-1. Call `get_case` first. It returns the down cells, the sites, the
-   planned outage interval, the KPI baseline windows and the limits.
-2. Investigate the case as the skill describes.
-3. Call `submit_report`.
+Investigate the case as the skill describes, and submit the report.
 
 This run is unattended. Do not ask a question and do not wait for an
 answer. Before each tool call, write one line: what you want to learn,
-and why this call answers it. After `submit_report` is accepted, reply
-with your summary and stop.
+and why this call answers it. After the report is accepted, reply with
+your summary and stop.
 ```
 
-The two cases are `WTL03023` and `FSL00169`. Run `prepare` once per
-case, each with the stored harness run of that case. If a case has no
-stored harness run, stop and report; do not type a ticket or a limit.
+The prompt of the second case is the same text with `FSL00169`.
 
-## 5. The author's steps, printed by `prepare.py`
+## 5. The run folders
+
+Create these three folders by hand, in a baseline root outside the
+repository. No script does this.
+
+```
+<baseline root>/WTL03023_dryrun/      mcp.json args end with --dry-run
+<baseline root>/WTL03023/
+<baseline root>/FSL00169/
+    each:
+    workspace/                        the folder the author opens in VS Code
+        .vscode/mcp.json
+        .github/skills/outage-investigation/SKILL.md     (or where the installed VS Code loads skills)
+    PROMPT.md
+    records/                          written by the server
+    session/                          the author saves the exported chat here
+    case.json, run.json, summary.md   written by the server and by summary.py
+```
+
+`.vscode/mcp.json`:
+
+```json
+{"servers": {"outage-baseline": {
+    "type": "stdio",
+    "command": "<absolute path of the project environment's python>",
+    "args": ["-m", "outage_harness_copilot.server",
+             "--run-dir", "<this run folder>",
+             "--harness-run", "<stored harness run of this case>"],
+    "env": {"PYTHONPATH": "<repository root>",
+            "REQUESTS_CA_BUNDLE": "<value from the current environment>",
+            "SSL_CERT_FILE": "<value from the current environment>"}}}}
+```
+
+VS Code starts the server, so the server does not inherit the
+terminal's variables. Add every other variable the data clients read.
+If one of them is a secret, do not write it into the file; stop and
+report. If a case has no stored harness run, do not create its folder
+and do not type a ticket or a limit; report it.
+
+One run folder is one run. The server refuses to start in a folder
+whose `records/` already holds an accepted report.
+
+## 6. The author's steps
 
 1. Open `workspace/` in a new VS Code window, in a profile with no other
    MCP server and no user-level instruction file.
@@ -475,72 +425,77 @@ stored harness run, stop and report; do not type a ticket or a limit.
 7. Run **Chat: Export Chat** and save the file in `session/`. Write
    down the credit count again. Run `summary.py`.
 
-## 6. `summary.py`
+## 7. `summary.py`
 
-From `case.json`, `pool.json` and `records/` only:
+`python -m outage_harness_copilot.summary <run folder> [--credits-before <n> --credits-after <n>]`
+
+From `case.json` and `records/` only:
 
 - `run.json`: `end_reason` (`report` when a report was accepted, else
-  `no_report`), `limits_hit`, the limits, the final budget record,
-  `COPILOT_BASELINE_VERSION`, and the resources: locations charged
-  (cached, live, no sample, error), covered locations found, KPI calls
-  and cell-queries, tool calls, rejected calls, seconds in tools,
-  seconds total, credits before and after or `not recorded`.
-- `summary.md`: the resources as a table; the count per class over the
-  read locations; then the report against the records: per area, each
-  reported count next to the count from `reads.jsonl`, and the number
-  of counts that differ; per `extent` entry, the reported
-  `farthest_covered_m` next to the value from `reads.jsonl`; the
-  backups in the records that the report does not name. With no
-  report, it says so.
+  `no_report`), the limits that were hit, the limits, the final budget
+  record, `COPILOT_BASELINE_VERSION`, and the resources: locations
+  charged (cached, live, no sample, error), covered locations found, map
+  calls, KPI calls and cell-queries, tool calls, rejected calls, seconds
+  in tools, seconds total, credits before and after or `not recorded`.
+- `summary.md`: the resources as a table; the tool calls in order, one
+  line each (tool, main parameters, charge); the count per class over
+  the read locations; then the report against the records: per area,
+  each reported count next to the count from `reads.jsonl`, and the
+  number of counts that differ; per `extent` entry, the reported
+  `farthest_covered_m` next to the value from `reads.jsonl`; the backups
+  in the records that the report does not name. With no report, it says
+  so.
 
-## 7. Tests, synthetic only, with the fake point source and a fake KPI client
+`reads.jsonl`, `samples.jsonl` and `kpi.json` use the layout of part 5
+of `Copilot_Baseline_Algorithm_Only_2026-11-13.md`, so that a later
+comparison with the harness runs needs no new run.
+
+## 8. Tests, synthetic only, with the fake point source and a fake KPI client
 
 1. A location in two areas is charged once.
-2. The three orders, a bearing filter that crosses north and a distance
-   filter return the locations computed by hand; one bearing without
-   the other is `invalid_parameter`.
+2. A partial coverage read returns the locations computed by hand for
+   nearest first, farthest first, evenly spread, and a bearing range
+   that crosses north.
 3. A call over the location limit is rejected whole, charges nothing
    and counts as a tool call.
-4. An `error` location is not charged and not selected again.
+4. An `error` location is not charged and not read again.
 5. Each row's class equals the harness classification of the same
-   samples; a fourth backup shows as `+1` in the row and in full in the
-   header.
-6. `read_kpi`: a raised call is `failed` and is not stored as zero
-   rows; an empty success is `no_rows`.
+   samples.
+6. KPI: a raised call is `failed` and is not stored as zero rows; an
+   empty success is `no_rows`.
 7. After the seconds limit and after the tool-call limit only
    `submit_report` is accepted; after an accepted report nothing is;
    `get_case` with a wrong skill version is rejected.
 8. `submit_report` names the field for: an area with no charged
-   location, counts that do not add up, a missing field.
+   location, counts that do not add up, a missing field. The numbers in
+   `SKILL.md` equal the constants of `completion_point`.
 9. A second server start on the same run folder continues the budget.
-   The numbers in `SKILL.md` equal the constants of `completion_point`.
-10. `prepare` writes the run folder as drawn above; it refuses an
-    `--out` inside the repository and an existing run folder.
+10. No response contains a file path or a grid id.
 11. `summary` on synthetic records with one wrong reported count gives
     that count as different.
 
 Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
 `uv run ty check`.
 
-## 8. Run it
+## 9. Run it
 
-1. `prepare --dry-run` for `WTL03023`. The author runs the session. This
-   one small run checks that the server starts, the skill loads, the
-   agent works without a question and the records are written.
+1. The author runs the session in `WTL03023_dryrun`. This one small run
+   checks that the server starts, the skill loads, the agent works
+   without a question and the records are written.
 2. Read the credits the dry run used. If credits per tool call times
    200 is above 1500, stop and report.
-3. `prepare` and one real run for `WTL03023`. Then the same for
-   `FSL00169`. One real run per case.
+3. One real run in `WTL03023`. Then one in `FSL00169`.
 
 Before a real run the author confirms that the data policy allows the
 coverage classes, cell IDs and KPI baselines of the case to pass
 through Copilot's model provider.
 
-## 9. Report back
+## 10. Report back
 
-The change list as file and line. Then, per run: `run.json`,
-`summary.md` and `report.json`. Then, briefly: which harness functions
-built the areas, classified a location and computed the KPI baseline;
-how the installed VS Code loaded the skill; each difference between the
-skill text and the current harness skill text; and anything that could
-not be done as written. State it; do not work around it silently.
+The table of part 1. The change list as file and line. Per tool of the
+new server: kept as it was, changed (what and for which requirement),
+or new. Then, per run: `run.json`, `summary.md` and `report.json`. Then,
+briefly: how the installed VS Code loaded the skill; each difference
+between the skill text and the current harness skill text; and anything
+that could not be done as written. State it; do not work around it
+silently.

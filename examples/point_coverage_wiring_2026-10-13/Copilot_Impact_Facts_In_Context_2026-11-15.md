@@ -1,8 +1,12 @@
 # Impact facts in the context, as two new packages (instruction for the Copilot)
 
-Apply after `Copilot_Impact_Score_and_Curve_2026-11-15.md`. This
-instruction uses the package `outage_harness_impact` that the other one
-builds.
+This instruction needs one module, `outage_harness_impact/impact.py`,
+which holds the definitions of exposure and severity. It is part 1 of
+`Copilot_Impact_Score_and_Curve_2026-11-15.md`. If the module does not
+exist yet, build it first from that part, with its tests 1 and 2. Do
+not build `curve.py` or `copilot_state.py` for this instruction; they
+need stored runs and are built later. No run folder, no reference and
+no data call is needed here.
 
 Build two new packages as copies, and change only the copies:
 

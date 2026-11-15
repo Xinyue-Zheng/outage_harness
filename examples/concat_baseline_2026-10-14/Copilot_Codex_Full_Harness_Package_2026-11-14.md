@@ -72,7 +72,7 @@ Constants at the top of `compaction.py`:
 | `COMPACT_USER_MESSAGE_MAX_TOKENS` | 20000 | `compact.rs` |
 | `BYTES_PER_TOKEN` | 4 | Codex's approximate token count |
 | `EMPTY_SUMMARY` | `"(no summary available)"` | `compact.rs` |
-| the context window of the model, in tokens | read from the package's model configuration | never typed here; if the configuration has no such value, stop and report |
+| `MODEL_CONTEXT_WINDOW_TOKENS` | given by the author when this instruction is handed over | the context length the endpoint serves for this model. It has no default. If the author has not given it, stop and ask for it. Set it in `compaction.py` of the new package only. |
 
 `SUMMARIZATION_PROMPT`, word for word from Codex:
 
@@ -101,7 +101,11 @@ The rule, as pure functions over the list of transcript messages:
    the sum over its messages.
 2. **Trigger.** Before each decision call, count the request that would
    be sent. If the count is at or above
-   `context_window * 9 // 10`, compact first.
+   `MODEL_CONTEXT_WINDOW_TOKENS * 9 // 10`, compact first. The count is
+   an approximation, so there is a second trigger, as in Codex: if the
+   endpoint rejects a decision call because the request is too long,
+   compact, and send the decision call again once. If it is rejected
+   again, end the run with `end_reason: context_window`.
 3. **The compaction call.** Send the same system message and the whole
    transcript, followed by one user message with `SUMMARIZATION_PROMPT`.
    Use the same model, endpoint and sampling settings as a decision
@@ -164,7 +168,8 @@ word for word from Codex:
 
 1. A request below the limit is sent unchanged; at the limit, one
    compaction call is made first, with `SUMMARIZATION_PROMPT` as the
-   last message.
+   last message. A decision call that the fake model rejects as too
+   long is followed by one compaction and one repeat of the call.
 2. After a compaction the transcript has exactly two messages: the
    start message and the summary message that begins with
    `SUMMARY_PREFIX`. A start message longer than 20000 tokens is cut to
@@ -186,8 +191,9 @@ Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
 
 ## 5. Report back
 
-The change list as file and line. The context window value used and
-where it was read. Whether the endpoint returns a distinct error for a
+The change list as file and line. The context window value used. The
+output-token limit of the model client, and whether it is below one
+tenth of the context window. Whether the endpoint returns a distinct error for a
 request that is too long, and how the code recognizes it. Whether the
 copied package already cut long tool outputs at head and tail, and with
 which limits. Anything that could not be done as written; state it, do

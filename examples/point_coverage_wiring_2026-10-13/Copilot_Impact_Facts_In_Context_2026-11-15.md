@@ -1,52 +1,68 @@
-# Impact facts in the context (instruction for the Copilot)
+# Impact facts in the context, as two new packages (instruction for the Copilot)
 
 Apply after `Copilot_Impact_Score_and_Curve_2026-11-15.md`. This
 instruction uses the package `outage_harness_impact` that the other one
 builds.
 
-One change to the harness: the context that the LLM reads gains the
-facts it needs to judge where the impact is. The LLM then has to
-estimate, from those facts, which open item is likely to hold the most
-impact per location spent, and work on that one first.
+Build two new packages as copies, and change only the copies:
+
+| new package | copy of | change |
+|---|---|---|
+| `outage_harness_langgraph_impact` | `outage_harness_langgraph` | the context that the LLM reads gains the facts it needs to judge where the impact is |
+| `outage_harness_rule_based_impact` | `outage_harness_rule_based` | the rule orders the open items by the same facts |
+
+The two original packages are not edited, so that runs of the old and
+the new packages can be compared.
 
 Why. Today the context says what is open and what each action costs. It
 says nothing about what a place is worth. The rule policy therefore
 works outward by distance, and the LLM has no basis for doing better.
-The completion check, the validator, the tools and the limits do not
-change: they decide what must be read and when a run may end. The order
-in which the open items are worked on is the policy's choice, and this
-change gives that choice a basis.
+With the facts, the LLM has to estimate which open item is likely to
+hold the most impact per location spent, and work on that one first.
+The completion check, the validator, the tools and the limits are the
+same code as in the originals: they decide what must be read and when a
+run may end. The order in which the open items are worked on is the
+policy's choice, and this change gives that choice a basis.
 
 ## Rules
 
-- The author confirms that no run is in progress before you start. This
-  instruction edits files that a run reads.
-- Edit only: the context renderer, the skill text and the step record
-  of `outage_harness_langgraph`; initialization, to store the exposure;
-  the run entry point, for one argument; and the rule package, for one
-  policy option. Do not edit the validator, the completion check, the
-  tools, the limits, the verifier or the transcript packages.
+- Edit no existing package. Change only the two copies.
+- In the copies, change only what parts 2 to 6 name. Do not change the
+  validator, the completion check, the tools, the limits or the
+  verifier.
 - Import `outage_harness_impact.impact`. Do not write a second
   definition of exposure or severity.
 - Do not run `uv sync`. Add no dependency. Do not use git. Make no data
-  call. Bump the version string of each package you edit.
+  call.
+- Each copy gets a version string `IMPACT_PACKAGE_VERSION` at the top
+  of its runner, bumped by hand, written to `run.json`.
 
-## 1. One run argument
+## 1. Copy the two packages
 
-`--impact-facts on|off`, default `off`. With `off`, the context, the
-skill text sent to the model and the rule's behaviour are exactly as
-they are today. The value is written to `task.json` and `run.json`, and
-the condition label gets the suffix `+impact` when it is `on`.
+From the directory that holds the packages, for each pair of the table:
+
+```
+cp -r <original> <new>
+cd <new>
+grep -rl "<original>" . | xargs sed -i 's/<original>/<new>/g'
+rm -rf __pycache__ */__pycache__ results runs
+```
+
+Do `outage_harness_langgraph_impact` first. If the rule package imports
+the harness package for shared parts, the rule copy imports the harness
+copy. Add the suffix `+impact` to the condition label of each copy.
+Check: a search for the original name in a copy finds nothing, and the
+originals are byte for byte unchanged.
 
 ## 2. Exposure at initialization
 
-With `--impact-facts on`, initialization computes the exposure counts
-of every location with `exposure_table` and stores them with the static
+Initialization of each copy computes the exposure counts of every
+location with `exposure_table` and stores them with the static
 geography of the run. Nothing else in the State changes.
 
-## 3. The context
+## 3. The context (harness copy)
 
-With `--impact-facts on`, the renderer adds two things.
+The renderer adds two things.
 
 **One block, once, above the open items:**
 
@@ -78,11 +94,10 @@ The program prints these facts and nothing more. It does not print an
 expected impact, a ranking of the items, or a recommended item. The
 estimate is the model's task.
 
-## 4. The skill text
+## 4. The skill text (harness copy)
 
-With `--impact-facts on`, this section is added to the skill text sent
-to the model, after the section on choosing an action. The stored skill
-file is not changed; the section lives in its own file in the package.
+Add this section to the skill text of the copy, after the section on
+choosing an action:
 
 ```
 Impact
@@ -91,17 +106,15 @@ Among the open items, work first on the one where you expect the most impact per
 The completion rules still apply. Impact decides the order in which you work, not what must be read in the end. State your estimate in one sentence in the purpose of the decision.
 ```
 
-## 5. The step record
+## 5. The step record (harness copy)
 
-For each decision with `--impact-facts on`, the step record keeps the
-impact facts of every open item as shown, and which item the chosen
-action belongs to.
+For each decision, the step record keeps the impact facts of every open
+item as shown, and which item the chosen action belongs to.
 
-## 6. The same basis for the rule policy
+## 6. The rule (rule copy)
 
-Add one policy option to the rule package, `impact`, so that a rule
-with the same facts runs beside the LLM. Among the valid actions of the
-open items it takes the one with the highest value of
+Among the valid actions of the open items, the rule of the copy takes
+the one with the highest value of
 
 ```
 p_samp * p_cov * mean exposure of the unread locations * expected severity
@@ -115,27 +128,30 @@ p_samp * p_cov * mean exposure of the unread locations * expected severity
 - Ties go to the item nearest to the down site.
 
 The rule keeps its existing choice of pattern and count for the item it
-selects. With the option unset, the rule behaves as it does today.
+selects. Its step record keeps the value of every open item and the
+item chosen.
 
 ## 7. Tests, synthetic
 
 1. On a fixture with two open items, the impact facts line of each
    equals the values counted by hand, and the block prints the
    constants of `impact.py`.
-2. With `--impact-facts off`, the context of a fixture run is identical,
-   byte for byte, to the context before this change.
-3. The rule option `impact` selects the item computed by hand on a
-   fixture where the nearest item has low exposure and a farther one
-   has a critical place.
-4. The step record holds the facts of every open item and the item
-   chosen.
+2. The rule copy selects the item computed by hand on a fixture where
+   the nearest item has low exposure and a farther one has a critical
+   place.
+3. The step records of both copies hold the facts or values of every
+   open item and the item chosen.
+4. On the same fixture and the same scripted decisions, the State after
+   each step of the harness copy equals the State of the original
+   package, apart from the stored exposure.
 
-Gate on the changed packages: `uv run ruff format`,
-`uv run ruff check --fix`, `uv run ty check`.
+Gate on the two copies: `uv run ruff format`, `uv run ruff check --fix`,
+`uv run ty check`.
 
 ## 8. Report back
 
-The change list as file and line. One rendered context from a fixture
-with `--impact-facts on`. Which estimates of `p_samp` and `p_cov` the
-rule option uses. Anything that could not be done as written; state it,
-do not work around it silently.
+The change list as file and line. One rendered context from a fixture.
+Which estimates of `p_samp` and `p_cov` the rule copy uses. Whether the
+rule package imports the harness package, and what the copy imports
+now. Anything that could not be done as written; state it, do not work
+around it silently.

@@ -72,7 +72,7 @@ Constants at the top of `compaction.py`:
 | `COMPACT_USER_MESSAGE_MAX_TOKENS` | 20000 | `compact.rs` |
 | `BYTES_PER_TOKEN` | 4 | Codex's approximate token count |
 | `EMPTY_SUMMARY` | `"(no summary available)"` | `compact.rs` |
-| `MODEL_CONTEXT_WINDOW_TOKENS` | given by the author when this instruction is handed over | the context length the endpoint serves for this model. It has no default. If the author has not given it, stop and ask for it. Set it in `compaction.py` of the new package only. |
+| `MODEL_CONTEXT_WINDOW_TOKENS` | 131072, measured by the author on the endpoint on 2026-11-15 | the context length the endpoint serves for this model. It has no default. If the author has not given it, stop and ask for it. Set it in `compaction.py` of the new package only. |
 
 `SUMMARIZATION_PROMPT`, word for word from Codex:
 
@@ -96,9 +96,12 @@ Another language model started to solve this problem and produced a summary of i
 
 The rule, as pure functions over the list of transcript messages:
 
-1. **Count.** The token count of a text is its UTF-8 byte length
-   divided by `BYTES_PER_TOKEN`, rounded up. The count of a request is
-   the sum over its messages.
+1. **Count.** The approximate token count of a text is its UTF-8 byte
+   length divided by `BYTES_PER_TOKEN`, rounded up. The count of the
+   next request is the prompt token count that the endpoint reported
+   for the last decision call, plus the approximate count of every
+   message appended since. If the endpoint reports none, or right after
+   a compaction, it is the approximate count of the whole request.
 2. **Trigger.** Before each decision call, count the request that would
    be sent. If the count is at or above
    `MODEL_CONTEXT_WINDOW_TOKENS * 9 // 10`, compact first. The count is

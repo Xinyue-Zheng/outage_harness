@@ -31,8 +31,13 @@ important places early. The impact curve does.
      Copilot run's `case.json` must equal those of the harness run's
      task. If they differ, stop and print both.
   2. Geometry. Take the site metadata and the static geometry (the grid
-     definition and the areas) from the harness run. Do not look
-     anything up and do not derive a geometry.
+     definition and the areas) from the harness run. A run that
+     expanded its study area holds several geography files
+     (`geography.json`, `geography_v2.json`, ...). Use the one that the
+     run's final State refers to, which is the largest. Confirm that a
+     grid id names the same cell in every version of that run, and say
+     so in the report; if it does not, stop. Do not look anything up
+     and do not derive a geometry.
   3. Grid ids. Map the coordinate of every Copilot read to a harness
      grid id with the harness grid function. Compute the distance
      between the read coordinate and the centre of that grid cell. If

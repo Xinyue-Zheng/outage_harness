@@ -72,6 +72,11 @@ Run as
 python -m outage_harness_impact.curve --out <output folder> [--reference <reference folder>] [--geometry-from <harness run folder>] <run folder> [<run folder> ...]
 ```
 
+One invocation covers one case. All run folders given, the reference
+and the `--geometry-from` run must be on the same case: the same down
+cell IDs and the same outage interval. If one differs, stop and name
+it. Run the command once per case, each with its own `--out` folder.
+
 ## 1. The score (`impact.py`)
 
 ```

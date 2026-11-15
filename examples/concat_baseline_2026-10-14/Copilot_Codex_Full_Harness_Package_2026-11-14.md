@@ -125,11 +125,16 @@ The rule, as pure functions over the list of transcript messages:
    transcript message after the start message and send again. Repeat.
    If only the start message is left and the call still fails, end the
    run with `end_reason: context_window`.
-6. **Accounting.** A compaction call is not a decision. Count it
+6. **No repeated compaction.** If the request is still at or above the
+   limit right after a compaction, end the run with
+   `end_reason: context_window`. Never compact twice without a decision
+   call between. This happens when the system message and the start
+   message alone do not fit the window.
+7. **Accounting.** A compaction call is not a decision. Count it
    separately: `compactions`, its input and output tokens, its seconds.
    Its seconds count toward the time limit. It charges no location and
    no KPI cell-query.
-7. **Record.** For each compaction write, in the step directory where
+8. **Record.** For each compaction write, in the step directory where
    it happened: the request sent, the summary, the transcript before
    and the transcript after.
 
@@ -192,6 +197,9 @@ Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
 ## 5. Report back
 
 The change list as file and line. The context window value used. The
+token count, by the rule of part 2, of the system message and of the
+start message on a real case, without a model call, so that the author
+can see how much of the window is left for the transcript. The
 output-token limit of the model client, and whether it is below one
 tenth of the context window. Whether the endpoint returns a distinct error for a
 request that is too long, and how the code recognizes it. Whether the

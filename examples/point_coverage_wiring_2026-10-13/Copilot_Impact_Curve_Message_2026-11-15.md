@@ -4,8 +4,9 @@ Paste the text in the box into a new chat, together with
 `Copilot_Impact_Score_and_Curve_2026-11-15.md`. Fill in the paths first.
 
 ```
-Apply the attached instruction. Then run it once per case, and show me
-impact_summary.md of each case.
+Apply the attached instruction. Give me the exact command for each
+case below, ready to copy. Then run them and show me impact_summary.md
+of each case.
 
 Case 1: <case name>
 Runs to draw: <package A run folder>, <package B run folder>, <package C run folder>
@@ -19,6 +20,9 @@ Case 3: <case name>
 Runs to draw: <package A run folder>, <package B run folder>, <package C run folder>
 Output folder: <output root>/<case 3>
 ```
+
+To get the commands without Copilot running them, replace the last
+sentence of the first paragraph with "Print the commands only."
 
 ## Optional lines, under a case
 

@@ -19,15 +19,40 @@ important places early. The impact curve does.
   `curve.py`, `copilot_state.py`, `tests/`. Import the harness and
   evaluation packages read-only. Do not copy code.
 - The evaluation function that gives the per-point record
-  (`ground_truth_outputs.py`) reads a harness State with the task and
-  the coverage. For a harness-type run, pass the run's own stored
-  State. For a Copilot baseline run, `copilot_state.py` builds that
-  input: the task from `case.json`, the coverage from
-  `records/samples.jsonl`, the KPI rows from `records/kpi.json`. Use
-  the harness's own constructors and field names. Fill only the fields
-  the evaluation function reads, and list them in the report. If a
-  stored record lacks a value the function needs, stop and name it; do
-  not put in a default.
+  (`ground_truth_outputs.py`) reads a harness State with the task, the
+  site metadata, the geometry and the coverage. For a harness-type run,
+  pass the run's own stored State.
+- A Copilot baseline run stores less: its case has no site metadata,
+  and its reads are keyed by coordinates, not by harness grid ids.
+  `copilot_state.py` builds the State input for such a run from two
+  sources, and only when `--geometry-from` names a stored harness run
+  on the same case:
+  1. Same case. The down cell IDs and the outage interval of the
+     Copilot run's `case.json` must equal those of the harness run's
+     task. If they differ, stop and print both.
+  2. Geometry. Take the site metadata and the static geometry (the grid
+     definition and the areas) from the harness run. Do not look
+     anything up and do not derive a geometry.
+  3. Grid ids. Map the coordinate of every Copilot read to a harness
+     grid id with the harness grid function. Compute the distance
+     between the read coordinate and the centre of that grid cell. If
+     any distance is above `MAX_CENTRE_OFFSET_M = 1.0`, stop and report
+     the count and the largest distance: the samples were then taken at
+     another point than the harness reads, and the author decides.
+  4. Coverage and KPI. Put the samples of `records/samples.jsonl` under
+     the mapped grid ids, and the rows of `records/kpi.json`, in the
+     form the harness State uses, with the harness's own constructors.
+  5. A read whose grid cell is outside the harness geometry is not
+     scored. Write the count of such reads into the summary, by name:
+     "outside the harness geometry, not scored".
+
+  Write the mapping to `<out>/<run name>/grid_mapping.csv`: the read
+  order, the stored coordinate key, the grid id, the offset in metres.
+  Fill only the State fields the evaluation function reads, and list
+  them in the report. If a stored record lacks a value the function
+  needs, stop and name it; do not put in a default. A Copilot run
+  folder given without `--geometry-from` is an error that names the
+  argument.
 - Read stored files only: the map copy of the case, the samples and KPI
   rows of each run, the reference. Write only under `--out`. Write
   nothing into a run directory.
@@ -39,7 +64,7 @@ important places early. The impact curve does.
 Run as
 
 ```
-python -m outage_harness_impact.curve --out <output folder> [--reference <reference folder>] <run folder> [<run folder> ...]
+python -m outage_harness_impact.curve --out <output folder> [--reference <reference folder>] [--geometry-from <harness run folder>] <run folder> [<run folder> ...]
 ```
 
 ## 1. The score (`impact.py`)
@@ -150,9 +175,14 @@ script; no plotting library.
 4. With a synthetic reference, the shares end at the hand-computed
    value, and the area under the curve holds the last value up to the
    limit.
-5. A synthetic Copilot run folder and a synthetic harness run with the
-   same samples and KPI rows give the same per-point records and the
-   same curve.
+5. A synthetic Copilot run folder, with `--geometry-from` a synthetic
+   harness run of the same case and the same samples and KPI rows,
+   gives the same per-point records and the same curve as that harness
+   run.
+6. A Copilot run whose case differs from the harness run stops and
+   prints both cases. A read 5 m from its cell centre stops with the
+   count and the distance. A read outside the geometry is counted as
+   not scored.
 
 Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
 `uv run ty check`.

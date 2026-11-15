@@ -1,17 +1,23 @@
-"""Find the context window that an OpenAI-compatible endpoint serves for a model.
+"""Find the context window that the model endpoint serves.
 
-Set these environment variables, then run the file:
+Edit BASE_URL below, then run:
 
-    LLM_BASE_URL   the base URL your client uses, for example https://host/v1
-    LLM_MODEL      the model name your client sends
-    LLM_API_KEY    optional
+    python check_context_window.py            asks the server, sends no long prompt
+    python check_context_window.py --probe    also sends one over-long prompt
 
-Step 1 asks the endpoint for its model list and prints every field that
-looks like a context length. It sends no prompt.
+`max_tokens` in the model client is the longest answer the model may write.
+It is not the context window. The context window is the most the model can
+read in one request, and only the server knows the value it was started with.
 
-Step 2 runs only with --probe. It sends one request that is far too long,
-with one output token, and prints the error message. Most servers answer
-with the limit in that message. Use it only if step 1 shows nothing.
+The script asks in three ways and prints what it finds:
+
+1. The model list of the OpenAI-compatible API.
+2. The native routes of an Ollama server, if the server is one. The model
+   tag "name:size" suggests that it is.
+3. With --probe: one request that is longer than the model can read, with
+   one output token. A server either rejects it and names the limit, or cuts
+   the input without an error. In the second case the token count that the
+   server reports for the prompt is the size it really read.
 """
 
 import json
@@ -21,19 +27,15 @@ import sys
 import urllib.error
 import urllib.request
 
+BASE_URL = "http://serverid:number/v1"  # edit: the host of the model client
+MODEL = "gpt-oss-safeguard:120b"
+
 CONTEXT_FIELD = re.compile(
-    r"context|max_model_len|max_input|n_ctx|window", re.IGNORECASE
+    r"context|max_model_len|max_input|n_ctx|num_ctx|window", re.IGNORECASE
 )
 LIMIT_IN_MESSAGE = re.compile(r"(\d{4,7})\s*tokens")
-PROBE_WORDS = 1_000_000
-TIMEOUT_SECONDS = 120
-
-
-def required_env(name: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the environment variable {name}.")
-    return value
+PROBE_WORDS = 300_000
+TIMEOUT_SECONDS = 600
 
 
 def call(url: str, payload: dict[str, object] | None) -> tuple[int, str]:
@@ -49,6 +51,15 @@ def call(url: str, payload: dict[str, object] | None) -> tuple[int, str]:
             return response.status, response.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as error:
         return error.code, error.read().decode("utf-8", "replace")
+    except urllib.error.URLError as error:
+        return 0, f"no connection: {error.reason}"
+
+
+def parse(body: str) -> object:
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError:
+        return None
 
 
 def context_fields(value: object, path: str = "") -> list[tuple[str, object]]:
@@ -66,60 +77,111 @@ def context_fields(value: object, path: str = "") -> list[tuple[str, object]]:
     return found
 
 
-def list_models(base_url: str, model: str) -> None:
+def openai_model_list(base_url: str) -> None:
+    print("1. Model list of the OpenAI-compatible API")
     status, body = call(f"{base_url}/models", None)
-    print(f"GET {base_url}/models -> HTTP {status}")
-    try:
-        parsed: object = json.loads(body)
-    except json.JSONDecodeError:
-        print(body[:500])
-        return
-    entries = parsed.get("data", []) if isinstance(parsed, dict) else []
+    print(f"   GET {base_url}/models -> HTTP {status}")
+    parsed = parse(body)
+    entries = parsed.get("data") if isinstance(parsed, dict) else None
     if not isinstance(entries, list):
-        entries = []
+        print(f"   no model list: {body[:300]}")
+        return
     for entry in entries:
-        if not isinstance(entry, dict):
+        if not isinstance(entry, dict) or entry.get("id") != MODEL:
             continue
-        marker = "  <- your model" if entry.get("id") == model else ""
-        print(f"model: {entry.get('id')}{marker}")
-        for path, value in context_fields(entry):
-            print(f"    {path} = {value}")
-    if not entries:
-        print("The answer has no model list. First 500 characters:")
-        print(body[:500])
+        fields = context_fields(entry)
+        if not fields:
+            print(f"   {MODEL} is listed, with no context length field")
+        for path, value in fields:
+            print(f"   {path} = {value}")
+        return
+    print(f"   {MODEL} is not in the list of {len(entries)} models")
 
 
-def probe(base_url: str, model: str) -> None:
+def ollama_routes(base_url: str) -> None:
+    print("2. Native routes of an Ollama server")
+    root = base_url.removesuffix("/v1")
+    status, body = call(f"{root}/api/show", {"model": MODEL})
+    print(f"   POST {root}/api/show -> HTTP {status}")
+    shown = parse(body)
+    if status != 200 or not isinstance(shown, dict):
+        print("   not an Ollama server, or the route is closed")
+        return
+    for path, value in context_fields(shown.get("model_info")):
+        print(f"   largest context the model supports: {path} = {value}")
+    parameters = shown.get("parameters")
+    served = [line for line in str(parameters).splitlines() if "num_ctx" in line]
+    if served:
+        print(f"   context set in the model file: {served[0].strip()}")
+    else:
+        print("   the model file sets no num_ctx; the server default applies")
+
+    status, body = call(f"{root}/api/ps", None)
+    print(f"   GET {root}/api/ps -> HTTP {status}")
+    running = parse(body)
+    models = running.get("models") if isinstance(running, dict) else None
+    if not isinstance(models, list):
+        return
+    for entry in models:
+        if isinstance(entry, dict) and entry.get("name") == MODEL:
+            fields = context_fields(entry)
+            for path, value in fields:
+                print(
+                    f"   loaded now with: {path} = {value}   <- the served context window"
+                )
+            if not fields:
+                print(
+                    "   the model is loaded; this server version does not report its context"
+                )
+            return
+    print("   the model is not loaded now; send one request and run this again")
+
+
+def probe(base_url: str) -> None:
+    print(f"3. One request of about {PROBE_WORDS} tokens, one output token")
     payload: dict[str, object] = {
-        "model": model,
+        "model": MODEL,
         "messages": [{"role": "user", "content": "a " * PROBE_WORDS}],
         "max_tokens": 1,
     }
     status, body = call(f"{base_url}/chat/completions", payload)
-    print(
-        f"POST {base_url}/chat/completions with about {PROBE_WORDS} tokens -> HTTP {status}"
-    )
-    print(body[:800])
-    limits = sorted({int(number) for number in LIMIT_IN_MESSAGE.findall(body)})
-    if status >= 400 and limits:
-        print(f"Token counts named in the error: {limits}")
+    print(f"   POST {base_url}/chat/completions -> HTTP {status}")
+    parsed = parse(body)
+    if status >= 400 or status == 0:
+        print(f"   {body[:500]}")
+        limits = sorted({int(number) for number in LIMIT_IN_MESSAGE.findall(body)})
+        if limits:
+            print(f"   token counts named in the error: {limits}")
+            print(
+                "   the context window is the limit the message names, usually the smaller one"
+            )
+        return
+    usage = parsed.get("usage") if isinstance(parsed, dict) else None
+    read = usage.get("prompt_tokens") if isinstance(usage, dict) else None
+    print(f"   the server accepted the request and reports prompt_tokens = {read}")
+    if isinstance(read, int) and read < PROBE_WORDS // 2:
         print(
-            "The context window is the limit the message names, usually the smaller number."
+            f"   it read far less than was sent: it cuts long input without an error at about {read} tokens"
         )
-    elif status < 400:
         print(
-            "The endpoint accepted the request. It may cut long input without an error."
+            "   that number is the context window the model really has on this server"
         )
-        print("Ask the host of the model for the served context length.")
+    else:
+        print(
+            "   the report does not show a cut; ask the host for the served context length"
+        )
 
 
 def main() -> None:
-    base_url = required_env("LLM_BASE_URL").rstrip("/")
-    model = required_env("LLM_MODEL")
-    list_models(base_url, model)
+    if "serverid" in BASE_URL:
+        sys.exit("Edit BASE_URL at the top of this file first.")
+    base_url = BASE_URL.rstrip("/")
+    openai_model_list(base_url)
+    print()
+    ollama_routes(base_url)
     if "--probe" in sys.argv[1:]:
         print()
-        probe(base_url, model)
+        probe(base_url)
 
 
 if __name__ == "__main__":

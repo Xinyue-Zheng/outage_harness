@@ -1,7 +1,8 @@
 # Impact score and impact curve (instruction for the Copilot)
 
-Apply this instruction first. `Copilot_Impact_Facts_In_Context_2026-11-15.md`
-builds on it.
+Apply this instruction first. A second instruction,
+`Copilot_Impact_Facts_In_Context_2026-11-15.md`, builds on it later.
+You do not need that file for this one.
 
 Build one new package, `outage_harness_impact`, that gives every
 location an impact score and draws, for any stored run, how much impact
@@ -15,9 +16,18 @@ important places early. The impact curve does.
 ## Rules
 
 - New code goes only into `outage_harness_impact/`: `impact.py`,
-  `curve.py`, `tests/`. Import the harness and evaluation packages
-  read-only. If a function cannot be called without a harness State,
-  stop and report which one. Do not copy code.
+  `curve.py`, `copilot_state.py`, `tests/`. Import the harness and
+  evaluation packages read-only. Do not copy code.
+- The evaluation function that gives the per-point record
+  (`ground_truth_outputs.py`) reads a harness State with the task and
+  the coverage. For a harness-type run, pass the run's own stored
+  State. For a Copilot baseline run, `copilot_state.py` builds that
+  input: the task from `case.json`, the coverage from
+  `records/samples.jsonl`, the KPI rows from `records/kpi.json`. Use
+  the harness's own constructors and field names. Fill only the fields
+  the evaluation function reads, and list them in the report. If a
+  stored record lacks a value the function needs, stop and name it; do
+  not put in a default.
 - Read stored files only: the map copy of the case, the samples and KPI
   rows of each run, the reference. Write only under `--out`. Write
   nothing into a run directory.
@@ -140,6 +150,9 @@ script; no plotting library.
 4. With a synthetic reference, the shares end at the hand-computed
    value, and the area under the curve holds the last value up to the
    limit.
+5. A synthetic Copilot run folder and a synthetic harness run with the
+   same samples and KPI rows give the same per-point records and the
+   same curve.
 
 Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
 `uv run ty check`.
@@ -147,7 +160,7 @@ Gate on the new package: `uv run ruff format`, `uv run ruff check --fix`,
 ## 5. Report back
 
 The change list as file and line. Which evaluation function gave the
-class and the issue flags. Which map features the stored copy holds
+class and the issue flags, and which State fields it reads. Which map features the stored copy holds
 (buildings, amenities, shops, leisure, tourism, roads) and which of the
 exposure items could therefore not be counted. Then `impact_summary.md`
 for the runs the author names.

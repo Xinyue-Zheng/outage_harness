@@ -7,19 +7,26 @@ ground truth) of that case. It reads stored files only and makes no
 data call.
 
 The package was built from `Copilot_Impact_Score_and_Curve_2026-11-15.md`.
-If the package does not exist, stop and report.
+If the package does not exist, stop and report. `table.py` is the new
+file that this instruction creates.
+
+Changed on 2026-11-16: part 0 allows you to write two loaders if the
+package does not have them.
 
 ## Rules
 
 - New code goes only into `outage_harness_impact/table.py` and
   `outage_harness_impact/tests/`. Edit no other package.
-- Reuse what the package has: the loading of a run, of the reference
-  and of a Copilot baseline run (`copilot_state.py`), the exposure, the
-  class and the severity with its state. Find these functions in
-  `impact.py`, `curve.py` and `copilot_state.py` and call them. If one
-  is inline in `curve.py`, move it into a function there without
-  changing what `curve.py` writes. Do not copy code and do not write a
-  second classification.
+- Reuse what the package has: the loading of a harness-type run, the
+  exposure, the class and the severity with its state. Find these
+  functions in `impact.py` and `curve.py` and call them. If one is
+  inline in `curve.py`, move it into a function there without changing
+  what `curve.py` writes. Do not copy code and do not write a second
+  classification.
+- The loader of a Copilot baseline run and the loader of the reference
+  may be missing. Part 0 says what to write then. Apart from moving a
+  function, do not change `curve.py`; it may keep rejecting a Copilot
+  run, because this table replaces the curve in the report.
 - Read stored files only. Write only under `--out`. Write nothing into
   a run folder or the reference folder.
 - Do not run `uv sync`. Add no dependency. Do not use git.
@@ -38,6 +45,47 @@ the reference and the `--geometry-from` run: the same down cell IDs and
 the same outage interval, compared as parsed times, not as text. If one
 differs, stop and print both. `--geometry-from` is required when a
 Copilot baseline run is among the runs, as in `curve.py`.
+
+## 0. Two loaders, if the package does not have them
+
+**The reference.** Find the reader that the evaluation package already
+uses for the stored reference, and call it. From it, `table.py` needs
+for every reference location: the grid id, the class, the reachable
+backups with their issue flags, and the KPI rows that give the load of
+a backup. Compute the severity with `impact.py`, as for a run. Write a
+reader in `table.py` only if no reader exists, and say so in the
+report.
+
+**A Copilot baseline run.** Such a run stores less than a harness run:
+its case has no site metadata, and its reads are keyed by coordinates,
+not by harness grid ids. Write the loader in `copilot_state.py`. It
+builds the input of the evaluation function for the run, and only when
+`--geometry-from` names a stored harness run on the same case:
+
+1. Same case. The down cell IDs and the outage interval of the Copilot
+   run's `case.json` must equal those of the harness run's task. If
+   they differ, stop and print both.
+2. Geometry. Take the site metadata and the static geometry (the grid
+   definition and the areas) from the harness run. A run that expanded
+   its study area holds several geography files. Use the one that the
+   run's final State refers to. Do not look anything up and do not
+   derive a geometry.
+3. Grid ids. Map the coordinate of every Copilot read to a harness grid
+   id with the harness grid function. If the distance between a read
+   coordinate and the centre of its grid cell is above
+   `MAX_CENTRE_OFFSET_M = 1.0`, stop and report the count and the
+   largest distance.
+4. Coverage and KPI. Put the samples of `records/samples.jsonl` under
+   the mapped grid ids, and the rows of `records/kpi.json`, in the form
+   the harness State uses, with the harness's own constructors. The
+   steps of a Copilot run are its tool calls in `records/calls.jsonl`.
+5. A read whose grid cell is outside the harness geometry is not
+   scored. It counts as queried, and the line under the table gives the
+   count.
+
+Fill only the State fields that the evaluation function reads, and list
+them in the report. If a stored record lacks a value that the function
+needs, stop and name it. Do not put in a default.
 
 ## 1. The sets
 
@@ -102,7 +150,9 @@ the total impact with the exposure weight and with the equal weight.
 4. A reference with no location of the class covered with no backup:
    `no_backup_recall` is `not available`.
 5. A synthetic Copilot baseline run with `--geometry-from` gives the
-   same row as the harness run with the same samples and KPI rows.
+   same row as the harness run with the same samples and KPI rows. A
+   Copilot run of another case stops and prints both cases. A read 5 m
+   from its cell centre stops with the count and the distance.
 
 Gate on the changed package: `uv run ruff format`,
 `uv run ruff check --fix`, `uv run ty check`.

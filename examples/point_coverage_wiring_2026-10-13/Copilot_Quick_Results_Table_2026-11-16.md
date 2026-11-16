@@ -51,9 +51,9 @@ its state. From them:
 ## 2. A Copilot baseline run
 
 A Copilot baseline run has `records/reads.jsonl`. Do not convert it to
-a harness State and do not use `--geometry-from`. Read its records
-directly, with the reader of `outage_harness_copilot` if that package
-has one:
+a harness State and do not use `--geometry-from`. Do not import
+`outage_harness_copilot`: its modules import `fastmcp`, which this
+environment may not have. Read the record files directly with `json`:
 
 | column | value |
 |---|---|
@@ -61,8 +61,8 @@ has one:
 | `covered_found`, `no_backup_found` | counted from the class of each line, with the same class names |
 | `hit_rate` | as in part 1 |
 | `located_impact`, `reportable_impact` | `not available` |
-| `seconds` | the total seconds that `summary.py` of that package reports |
-| `end_reason` | `report submitted` if a report was accepted; else the limit that ended the run; else `no report` |
+| `seconds` | from `records/calls.jsonl`: the time of the last call plus its seconds, minus the time of the first call |
+| `end_reason` | `report submitted` if `records/report.json` holds an accepted report; else `no report` |
 
 ## 3. Output
 

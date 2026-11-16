@@ -64,6 +64,11 @@ Initialization of each copy computes the exposure counts of every
 location with `exposure_table` and stores them with the static
 geography of the run. Nothing else in the State changes.
 
+Resume and program recovery stay as they are in the originals. A
+resumed run reads the stored exposure and does not compute it again.
+When a run expands its study area, the exposure of the new locations is
+computed and stored with the new geography version.
+
 ## 3. The context (harness copy)
 
 The renderer adds two things.

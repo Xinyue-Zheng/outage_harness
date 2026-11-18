@@ -64,12 +64,10 @@ exposure that initialization stores with the geography stays.
   bumped by hand at every change of a rule below. Write it to
   `run.json` beside `rule_score`. Where the condition label of the
   copy ends in `+impact`, change the ending to `+greedy`.
-- The copy also holds the tests of the source package. Some of them
-  assert the earlier selection by the impact value, the earlier gain of
-  a request on a beyond item, or the earlier second step of `p_samp`.
-  Those tests are wrong for the copy. Delete them in the copy and name
-  them in the report. Do not keep them as skipped tests. Do not change
-  a test of another package.
+- The source package has no test directory of its own. Put the tests
+  of part 6 where the tests of the rule packages are, in a new file for
+  `outage_harness_greedy`. Do not edit or delete an existing test: the
+  existing tests check the source packages, which do not change.
 - If `scores.py` of the copy has no `expected_cost` selection, or a
   function named above does not exist, or a part below cannot be done
   as written, stop and report. Do not work around it and do not put in
@@ -230,7 +228,7 @@ and the mean `p_samp`) and four more: `len_x_in`, `gain_out`,
 `X_out`) and the mean `p_cov` over `X_out`. For a KPI candidate it
 holds the cells named and the score. Nothing else is added.
 
-## 6. Tests, in the copy, synthetic
+## 6. Tests, synthetic
 
 1. `gain_out` equals the value from a direct enumeration of all `3^m`
    outcome combinations, written in the test only, for `m = 4`, unequal
@@ -311,7 +309,7 @@ run did.
 
 - The files of the copy that differ from the source package, as file
   and line, and the value of `GREEDY_VERSION`.
-- The copied tests that you deleted, each with the reason.
+- The file that holds the new tests.
 - The names of the existing functions that the new code calls.
 - For the synthetic run: end reason, locations used, rounds, the round
   of each KPI request, and whether the metrics command read the run.

@@ -202,9 +202,12 @@ run.
 
 - When there is at least one pending cell, and the KPI cell-queries
   left cover all pending cells, one KPI request for the pending cells
-  is a candidate. Build it with the function that rule R3 uses. If that
-  function sends one technology per request, the candidate holds the
-  pending cells of the first technology in the order of R3.
+  is a candidate. Build it with the code that rule R3 uses. If R3
+  builds its request inline, move that code, in the copy, into one
+  function that takes the cells to name as a parameter. Call it from R3
+  and from the KPI candidate. R3 must propose exactly what it proposes
+  today. If R3 sends one technology per request, the candidate holds
+  the pending cells of the first technology in the order of R3.
 - Its gain is the number of cells named, its cost is the same number,
   and its score is 1.
 - Selection: take the highest score over the coverage candidates and
@@ -247,7 +250,8 @@ holds the cells named and the score. Nothing else is added.
 6. KPI candidate: with two pending cells and enough KPI budget, R1
    proposes the KPI request while an inside item is open. A cell that
    failed earlier is not named. With one KPI cell-query left and two
-   pending cells, R1 proposes coverage.
+   pending cells, R1 proposes coverage. On an existing fixture, R3 of
+   the copy proposes the same KPI request as R3 of the source package.
 7. With `RULE_SCORE=domain`, the copy proposes the same requests as
    `outage_harness_rule_based` on the fixtures of the existing rule
    tests.

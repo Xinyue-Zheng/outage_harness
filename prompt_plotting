@@ -1,0 +1,11 @@
+1. For each method, compute the precision-recall curve from its final test scores with sklearn's precision_recall_curve.
+2. Use interpolated precision: for each recall level r, precision_interp(r) = the maximum precision over all points with recall >= r. This makes each curve monotonically non-increasing and removes the staircase effect.
+3. Evaluate the interpolated precision on a fixed recall grid from 10% to 50% (for example every 1%), and plot it as a line. Add markers only at a subset of the grid points (for example every 4%) so the markers are not crowded.
+4. Styling:
+   - x-axis: "Recall %", range 10 to 50; y-axis: "Precision", range 0 to 1.05
+   - a distinct color, marker, and line style per method; draw the main proposed method on top
+   - a dashed gray horizontal line at the test positive rate labeled "Random Guess"
+   - legend with 2 columns inside the plot, no frame, font size similar to the axis labels
+   - figure size about 6 x 3.5 inches, large readable fonts, light or no grid
+5. Keep the AUPRC values computed from the ORIGINAL (non-interpolated) scores with average_precision_score; the interpolation is for display only. Do not show AUPRC in the legend unless I ask.
+6. Save as PNG (300 dpi) and PDF, and keep the previous figure file unchanged.

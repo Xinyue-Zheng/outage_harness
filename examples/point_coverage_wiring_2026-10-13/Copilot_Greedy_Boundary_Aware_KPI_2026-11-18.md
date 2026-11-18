@@ -216,25 +216,67 @@ holds the cells named and the score. Nothing else is added.
 Gate on the copy: `uv run ruff format`, `uv run ruff check --fix`,
 `uv run ty check`.
 
-## 7. Run it once, on the synthetic case
+## 7. One synthetic run, as a check before the real cases
 
-Run the copy from initialization to its end on fixtures F1 and F2 of
-the completion check tests, with `RULE_SCORE=expected_cost`, the fake
-point source and the limits that those tests use. Run the original
-package on the same fixtures with the same setting. Do not run a real
-case.
+Run the copy from initialization to its end on fixture F1 of the
+completion check tests, with `RULE_SCORE=expected_cost`, the fake point
+source and the limits that those tests use. Write the run under
+`tmp_path` or another folder outside every real run directory.
 
-## 8. Report back
+Then run the metrics command of part 8 on that run folder alone, to
+confirm that it reads a run of the copy. If it stops, report the error
+as it is. Do not edit `outage_harness_impact`.
+
+Do not run a real case yourself.
+
+## 8. Two commands for the real cases
+
+The author runs the real cases. For each case of the author's message,
+write one command line that the author can copy and run as it is. Do
+not run it.
+
+Each case names an earlier greedy run and an output folder. Read the
+stored files of the earlier run, and only those:
+
+- the case: the down cell IDs and the outage interval;
+- the three limits: locations, KPI cell-queries and seconds;
+- `rule_score` in `run.json`. If it is `domain`, or the field is
+  missing, stop for that case and report it: the earlier run is then
+  not a greedy run.
+
+The command line of a case does two things, in this order, and the
+second runs only if the first succeeds:
+
+1. It starts a run of `outage_harness_rule_boundary` on the same case,
+   with the same three limits and the same `RULE_SCORE` as the earlier
+   run. The run folder is `<output folder>/run`.
+2. It writes and prints the metrics of the earlier run and the new run
+   side by side, with the existing command:
+
+   ```
+   python -m outage_harness_impact.quick_table --out <output folder>/metrics greedy_before=<earlier run folder> greedy_boundary=<output folder>/run
+   ```
+
+The table of that command has these columns per run: locations
+queried, covered found, hit rate, no-backup found, located impact,
+reportable impact, seconds and end reason. Do not add a column and do
+not write a second metrics program.
+
+If `<output folder>/run` already exists, the command must stop and not
+overwrite it. Use the Python of the project environment, as the earlier
+run did.
+
+## 9. Report back
 
 - The files of the copy that differ from the original, as file and
   line, and the value of `RULE_BOUNDARY_VERSION`.
 - The copied tests that you deleted, each with the reason.
 - The names of the existing functions that the new code calls.
-- For each synthetic run of the copy: end reason, locations used,
-  rounds and the round of each KPI request. Beside them, the same four
-  values of the original package on the same fixture.
-- The exact command to start a real run with the copy, ready to copy,
-  with placeholders for the case and the run folder.
+- For the synthetic run: end reason, locations used, rounds, the round
+  of each KPI request, and whether the metrics command read the run.
+- The command line of each case, ready to copy, with the author's
+  folders filled in. Under each one, the case, the limits and the
+  `RULE_SCORE` that you read from the earlier run.
 - Anything that could not be done as written. State it, and do not work
   around it.
 
@@ -243,6 +285,15 @@ case.
 ```
 Read Copilot_Greedy_Boundary_Aware_KPI_2026-11-18.md in full, then
 apply it. Build the copy outage_harness_rule_boundary, run the tests
-and the synthetic runs, and report as part 8 asks. Do not edit
-outage_harness_rule_based.
+and the synthetic run, and report as part 9 asks. Do not edit
+outage_harness_rule_based. Do not run a real case; give me the two
+command lines of part 8.
+
+Case 1
+  earlier greedy run: <run folder of the earlier greedy run, case 1>
+  output folder:      <path 1>
+
+Case 2
+  earlier greedy run: <run folder of the earlier greedy run, case 2>
+  output folder:      <path 2>
 ```

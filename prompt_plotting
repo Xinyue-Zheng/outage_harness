@@ -1,26 +1,9 @@
-Please compute precision-recall curves for the two MLP-head models (core + MLP head and LLM + MLP head) and add them to the existing test-set PR curve figure. Do not train anything.
+Add "core + LLM embedding + XGBoost" with two PCA variants, and select between them using VALIDATION AUPRC only. Reuse the saved embeddings. Align core and LLM by sample_id (check that sample_ids, labels, and row counts match on every split; never align by row position). Fit every scaler and PCA on the TRAINING split only. Do not overwrite existing files.
 
-Step 0 – Confirm data split and checkpoints (STOP after this step and wait for my confirmation)
-- Data split: use ONLY the new SECTOR-based split manifest at <MANIFEST_PATH>. Validation = rows with split == "val"; test = rows with split == "test". Do NOT use the old market-based split or any other split file.
-- Checkpoints: use the models trained on this sector-based split with all training samples and positive weighting (not the 1:2 resampling runs, and not any run trained on the market-based split). For each model, use the BEST checkpoint selected by validation AUPRC, which is the same checkpoint used for the embedding export:
-  - core + MLP head: <CORE_CHECKPOINT_PATH>
-  - LLM + MLP head: <LLM_CHECKPOINT_PATH>
-  If I left any path above unfilled, find the candidates and list them with their training run directory, split used, training mode, epoch, and logged validation AUPRC. Do not pick one yourself.
-- Report: the manifest path, the number of val and test samples and positives in it, and for each model the checkpoint path, its epoch, the split it was trained on, and its logged best validation AUPRC.
-STOP and wait for my confirmation.
+Variant A – separate PCA: for each of the same 10 settings as core and LLM (no-PCA plus config PCA {16, 32, 64} x KPI PCA {16, 32, 64}), build the core and LLM representations with their own PCA, then concatenate.
 
-Step 1 – Predictions
-- Load each confirmed checkpoint in model.eval() mode with torch.no_grad(), using exactly the same preprocessing artifacts (normalization statistics, vocabularies, feature-path assignments) saved with that training run, and the same evaluation settings as the final test evaluation (core: batch size 128).
-- Run inference on the validation and test sets defined by the manifest above.
-- Use the predicted probability of the POSITIVE class (apply sigmoid to logits, or take the positive-class column after softmax; report which one applies).
-- Every val/test sample must appear exactly once: drop_last=False, and if multiple GPUs are used, deduplicate by sample_id. Verify row counts and labels against the manifest by sample_id.
-- Save per-sample scores (sample_id, label, score) for val and test as CSV files.
+Variant B – joint PCA: build the core and LLM representations with the KPI part mean-pooled over patches (as before) and no PCA, concatenate them, standardize each feature, then apply a single PCA to the concatenated features with {32, 64, 128, 256} components, plus a no-PCA setting (5 settings).
 
-Step 2 – Sanity check
-Recompute the test AUPRC from these saved scores with average_precision_score and confirm it matches the previously reported test AUPRC of each MLP-head model. Report both numbers. If they differ by more than 0.005, STOP and report possible causes before plotting.
+For each variant: run the same XGBoost search per setting selected by validation AUPRC, train seeds 0–4, and average predicted probabilities over all its settings and seeds to get the final scores.
 
-Step 3 – Plot
-Add both MLP-head models to the EXISTING PR curve figure (same single figure, no subplots), using exactly the same interpolated-precision method, recall grid (10% to 50%), and styling as the other methods. Use the same color for the same backbone (core, LLM), with solid lines for XGBoost heads and dashed lines for MLP heads. Save the updated figure as PNG (300 dpi) and PDF, keeping the previous figure files unchanged.
-
-Step 4 – F1
-For each MLP-head model, choose the threshold that maximizes F1 on the VALIDATION scores, apply it to the test scores, and add test F1, precision, recall, and the threshold to the summary table alongside the XGBoost methods.
+Select the variant with the higher VALIDATION AUPRC (from the final averaged scores). For the selected variant, report val/test AUPRC and test F1 (threshold chosen on validation), and add it to the summary table and the PR curve figure. Also report the other variant's val and test AUPRC, clearly labeled as not selected. Do not use test results for any selection.

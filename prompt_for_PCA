@@ -1,7 +1,0 @@
-For the CORE model only, using the current best representation (config part reduced by PCA + the 192-dim KPI patch-mean part, concatenated), run a multi-seed PCA dimension sweep:
-
-1. Config PCA dimensions: 16, 24, 32, 48, 64, 96, 128, 192, 256. Fit PCA on the TRAINING split only (use a fixed random_state if a randomized solver is used), then transform val and test. Keep the 192-dim KPI patch-mean part unchanged and concatenate it back.
-2. For each PCA dimension, run the same XGBoost hyperparameter search as before and select the configuration by VALIDATION AUPRC only.
-3. For the selected configuration of each PCA dimension, train with 5 seeds (seeds 0, 1, 2, 3, 4; keep this seed list fixed so it can be reused for other baselines later). Report train, val, and test AUPRC as mean and std over the 5 seeds.
-4. Choose the best PCA dimension by mean validation AUPRC only.
-5. Present one table with columns: PCA dimension, total feature dimension, train AUPRC (mean ± std), val AUPRC (mean ± std), test AUPRC (mean ± std), and save the table to a CSV file.

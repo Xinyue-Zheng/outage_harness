@@ -1,0 +1,224 @@
+# Greedy rule policy with a boundary-aware gain and a KPI candidate (instruction for the Copilot)
+
+Build a new variant of the greedy rule policy as a copy of
+`outage_harness_rule_based`. The original package stays as it is, so
+that runs of the old and the new policy can be compared.
+
+The variant changes three things in the score of rule R1:
+
+1. The gain of a coverage request on an item beyond the boundary
+   includes the case that the request finds the outage cell and the
+   boundary moves.
+2. A KPI request is a candidate in the same ranking, so that KPI is
+   queried during the run and not only after coverage is closed.
+3. The sample rate uses the direction bin when the area has too few
+   reads.
+
+Nothing else changes: not the completion check, not the valid request
+list, not the selectors, not rules R2 to R4, not the validator.
+
+## Rules
+
+- Copy the folder `outage_harness_rule_based` to
+  `outage_harness_rule_boundary`, and change the imports inside the
+  copy to the new name. Edit only the copy. Do not edit the original
+  package or any other package.
+- Reuse what the package has: `legal_requests`, the selectors that
+  return the location set of a request, `p_samp`, `p_cov`, `need`, the
+  function that rule R3 uses to build a KPI request, and the step
+  record. Find them and call them. Do not write a second version of any
+  of them.
+- A run may be in progress. Do not edit any file that a run reads per
+  round: skill text, templates, configuration, `unit_costs.json`, any
+  run directory.
+- Do not run `uv sync`. Add no dependency. Do not use git.
+- Tests are synthetic and write only under `tmp_path`. Make no point
+  call and no KPI call.
+- `RULE_BOUNDARY_VERSION` is a string at the top of `scores.py` of the
+  copy, bumped by hand at every change of a rule below. Write it to
+  `run.json` beside `rule_score`.
+- If a function named above does not exist, or a part below cannot be
+  done as written, stop and report. Do not work around it and do not
+  put in a default.
+
+The setting `RULE_SCORE` keeps its three values. `domain` is unchanged.
+`expected_cost` uses the new gain of part 2. `budget_aware` uses the
+new gain while completion is affordable; its second mode, which ranks
+by expected covered locations, is unchanged. Parts 3 and 4 apply to
+`expected_cost` and `budget_aware`.
+
+## 1. Terms
+
+For one candidate request on an open coverage item (area, bin):
+
+- `X`: the new locations that the selector returns for the request.
+- `F`: the boundary of the bin, or none when no location of the bin
+  shows an outage sector.
+- `X_in`: the locations of `X` at or inside `F`. Empty when the bin has
+  no boundary.
+- `X_out`: the other locations of `X`, sorted by distance from the site
+  of the bin, nearest first; ties by grid id. `m` is their count.
+- For location `i` of `X_out`: `p_i` is `p_samp` and `q_i` is `p_cov`.
+- Three outcomes of a location: `A`, it shows an outage sector, with
+  probability `p_i * q_i`; `N`, it has a sample and shows no outage
+  sector, with probability `p_i * (1 - q_i)`; `U`, no sample, with
+  probability `1 - p_i`. Locations are treated as independent.
+
+## 2. The gain of a coverage candidate
+
+```
+gain  = len(X_in) + gain_out
+cost  = len(X)
+score = gain / cost
+```
+
+Every location of `X_in` counts 1, with or without a sample, because
+every location inside the boundary must be read.
+
+`gain_out` depends on the request:
+
+**`all`.** `gain_out` is the sum of `need` over the open beyond items
+of this area, one per bin. `len(X_in)` is counted over all bins of the
+area, each location against the boundary of its own bin.
+
+**Every other pattern.** If `X_out` is empty, `gain_out` is 0.
+Otherwise:
+
+```
+c_i = p_i * q_i
+h_i = p_i * (1 - q_i) / (1 - c_i)
+
+P(J = 0) = product over i = 1..m of (1 - c_i)
+P(J = j) = c_j * product over i = j+1..m of (1 - c_i)        for j = 1..m
+
+gain_out = sum over j = 0..m of  P(J = j) * ( j + E[ min(K_j, D_j) ] )
+```
+
+- `J` is the position of the farthest location of `X_out` with outcome
+  `A`; `J = 0` when none has it. When `J = j >= 1`, the boundary moves
+  to location `j`, and the locations 1 to `j` are then inside the
+  boundary. That is the term `j`.
+- `K_j` is the number of locations after position `j` with outcome `N`.
+  Given that none of them is `A`, each one is `N` with probability
+  `h_i`, independently. Compute the distribution of `K_j` exactly, as a
+  sum of independent Bernoulli variables. Do not use a mean rate in
+  place of the single `h_i`.
+- `D_j` is what the item lacks under the new boundary.
+  `D_0 = need` of the item. For `j >= 1`:
+  `D_j = max(0, N_MIN_SAMPLED - known_j)`, where `known_j` is the
+  number of already read locations of this (area, bin) that have a
+  sample, show no outage sector, and lie farther from the site than
+  location `j`. If the area has no location in this bin farther than
+  location `j`, `D_j = 0`.
+- If `X` holds locations of several bins, split `X_out` by bin, compute
+  `gain_out` per bin and add.
+
+When every `q_i` is 0, `gain_out` equals the earlier value
+`E[min(need, K_0)]`.
+
+Do not enumerate the `3^m` outcome combinations in `scores.py`. The sum
+over `j` gives the same value.
+
+The candidates are as before: every template that `legal_requests`
+returns for an open coverage item, with the smallest valid count where
+the template has a count, and radius 10.
+
+## 3. The sample rate
+
+`p_samp` of a location uses the locations of the same kind, in a road
+corridor or not:
+
+- the read locations of that kind in the area of the request, when
+  there are at least `MIN_OBS`;
+- else the read locations of that kind in the same site and direction
+  bin, over all areas.
+
+The estimate is `(1 + sampled) / (2 + read)` in both cases. With no
+read location, it is 0.5 by the same formula. The earlier second step,
+the whole run, is removed in the copy. `p_cov` is unchanged.
+
+## 4. The KPI candidate
+
+Pending cells are the cells that the open KPI items of the completion
+check name, without the cells whose KPI query failed earlier in this
+run.
+
+- When there is at least one pending cell, and the KPI cell-queries
+  left cover all pending cells, one KPI request for the pending cells
+  is a candidate. Build it with the function that rule R3 uses. If that
+  function sends one technology per request, the candidate holds the
+  pending cells of the first technology in the order of R3.
+- Its gain is the number of cells named, its cost is the same number,
+  and its score is 1.
+- Selection: take the highest score over the coverage candidates and
+  the KPI candidate. On a tie, the KPI candidate goes first, because it
+  uses no location budget. A coverage score is at most 1, so the KPI
+  candidate is proposed whenever it exists. One action holds one kind
+  of request: the KPI request in this round, coverage in the next.
+- When the KPI cell-queries left do not cover the pending cells, there
+  is no KPI candidate, and R3 applies after coverage as before.
+- A cell whose query failed is not named again by the candidate. It
+  stays an open KPI item, and R3 handles it after coverage as before.
+
+## 5. Records
+
+The step record of an R1 round holds, per chosen coverage candidate,
+the fields it holds today and four more: `len_x_in`, `gain_out`,
+`p_no_move` (the value `P(J = 0)`; null for `all` and for an empty
+`X_out`) and the mean `p_cov` over `X_out`. For a KPI candidate it
+holds the cells named and the score. Nothing else is added.
+
+## 6. Tests, in the copy, synthetic
+
+1. `gain_out` equals the value from a direct enumeration of all `3^m`
+   outcome combinations, written in the test only, for `m = 4`, unequal
+   `p_i` and `q_i`, and three already read locations with a sample at
+   different distances. Tolerance 1e-9.
+2. With every `q_i = 0`, `gain_out` equals `E[min(need, Binomial)]` of
+   the original `scores.py` for the same request.
+3. Three locations, every `p_i = 0.5` and `q_i = 0.4`, `need = 2`, the
+   eight counted locations all nearer than the three, and area
+   locations farther than the third: `gain_out` is 1.753 to three
+   decimals. The earlier value for the same request is 1.375.
+4. `all` on an area with 30 unread locations inside the boundary and a
+   beyond item with `need = 6`: the gain is 36.
+5. `p_samp`: 30 reads of the kind in the area use the area; 5 reads in
+   the area and 40 in the same site and bin use the bin; none gives
+   0.5.
+6. KPI candidate: with two pending cells and enough KPI budget, R1
+   proposes the KPI request while an inside item is open. A cell that
+   failed earlier is not named. With one KPI cell-query left and two
+   pending cells, R1 proposes coverage.
+7. `RULE_SCORE=domain` in the copy proposes the same requests as the
+   original package on the fixtures of the existing rule tests.
+
+Gate on the copy: `uv run ruff format`, `uv run ruff check --fix`,
+`uv run ty check`.
+
+## 7. Run it once, on the synthetic case
+
+Run the copy from initialization to its end on the fixtures that part 6
+of `Copilot_Rule_Scores_2026-11-13.md` used, with
+`RULE_SCORE=expected_cost`, the fake point source and the same limits.
+Do not run a real case.
+
+## 8. Report back
+
+- The files of the copy that differ from the original, as file and
+  line, and the value of `RULE_BOUNDARY_VERSION`.
+- The names of the existing functions that the new code calls.
+- For the synthetic run: end reason, locations used, rounds, the round
+  of each KPI request, and the same four values of the original package
+  on the same fixture.
+- The exact command to start a real run with the copy, ready to copy,
+  with placeholders for the case and the run folder.
+- Anything that could not be done as written. State it, and do not work
+  around it.
+
+## The author's message
+
+```
+Apply Copilot_Greedy_Boundary_Aware_KPI_2026-11-18.md. Build the copy
+outage_harness_rule_boundary, run the tests and the synthetic run, and
+report as part 8 asks. Do not edit outage_harness_rule_based.
+```

@@ -37,9 +37,30 @@ list, not the selectors, not rules R2 to R4, not the validator.
 - `RULE_BOUNDARY_VERSION` is a string at the top of `scores.py` of the
   copy, bumped by hand at every change of a rule below. Write it to
   `run.json` beside `rule_score`.
+- The copy also holds the tests of the original package. Some of them
+  assert the earlier gain of a request on a beyond item, or the earlier
+  second step of `p_samp`. Those tests are wrong for the copy. Delete
+  them in the copy and name them in the report. Do not keep them as
+  skipped tests. Do not change a test of the original package.
 - If a function named above does not exist, or a part below cannot be
   done as written, stop and report. Do not work around it and do not
   put in a default.
+
+This instruction can be applied without any earlier conversation. Read
+these parts of `outage_harness_rule_based` before you write code:
+
+- `scores.py`: `p_samp`, `p_cov`, the scores `expected_cost` and
+  `budget_aware`, and how a candidate gets its `cost`, `need`, `gain`
+  and `score`;
+- rule R1 and the place where it reads `RULE_SCORE` and calls the
+  score; rules R2 to R4, and in R3 the function that builds a KPI
+  request;
+- `legal_requests` and the selectors that return the locations of a
+  request;
+- the completion check: its open coverage items, with their kind
+  (inside or beyond), the boundary of a bin and the counts per (area,
+  bin), and its open KPI items;
+- the step record of an R1 round.
 
 The setting `RULE_SCORE` keeps its three values. `domain` is unchanged.
 `expected_cost` uses the new gain of part 2. `budget_aware` uses the
@@ -197,19 +218,21 @@ Gate on the copy: `uv run ruff format`, `uv run ruff check --fix`,
 
 ## 7. Run it once, on the synthetic case
 
-Run the copy from initialization to its end on the fixtures that part 6
-of `Copilot_Rule_Scores_2026-11-13.md` used, with
-`RULE_SCORE=expected_cost`, the fake point source and the same limits.
-Do not run a real case.
+Run the copy from initialization to its end on fixtures F1 and F2 of
+the completion check tests, with `RULE_SCORE=expected_cost`, the fake
+point source and the limits that those tests use. Run the original
+package on the same fixtures with the same setting. Do not run a real
+case.
 
 ## 8. Report back
 
 - The files of the copy that differ from the original, as file and
   line, and the value of `RULE_BOUNDARY_VERSION`.
+- The copied tests that you deleted, each with the reason.
 - The names of the existing functions that the new code calls.
-- For the synthetic run: end reason, locations used, rounds, the round
-  of each KPI request, and the same four values of the original package
-  on the same fixture.
+- For each synthetic run of the copy: end reason, locations used,
+  rounds and the round of each KPI request. Beside them, the same four
+  values of the original package on the same fixture.
 - The exact command to start a real run with the copy, ready to copy,
   with placeholders for the case and the run folder.
 - Anything that could not be done as written. State it, and do not work
@@ -218,7 +241,8 @@ Do not run a real case.
 ## The author's message
 
 ```
-Apply Copilot_Greedy_Boundary_Aware_KPI_2026-11-18.md. Build the copy
-outage_harness_rule_boundary, run the tests and the synthetic run, and
-report as part 8 asks. Do not edit outage_harness_rule_based.
+Read Copilot_Greedy_Boundary_Aware_KPI_2026-11-18.md in full, then
+apply it. Build the copy outage_harness_rule_boundary, run the tests
+and the synthetic runs, and report as part 8 asks. Do not edit
+outage_harness_rule_based.
 ```

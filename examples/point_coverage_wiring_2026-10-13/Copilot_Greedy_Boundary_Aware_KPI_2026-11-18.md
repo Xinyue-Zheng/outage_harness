@@ -1,15 +1,16 @@
 # Greedy rule policy with a boundary-aware gain and a KPI candidate (instruction for the Copilot)
 
-Change rule R1 of the existing package
-`outage_harness_rule_based_impact`. Edit this package in place. Do not
-create a copy.
+Build a new package, `outage_harness_greedy`, as a copy of
+`outage_harness_rule_based_impact`, and change rule R1 in the copy. The
+package `outage_harness_rule_based_impact` stays as it is, so that runs
+of the earlier rule and of the new one can be compared.
 
-Today R1 of this package takes, among the valid actions of the open
-items, the one with the highest value of
+Today R1 of `outage_harness_rule_based_impact` takes, among the valid
+actions of the open items, the one with the highest value of
 `p_samp * p_cov * mean exposure of the unread locations * expected severity`,
-and keeps the earlier choice of pattern and count. This instruction
-replaces that selection with a greedy score: the expected gain of a
-request divided by its cost, over every valid request.
+and keeps the earlier choice of pattern and count. In the copy, a
+greedy score replaces that selection: the expected gain of a request
+divided by its cost, over every valid request.
 
 The new selection has four parts:
 
@@ -30,38 +31,53 @@ exposure that initialization stores with the geography stays.
 
 ## Rules
 
-- Edit only `outage_harness_rule_based_impact`. Do not edit
-  `outage_harness_rule_based`, `outage_harness_langgraph_impact` or any
-  other package.
+- Make the copy from the directory that holds the packages:
+
+  ```
+  cp -r outage_harness_rule_based_impact outage_harness_greedy
+  cd outage_harness_greedy
+  grep -rl "outage_harness_rule_based_impact" . | xargs sed -i 's/outage_harness_rule_based_impact/outage_harness_greedy/g'
+  rm -rf __pycache__ */__pycache__ results runs
+  ```
+
+  Check: a search for `outage_harness_rule_based_impact` in the copy
+  finds nothing, and the source package is byte for byte unchanged.
+  The copy keeps its imports of other packages as they are.
+- Edit only `outage_harness_greedy`. Do not edit
+  `outage_harness_rule_based_impact`, `outage_harness_rule_based`,
+  `outage_harness_langgraph_impact` or any other package.
 - Reuse what the package has: `legal_requests`, the selectors that
   return the location set of a request, `p_samp`, `p_cov`, `need`, the
   function that rule R3 uses to build a KPI request, and the step
   record. Find them and call them. Do not write a second version of any
   of them.
-- Remove the earlier selection by the impact value from R1, and its
-  values from the step record. Do not keep it behind a setting.
+- In the copy, remove the earlier selection by the impact value from
+  R1, and its values from the step record. Do not keep it behind a
+  setting.
 - A run of another package may be in progress. Do not edit any file
   that a run reads per round: skill text, templates, configuration,
   `unit_costs.json`, any run directory.
 - Do not run `uv sync`. Add no dependency. Do not use git.
 - Tests are synthetic and write only under `tmp_path`. Make no point
   call and no KPI call.
-- Bump `IMPACT_PACKAGE_VERSION` of this package by hand, and report the
-  old and the new string. This string in `run.json` tells a run of the
-  earlier selection from a run of the new one.
-- Some existing tests of this package assert the earlier selection by
-  the impact value, the earlier gain of a request on a beyond item, or
-  the earlier second step of `p_samp`. Those tests are wrong now.
-  Delete them and name them in the report. Do not keep them as skipped
-  tests. Do not change a test of another package.
-- If `scores.py` of this package has no `expected_cost` selection, or a
+- `GREEDY_VERSION` is a string at the top of `scores.py` of the copy,
+  bumped by hand at every change of a rule below. Write it to
+  `run.json` beside `rule_score`. Where the condition label of the
+  copy ends in `+impact`, change the ending to `+greedy`.
+- The copy also holds the tests of the source package. Some of them
+  assert the earlier selection by the impact value, the earlier gain of
+  a request on a beyond item, or the earlier second step of `p_samp`.
+  Those tests are wrong for the copy. Delete them in the copy and name
+  them in the report. Do not keep them as skipped tests. Do not change
+  a test of another package.
+- If `scores.py` of the copy has no `expected_cost` selection, or a
   function named above does not exist, or a part below cannot be done
   as written, stop and report. Do not work around it and do not put in
   a default.
 
 This instruction can be applied without any earlier conversation. Read
 these parts of `outage_harness_rule_based_impact` before you write
-code:
+code. The copy holds the same files:
 
 - `scores.py`: `p_samp`, `p_cov`, the scores `expected_cost` and
   `budget_aware`, and how a candidate gets its `cost`, `need`, `gain`
@@ -76,8 +92,8 @@ code:
   bin), and its open KPI items;
 - the step record of an R1 round.
 
-The setting `RULE_SCORE` keeps its three values, and the earlier order
-by the impact value is removed for all three:
+In the copy, the setting `RULE_SCORE` keeps its three values, and the
+earlier order by the impact value is removed for all three:
 
 - `domain` proposes what `outage_harness_rule_based` proposes with
   `domain`;
@@ -211,7 +227,7 @@ and the mean `p_samp`) and four more: `len_x_in`, `gain_out`,
 `X_out`) and the mean `p_cov` over `X_out`. For a KPI candidate it
 holds the cells named and the score. Nothing else is added.
 
-## 6. Tests, synthetic
+## 6. Tests, in the copy, synthetic
 
 1. `gain_out` equals the value from a direct enumeration of all `3^m`
    outcome combinations, written in the test only, for `m = 4`, unequal
@@ -232,22 +248,22 @@ holds the cells named and the score. Nothing else is added.
    proposes the KPI request while an inside item is open. A cell that
    failed earlier is not named. With one KPI cell-query left and two
    pending cells, R1 proposes coverage.
-7. With `RULE_SCORE=domain`, the package proposes the same requests as
+7. With `RULE_SCORE=domain`, the copy proposes the same requests as
    `outage_harness_rule_based` on the fixtures of the existing rule
    tests.
 
-Gate on the package: `uv run ruff format`, `uv run ruff check --fix`,
+Gate on the copy: `uv run ruff format`, `uv run ruff check --fix`,
 `uv run ty check`.
 
 ## 7. One synthetic run, as a check before the real cases
 
-Run the package from initialization to its end on fixture F1 of the
+Run the copy from initialization to its end on fixture F1 of the
 completion check tests, with `RULE_SCORE=expected_cost`, the fake point
 source and the limits that those tests use. Write the run under
 `tmp_path` or another folder outside every real run directory.
 
 Then run the metrics command of part 8 on that run folder alone, to
-confirm that it reads a run of this package. If it stops, report the error
+confirm that it reads a run of the copy. If it stops, report the error
 as it is. Do not edit `outage_harness_impact`.
 
 Do not run a real case yourself.
@@ -268,14 +284,14 @@ those:
 The command line of a case does two things, in this order, and the
 second runs only if the first succeeds:
 
-1. It starts a run of `outage_harness_rule_based_impact` on the same
-   case, with the same three limits and `RULE_SCORE=expected_cost`. The
-   run folder is `<output folder>/run`.
+1. It starts a run of `outage_harness_greedy` on the same case, with
+   the same three limits and `RULE_SCORE=expected_cost`. The run folder
+   is `<output folder>/run`.
 2. It writes and prints the metrics of the earlier run and the new run
    side by side, with the existing command:
 
    ```
-   python -m outage_harness_impact.quick_table --out <output folder>/metrics rule_before=<earlier run folder> greedy_boundary=<output folder>/run
+   python -m outage_harness_impact.quick_table --out <output folder>/metrics rule_before=<earlier run folder> greedy=<output folder>/run
    ```
 
 The table of that command has these columns per run: locations
@@ -289,9 +305,9 @@ run did.
 
 ## 9. Report back
 
-- The change list as file and line, and the old and the new
-  `IMPACT_PACKAGE_VERSION`.
-- The tests that you deleted, each with the reason.
+- The files of the copy that differ from the source package, as file
+  and line, and the value of `GREEDY_VERSION`.
+- The copied tests that you deleted, each with the reason.
 - The names of the existing functions that the new code calls.
 - For the synthetic run: end reason, locations used, rounds, the round
   of each KPI request, and whether the metrics command read the run.
@@ -305,9 +321,10 @@ run did.
 
 ```
 Read Copilot_Greedy_Boundary_Aware_KPI_2026-11-18.md in full, then
-apply it. Edit outage_harness_rule_based_impact in place, run the tests
-and the synthetic run, and report as part 9 asks. Do not run a real
-case; give me the two command lines of part 8.
+apply it. Build outage_harness_greedy as a copy of
+outage_harness_rule_based_impact, run the tests and the synthetic run,
+and report as part 9 asks. Do not edit any other package. Do not run a
+real case; give me the two command lines of part 8.
 
 Case 1
   earlier run:   <run folder of an earlier rule run, case 1>

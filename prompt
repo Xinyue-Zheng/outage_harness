@@ -1,0 +1,40 @@
+Add two more 5G baselines to the XGBoost-head comparison: TPB-TTMs (tsfm encoder) and TPB-TM (TimeMixer encoder). Use EXACTLY the same procedure that was used for the core and LLM embeddings, reusing the existing code. Work step by step and STOP where indicated. Never modify or overwrite existing files; write all new outputs to <OUTPUT_DIR>.
+
+## Inputs (filled in by me)
+- Sector-based split manifest (sample_id, split, label): <MANIFEST_PATH>
+- TPB-TTMs trained 5G model / checkpoint directory: <TTMS_RUN_DIR>
+- TPB-TM (TimeMixer) trained 5G model / checkpoint directory: <TM_RUN_DIR>
+- Existing embedding export script used for core/LLM: <EXPORT_SCRIPT>
+- Existing XGBoost ensemble script and results for core/LLM/raw: <ENSEMBLE_SCRIPT>, <EXISTING_RESULTS_DIR>
+- Existing PR-curve plotting script and current figure: <PR_PLOT_SCRIPT>, <PR_FIGURE_PATH>
+
+## Step 0 – Confirm checkpoints and layout (read-only). STOP after this step.
+For each of the two models:
+- Confirm it was trained on the sector-based split in <MANIFEST_PATH> (not the old market-based split), and report the checkpoint that will be used: the best checkpoint selected by validation AUPRC, its path and epoch.
+- Report which layer the embedding will be taken from, matching the layer used for core and LLM, and the resulting embedding layout: which columns come from the tabular (configuration) encoder and which from the time-series (KPI) encoder, and whether the KPI part has a patch axis.
+- If either model has no clean configuration part / KPI part split, or no patch axis, propose how to map it onto the same processing and wait for my confirmation.
+
+## Step 1 – Export embeddings
+- Load the confirmed checkpoint in model.eval() mode with torch.no_grad(), using the same preprocessing artifacts saved with that training run.
+- Export train, val and test with drop_last=False and no shuffling. If multiple GPUs are used, deduplicate by sample_id. Every sample in the manifest must appear exactly once.
+- Save one .npz per model per split containing "emb" (float32), "sample_id" and "label", written together in the same row order.
+- Verify, per split: row counts, positive counts and labels match the manifest when joined by sample_id; no duplicate sample_ids; no NaN or Inf. Report the results and the embedding dimension.
+
+## Step 2 – Representations (same as core and LLM)
+- KPI part: mean over patches (if a patch axis exists), then optional PCA.
+- Configuration part: no cell averaging, then optional PCA.
+- Settings: no-PCA, plus config PCA {16, 32, 64} x KPI PCA {16, 32, 64} = 10 settings.
+- Fit every PCA on the TRAINING split only, then transform val and test. Join everything by sample_id, never by row position.
+
+## Step 3 – XGBoost and ensemble (same as core and LLM)
+- For each setting, run the same XGBoost search as the existing code and select the configuration by VALIDATION AUPRC only; then train seeds 0–4 with it.
+- Final score per sample = equal-weight arithmetic mean of predicted probabilities over all 10 settings x 5 seeds.
+- Report val and test AUPRC from the final averaged scores, and test F1, precision and recall with the threshold chosen on the VALIDATION final scores.
+- Save per-sample final scores (sample_id, label, score) for val and test as CSV files.
+- Never use test results for any selection.
+
+## Step 4 – PR curve
+- Using <PR_PLOT_SCRIPT>, create a NEW figure that contains all methods already in <PR_FIGURE_PATH> plus TPB-TTMs and TPB-TM, with exactly the same interpolated-precision method (precision at recall r = max precision at recall >= r), recall grid (10% to 50%), colors, markers and styling for the existing methods. Give the two new methods their own distinct color and marker, matching the style used for TPB-TTMs and TPB-TM in the 4G figure if available.
+- Save as PNG (300 dpi) and PDF in <OUTPUT_DIR>, and add both methods to the summary table (val AUPRC, test AUPRC, threshold, test F1, precision, recall) alongside the existing methods.
+
+Finally, summarize the numbers and all verification results.

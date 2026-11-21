@@ -1,9 +1,0 @@
-Add "core + LLM embedding + XGBoost" with two PCA variants, and select between them using VALIDATION AUPRC only. Reuse the saved embeddings. Align core and LLM by sample_id (check that sample_ids, labels, and row counts match on every split; never align by row position). Fit every scaler and PCA on the TRAINING split only. Do not overwrite existing files.
-
-Variant A – separate PCA: for each of the same 10 settings as core and LLM (no-PCA plus config PCA {16, 32, 64} x KPI PCA {16, 32, 64}), build the core and LLM representations with their own PCA, then concatenate.
-
-Variant B – joint PCA: build the core and LLM representations with the KPI part mean-pooled over patches (as before) and no PCA, concatenate them, standardize each feature, then apply a single PCA to the concatenated features with {32, 64, 128, 256} components, plus a no-PCA setting (5 settings).
-
-For each variant: run the same XGBoost search per setting selected by validation AUPRC, train seeds 0–4, and average predicted probabilities over all its settings and seeds to get the final scores.
-
-Select the variant with the higher VALIDATION AUPRC (from the final averaged scores). For the selected variant, report val/test AUPRC and test F1 (threshold chosen on validation), and add it to the summary table and the PR curve figure. Also report the other variant's val and test AUPRC, clearly labeled as not selected. Do not use test results for any selection.

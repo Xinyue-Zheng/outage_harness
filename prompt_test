@@ -1,0 +1,7 @@
+For the EngCon (eNodeB weekly energy) task, compute two simple non-learned baselines and compare them with the trained models. Read-only with respect to existing code and results; write new outputs to <OUTPUT_DIR>.
+
+1. Persistence ("last week"): for each validation and test sample, predict the target (total energy over the next one-week horizon) as the same eNodeB's actual total energy over the 168 hours immediately before the target window, i.e., the sample's own input week. Use only measured energy from the data; never use any value from inside the target window.
+2. Training-period mean: for each eNodeB, predict its average weekly energy computed from the TRAINING split only.
+3. Use exactly the same validation and test samples as the trained models (same eNodeBs and target windows, joined by sample ID or by eNodeB + target start time). Report how many samples each baseline can cover (e.g., missing previous-week data or eNodeBs absent from training), and evaluate every method on the common covered set as well as on the full set.
+4. Report, on the ORIGINAL energy scale, MAPE, RMSE and the 25th/50th/75th percentiles of absolute percentage error for both baselines, side by side with StaF-MLP, RAN-NFM-Core (with checkpoint), RAN-NFM-Core without checkpoint, and the other existing baselines. Also give the values normalized to StaF-MLP, as in Table 4.
+5. Save a CSV of per-sample predictions for both baselines (sample ID, eNodeB, target window, true value, prediction) and a summary table.

@@ -1,0 +1,20 @@
+Run two label-efficiency experiments on 4G RANPerf using only 25% of the training data: (A) RAN-NFM-Core, fine-tuned from the pretrained checkpoint, and (B) Core-Scratch, the same architecture trained from random initialization. Both must follow the ORIGINAL 4G RANPerf pipeline exactly (same training script, hyperparameters, 1:6 resampling, checkpoint selection by validation accuracy, embedding export and XGBoost head settings). The only difference between A and B is the initialization. Do not overwrite existing files; write everything to <OUTPUT_DIR>.
+
+Step 1 – Before training (STOP after this step and wait for my confirmation)
+- Report the original pipeline's settings with file names: training script, hyperparameters, number of GPUs, per-process and effective batch size, epochs, checkpoint selection rule, embedding export and XGBoost settings. Also report the settings used for the existing 100% RAN-NFM-Core and Core-Scratch runs.
+- From the existing training split, sample 25% of the training SECTORS with a fixed seed, keeping the positive rate close to the full training set. All samples of a selected sector are kept; all others are dropped. Do this BEFORE the 1:6 resampling. Validation and test sets stay unchanged.
+- Save the selected sector list and report the number of sectors, samples and positives in the 25% subset versus the full training set. Runs A and B must use this SAME subset.
+- Each run will use 4 GPUs. Propose a per-process batch size that keeps the EFFECTIVE batch size equal to the original 100% runs; if that does not fit in memory, say so and report the effective batch size you would use instead.
+
+Step 2 – Training (A and B in parallel, 4 GPUs each)
+- A: fine-tune from the pretrained checkpoint on the 25% subset.
+- B: train from random initialization on the 25% subset.
+- Same script, seed, learning rate, epochs, effective batch size, resampling and checkpoint selection rule for both. Log validation accuracy every epoch for both runs.
+
+Step 3 – XGBoost head
+- For each run, export embeddings with its selected checkpoint and train the XGBoost head using ONLY the 25% training subset (never the full training labels), with the same XGBoost procedure for A and B. Evaluate on the unchanged test set.
+
+Step 4 – Report
+- A table of test AUPRC and F1 for: RAN-NFM-Core 25%, Core-Scratch 25%, RAN-NFM-Core 100%, Core-Scratch 100%, and Auric-XGB.
+- Save per-sample test predictions for both new runs, and the validation curves of A and B in one plot.
+- Never use test results for any selection.

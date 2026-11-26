@@ -1,0 +1,33 @@
+\begin{minipage}[t]{0.42\textwidth}
+    \centering
+    \caption{Efficiency Comparison. Model memory is shown for RANPerf; full results are in Appendix A.x.}
+    \label{tab:efficiency}
+    \begin{tabular}{l|c|ccc}
+      \hline
+       & Model & \multicolumn{3}{c}{Inference Time (ms)} \\
+      Method & Memory (MB) & RANPerf & EngSav & EngCon \\
+      \hline
+      RAN-MP-Pro  & 61772 & 465.9 & 34.9 & 146.2 \\
+      RAN-MP-Core & 365   & 8.2   & 4.0  & 32.9  \\
+      TPB-TTMs    & 1002  & 68.2  & 8.7  & 421.8 \\
+      TPB-TM      & 490   & 16.5  & 8.7  & 430.4 \\
+      NetLLM      & 61407 & 457.7 & 30.9 & 113.3 \\
+      \hline
+    \end{tabular}
+
+    \medskip
+    \caption{Field Deployment of EngSav}
+    \label{tab:engsav-field}
+    \begin{tabular}{l|cc}
+      \hline
+      Method & Policy MAD & Regression MAE \\
+      \hline
+      RAN-MP-Pro  & 11.27\% & 0.23 \\
+      RAN-MP-Core & 5.03\%  & 0.25 \\
+      TPB-TTMs    & 9.28\%  & 0.38 \\
+      TPB-TM      & 10.23\% & 0.4  \\
+      NetLLM      & 11.69\% & 0.67 \\
+      \hline
+    \end{tabular}
+  \end{minipage}%
+\end{table}

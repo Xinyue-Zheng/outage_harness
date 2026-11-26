@@ -1,0 +1,19 @@
+B. Intro 第三段（约 230 词 → 约 150 词，−0.15 页）
+
+前半段（规则方法 → 任务专用模型 → 需要通用模型）基本保留；后半段 LLM 那几句文献讨论压成一句，因为 §3.1 已经讲过了。顺带改掉了这一段里两处 “foundation model”。
+
+Despite the availability of rich multimodal data, traditional rule-based RAN management systems rely heavily on domain experts to handcraft rules and select meaningful features for each task. More recent learning-based approaches [8, 15, 30, 31] shift from rule engineering to model engineering, training a task-specific model for each task; while effective within their designated tasks, they require redesign and retraining for new tasks, limiting reuse across diverse downstream tasks. These limitations motivate a single pretrained model that learns reusable representations of RAN behavior and can be efficiently adapted to a wide range of downstream tasks. Recent work such as NetLLM [38] explores pretrained LLMs for networking. LLMs provide rich semantic and contextual priors for tabular and time-series data [7, 17, 40], but their language-oriented representations are less aligned with continuous values and do not reliably capture the fine-grained temporal dependencies required for numerical forecasting [35, 41]. These complementary strengths motivate us to combine LLM-derived representations with a RAN-specific model pretrained directly on operational data.
+
+C. §5.1 Encoder Substitution（约 140 词 → 约 75 词，−0.12 页）
+
+TPB-TTMs 和 TPB-TM 的区别其实只有两点：时序编码器不一样（TTMs 还是 TimeMixer），以及是否从预训练权重开始训练。合成一段，直接把这两点讲清楚。原文的 “carefully fine-tuned” 也去掉了。
+
+Encoder Substitution: To evaluate alternative encoder designs, we replace the tabular encoder of RAN-MP-Core with TPBERTa [40] and its time-series encoder with either TTMs [5] (TPB-TTMs) or TimeMixer [37] (TPB-TM), keeping the rest of the architecture and training pipeline identical (Sections 3.3 and 3.5). TPBERTa and TTMs are single-modality models pretrained on large-scale cross-domain data; in TPB-TTMs, both encoders are fine-tuned from their pretrained initialization, whereas TPB-TM is trained from random initialization.
+
+原文：
+
+Complementary LLM feature extraction. In parallel, a pretrained LLM extracts semantic and contextual features complementary to the RAN-specific representation learned by RAN-NFM-Base. As summarized in Table 1, across both time-series and tabular data, LLMs excel at semantics-driven tasks. including contextual reasoning and few-shot transfer, whereas specialized models remain the preferred choice for precise numerical prediction over raw values.
+
+改成：
+
+Complementary LLM feature extraction. In parallel, a pretrained LLM extracts semantic and contextual features complementary to the RAN-specific representation learned by RAN-MP-Base. Across both time-series and tabular data, LLMs excel at semantics-driven tasks, such as contextual reasoning and few-shot transfer [12, 20, 29, 39, 40], whereas specialized models remain preferable for precise numerical prediction over raw values [13, 23, 27, 28].

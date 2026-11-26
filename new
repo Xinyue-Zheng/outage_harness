@@ -1,0 +1,105 @@
+下面把三部分整理在一起：编码器消融的定稿、删形容词的三种方案、§2 的三个方案。你挑好告诉我，或者直接在 Overleaf 里改。
+
+---
+
+# 一、§5.3.2 编码器消融（定稿，−0.35 页）
+
+整段替换原来的 "Encoder Choices." 段：
+
+Encoder Choices. Replacing the tabular and time-series encoders of RAN-MP with general-purpose alternatives (TPB-TTMs and TPB-TM, Section 5.1) reduces accuracy on all use cases. On RANPerf, RAN-MP-Core exceeds TPB-TM and TPB-TTMs in AUPRC by 0.176 and 0.207, respectively (Table 2). On EngSav, both variants have higher errors than the baseline (Table 3). On EngCon, they reduce MAPE but incur higher RMSE and percentile errors (Table 4). These results indicate that single-modality, general-purpose encoders are not well suited to RAN profiling. Pretrained models from other domains, such as TTMs, are further limited by the sequence-length constraints of their backbones, which restrict their capacity to represent high-dimensional RAN data, and by their reliance on pretrained word embeddings, which are less effective for configuration features and performance indicators that lack natural-language semantics. In contrast, the lightweight SAINT-based design of RAN-MP imposes no such constraints.
+
+---
+
+# 二、删形容词：三种方案
+
+我统计了原文正文里这些词的出现次数。三个方案是递进的：B 包含 A，C 包含 B。
+
+## 方案 A：只删没有依据的强化词（最安全，约 −0.05 页）
+
+| 词 | 次数 | 怎么处理 |
+|---|---|---|
+| significantly | 4 | 我们没有做显著性检验。后面有数字就删掉这个词，没有数字就换成具体数字 |
+| substantially / substantial | 14 | 后面跟着数字的保留，否则删掉 |
+| highly | 7 | 基本都可以直接删，比如 "highly competitive" 改成 "competitive" |
+| seamless、succinct yet potent | 各 1 | 直接删。原文 §3.1 有 "succinct yet potent representation" |
+
+省得少，但没有任何风险，还能顺带去掉审稿人容易挑的说法。
+
+## 方案 B：A 加上收紧 claim 的词（推荐，约 −0.1 ~ −0.15 页）
+
+| 词 | 次数 | 怎么处理 |
+|---|---|---|
+| consistently | 8 | **逐个核对。** 5G 上 Pro 并不是每个组、每个 recall 都领先，凡是写 Pro "consistently" 最好的地方都要确认 |
+| superior | 2 | 改成 "higher" 或 "better"，或者给出数字 |
+| robust / robustness | 5 | 没有专门测过鲁棒性的地方都删掉 |
+| generic | 5 | 改成 "reusable"，和摘要的口径一致 |
+| state-of-the-art | 4 | 只用在确实是生产方案或公认 SOTA 的地方 |
+| "These results highlight..." / "demonstrating..." 这类句尾分句 | 约 20 处 | 很多句子结尾是 "..., highlighting the effectiveness of..."，把整个分句删掉。**这才是真正省行数的地方** |
+
+## 方案 C：B 加上删套话句（约 −0.15 ~ −0.25 页）
+
+- 每个小节结尾的总结句，比如 "Overall, these results demonstrate...", "Taken together, these results highlight..."。每个小节最多留一句，其余删掉。
+- 不必要的过渡词：Moreover（2）、Specifically（3）、As a result（4）。上下文本来就连贯的，直接删。
+- "It is important to note that"（1）：删掉，直接说后面的内容。
+
+C 省得最多，但有一点风险：有些总结句其实是 take-home message。每个小节至少要保留一句结论。
+
+**不论选哪个方案，删的时候都优先处理"最后一行只有一到三个词"的段落。** 这样删几个词就能省一行，效率最高。
+
+---
+
+# 三、§2：三个方案
+
+三个方案都要做的两处必改：
+- Requirements (1)："The foundation model must be generic" 改成 "The model must be generic"。
+- Challenges (1)："The foundation model must learn task-agnostic representations" 改成 "The model must learn task-agnostic representations"。
+
+## 方案 1：保守版（约 −0.07 页）
+
+结构全部保留，只去掉 foundation model 的说法、改语法、删一两处冗余。
+
+**§2.1 第一段：**
+The Radio Access Network (RAN), a core component of cellular infrastructure, consists of widely deployed base stations that provide radio coverage across geographic regions. An LTE base station (eNodeB) typically comprises multiple directional sectors (commonly three), each hosting one or more cells, which are the management units for scheduling, configuration, and performance measurement. Performance metrics may also be aggregated at the sector or base-station level. Accurate and efficient RAN profiling, used to predict behaviors such as traffic growth, congestion risk, and performance degradation, is essential for numerous engineering tasks, including configuration management and tuning [8, 9], troubleshooting [30, 31], and mobility management [11].
+
+**§2.1 第二段：**
+The states and behavior of RANs are captured by heterogeneous data, such as RAN property data, runtime performance measurements, log data, and geographic information, among which the first two are the most widely used. (1) RAN property data include configuration parameters that describe cell hardware, software setup, and operational settings, along with long-term performance indicators that capture stable behaviors over time. Because these attributes are structured fields (numerical or categorical) whose order carries no semantic meaning, the data are naturally represented in tabular form. (2) Runtime performance data consist of time-varying metrics collected at different spatial granularities (cell or sector) and temporal intervals (e.g., hourly). They reflect dynamic network conditions and exhibit temporal dependencies, making them naturally suited for time-series representation.
+
+**§2.2 第一、二段：** 不动。
+
+**§2.2 第三段：**
+Inspired by large pretrained models (e.g., [2, 43]), which are trained once on massive historical datasets and then efficiently adapted to diverse downstream tasks [3, 16, 19, 21], we aim to develop a multimodal pretrained model for RAN profiling. Our goal is to jointly learn from RAN property data and runtime performance measurements to characterize the operational behaviors of cellular network cells and sectors. By learning generic representations across heterogeneous RAN conditions, the model enables lightweight fine-tuning and efficient adaptation to a wide range of downstream network management tasks.
+
+**Requirements、Challenges：** 只做上面的两处必改。
+
+## 方案 2：中间版（约 −0.15 页）
+
+在保守版基础上，只多压一处：§2.2 第二段（规则方法、任务专用模型）。这段和 Intro 第三段讲的是同一件事，四句压成一句，引用全部保留。
+
+**§2.2 第二段替换成：**
+Legacy rule-based RAN control systems struggle with the high dimensionality and heterogeneity of modern RAN data, leading to incomplete coverage and corner-case failures, while learning-based approaches [15, 26, 30, 31, 34, 42] require supervised training tailored to a specific use case and dataset, so operators must repeatedly redesign feature pipelines and retrain models for new applications.
+
+其余和保守版一样。
+
+## 方案 3：精简版（约 −0.5 页）
+
+§2.1 合成一段，§2.2 前三段合成一段。和 Intro 重复的内容全部删掉，Requirements 和 Challenges 保留。
+
+**§2.1（替换两段）：**
+The RAN consists of base stations that provide radio coverage across geographic regions. An LTE base station (eNodeB) typically comprises three directional sectors, each hosting one or more cells, which are the units of scheduling, configuration, and performance measurement; metrics may also be aggregated at the sector or base-station level. RAN profiling, i.e., predicting behaviors such as traffic growth, congestion risk, and performance degradation, underlies many engineering tasks, including configuration tuning [8, 9], troubleshooting [30, 31], and mobility management [11]. Two data types are the most widely used: RAN property data, comprising configuration parameters and long-term performance indicators stored as structured, order-agnostic tabular fields, and runtime performance data, comprising time-varying KPIs collected at cell or sector granularity and at hourly intervals, which exhibit temporal structure.
+
+**§2.2（替换前三段）：**
+RAN operators rely on the profile of each sector, i.e., its configuration properties and measurement data, to make operational decisions and detect anomalies, increasingly through automated control loops. As discussed in Section 1, rule-based systems struggle with the dimensionality and heterogeneity of modern RAN data, and learning-based models [15, 26, 30, 31, 34, 42] are trained for a single task and dataset, so operators must repeatedly redesign feature pipelines and retrain models. Our goal is therefore to jointly learn from RAN property data and runtime measurements representations of sectors that are reusable across downstream network management tasks and can be adapted through lightweight fine-tuning.
+
+---
+
+# 四、组合后的页数
+
+| 组合 | 删形容词 | §2 | 结果（从 18 页开始，含编码器消融 −0.35、Table 5 −0.2、图片 −0.2） |
+|---|---|---|---|
+| 最保守 | A | 方案 1 | 约 17.1 |
+| 中间 | B | 方案 2 | 约 16.95 |
+| 最省 | C | 方案 3 | 约 16.45 |
+
+我的建议是：给导师的这一版用"中间"组合，约 17 页。把 §2 的方案 3 作为备选一起附上，请导师决定要不要再压。
+
+如果需要，我可以把这三组方案写进之前那份规划文档的新标签页，方便直接发给导师。

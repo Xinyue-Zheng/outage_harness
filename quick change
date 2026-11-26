@@ -1,0 +1,94 @@
+A. §3.4 和 §3.5
+
+§3.4 LLM Feature Extraction（整段替换，−30 词）：
+
+RAN-MP-Base learns RAN-specific representations directly from structured tabular and time-series data, while pretrained LLMs provide complementary semantic and contextual features (Table 1). Following NetLLM [38], which shows that LLMs can be adapted to networking data with parameter-efficient techniques such as low-rank adaptation (LoRA), we use an LLM as an additional feature extractor adapted with LoRA. As shown in Figure 2, the modality-specific encoders first tokenize the multimodal inputs and align them with the LLM input space, after which the adapted LLM generates the representation f_LLM.
+
+§3.5 EIFT 第一段（替换，−50 词）： 原文是标准 fine-tuning 的通用形式化。后面 EIFT 的公式要用 E(·)、H(·)、L，所以这几个符号要保留，只压成一句：
+
+To adapt the pretrained representations to a downstream task with labeled data D = {X, Y}, standard fine-tuning extracts features f_x = E(x) with the pretrained encoders and maps them to a prediction ŷ = H(f_x) through a task-aware head trained with a task-specific loss L(y, ŷ), such as cross-entropy for classification or MSE for regression.
+
+第二段开头相应改成：
+
+However, this design cannot address an important category of RAN operating tasks: event injection.
+
+后面不动。
+
+B. §7 和 §8 合并
+
+用前面纯文字版的那四段：Extensibility、Adaptability、Limitations、Conclusion。名字记得换成 RAN-MP。
+
+C. §1 Intro（不省篇幅，但必须改）
+
+这部分不是为了压页数，而是新标题、5G 和 ablation 都要在 Intro 里体现，同时去掉描述自己方法时的 “foundation model”。逐句替换：
+
+第三段：
+
+“These limitations motivate a foundation-model-based approach, in which a single pretrained model learns general, reusable representations of a RAN network...” 改成：These limitations motivate a single pretrained model that learns reusable representations of RAN behavior and can be efficiently adapted to a wide range of downstream tasks.
+“...with a RAN-specific foundation model trained directly on operational data.” 改成：...with a RAN-specific model pretrained directly on operational data. Table 1 summarizes these complementary strengths.
+
+第四段：
+
+“we propose RAN-NFM, a multimodal foundation-model framework for RAN profiling. At its core is a self-trained foundation model, RAN-NFM-Base, which focuses on...” 改成：we propose RAN-MP, a multimodal framework for RAN profiling. At its core is RAN-MP-Base, a model pretrained on operational data, which focuses on...
+
+第五段：
+
+“We evaluate RAN-NFM using six months of real 2025 operational data from a top cellular service provider in USA.” 改成：We evaluate RAN-MP using six months of 2025 operational data from a nationwide U.S. cellular service provider.
+“By using the pretrained foundation model, RAN-NFM reduces the complex and time-consuming feature engineering...” 这句删掉，换成：We further show that RAN-MP can be adapted to 5G NR, whose configuration features are absent from pretraining, and analyze when pretraining helps through ablations that train the model from scratch or freeze the pretrained backbone.
+
+贡献点：
+
+(1) “a multimodal foundation-model system for RAN profiling” 改成 “a multimodal RAN profiling system”。
+(3) 改成：We evaluate the RAN-MP models across three RAN engineering use cases using six months of operational data from a nationwide provider, demonstrating that they outperform all comparison methods on LTE, including the production solution previously deployed, and that they can be adapted to 5G NR.
+新增 (5)：We analyze the role of pretraining, showing that it improves accuracy on throughput-related tasks, where the frozen pretrained backbone alone can match the fine-tuned model, but not on eNodeB-level energy consumption.
+
+(5) 这种"什么时候有用、什么时候没用"的结论，正好是 CoNEXT 要的 take-home message。
+
+D. §6 Related Work（+0.15 页）
+
+原文 “Foundation Model (FM) Based Approaches” 那段里有一句 “an effective multi-modal foundation model tailored specifically for RAN remains largely unexplored”。现在有了 TimeRAN 这些工作，这句已经不成立，要改。整段替换成：
+
+Pretrained Model Based Approaches. Pretrained models that learn transferable representations from large-scale data and adapt to downstream tasks have been explored across many domains [1, 2, 13, 19, 32, 36] and, more recently, in networking. NetLLM [38] adapts LLMs to networking applications, but LLM-only adaptation performs poorly on regression-based time-series forecasting, a core RAN task. NetGPT [X] and NetMamba [X] pretrain models on network traffic for traffic understanding and classification. Concurrent work on RAN focuses on time-series telemetry: TimeRAN [X] pretrains a lightweight time-series foundation model on an open corpus of RAN telemetry for anomaly detection, classification, forecasting, and imputation, with a proof-of-concept deployment in a 5G testbed. In contrast, RAN-MP jointly models configuration parameters, long-term performance indicators, and KPI time series from a production network, and targets configuration and energy decisions evaluated in field deployment. Recent time-series studies also combine LLM-derived representations with dedicated temporal models rather than relying on LLMs alone [4, 22, 29], supporting RAN-MP’s design: a RAN-specific backbone learns structured numerical and temporal representations, while the LLM module provides complementary semantic and contextual features.
+
+NetGPT 和 NetMamba 那句是我按印象写的：两篇都是在网络流量上做预训练。放进去之前要对照原文核实，bib 条目也要查准。CoNEXT 今年要交 .bbl，会检查引用是不是真的。
+
+E. Ethics（必须改，+0.1 页）
+
+现在的 “This work does not raise any ethical issues” 很可能不合格：CFP 明确要求，用到敏感数据的工作必须专门讨论伦理问题。草稿如下，方括号里的要按实际情况确认：
+
+Ethics. This work uses operational data from a commercial cellular provider, accessed and analyzed under the provider’s data governance policies [and with its approval]. All data are aggregated at the cell, sector, or eNodeB level and contain no user identifiers, user-level traffic, or individual location traces. The data were accessed only on the provider’s secure infrastructure [and will not be publicly released]. Field deployments followed the provider’s standard change-management procedures. We are not aware of other ethical issues raised by this work.
+另外，CoNEXT 还要求声明生成式 AI 的使用：小段文字用脚注，大段内容要在附录里写明用了哪个工具、哪个版本。这次改写里有不少段落是我起草的，这一项你和导师商量一下怎么写
+
+
+
+F. §5.3.1 EngCon（原文两段约 250 词 → 一段约 130 词）
+
+EngCon: Table 4 reports the same metrics with StatF-MLP as the baseline. RAN-MP-Pro achieves the best performance across all metrics, reducing MAPE by 79.9% and RMSE by 26.4%. RAN-MP-Core reduces MAPE to 0.591 and achieves lower errors at all reported percentiles, but its RMSE is slightly above the baseline (1.037) because of a small number of large tail errors, as shown by the error CDF in Figure 5(d). TPB-TM and TPB-TTMs reduce MAPE but perform worse than the baseline on RMSE and the percentile metrics, while NetLLM underperforms on all measures. Overall, RAN-MP’s domain-specific representations enable accurate weekly eNodeB-level energy prediction.
+
+G. §3.1 System Overview（开头加四个要点，约 270 词 → 约 150 词）
+
+保留了每个模块做什么，也注明了对应的小节；删掉的是 “generic, transferable”、"succinct yet potent" 这类描述，以及四个要点各自的展开。
+
+To address the RAN profiling problem and the challenges above, we present RAN-MP (Figure 2). At its core is RAN-MP-Base, a multimodal backbone pretrained on large-scale, unlabeled RAN property and measurement data to learn transferable representations, which can then be adapted to diverse downstream tasks with limited labeled data. RAN-MP-Base encodes RAN property data with a tabular encoder and measurement data with a time-series encoder (Section 3.2.1), fuses the resulting embeddings through cross-attention into a unified representation of each sector’s property states and performance patterns (Section 3.2.2), and is pretrained with a self-supervised objective (Section 3.3). In parallel, a pretrained LLM extracts semantic and contextual features that complement this RAN-specific representation (Section 3.4 and Table 1). During fine-tuning (Section 3.5), RAN-MP-Pro combines both representations, whereas RAN-MP-Core uses only the RAN-MP-Base representation for lightweight adaptation.
+
+H. §5.3.1 EngSav（约 210 词 → 约 120 词）
+
+保留：MAPE 降 14%、中位数误差降 10% 这两个最关键的数，NetLLM 在回归任务上不行，Pro 优于 Core 说明 LLM 特征有互补作用，以及 CDF 和运营意义。各个分位数的具体值表里都有，正文就不再列了。
+
+EngSav: Table 3 reports the MAPE, RMSE, and the 25th, 50th, and 75th percentile errors, normalized by the production baseline StatF-MLP. RAN-MP-Pro achieves the smallest error across all metrics, reducing MAPE by 14% and the median error by 10% relative to StatF-MLP, a production solution used for years, and RAN-MP-Core also outperforms the baseline on all metrics. Unlike RANPerf, this fine-grained regression task exposes the limitations of existing pretrained models, including NetLLM, underscoring the importance of RAN-specific numerical and temporal representations, while the gain of RAN-MP-Pro over RAN-MP-Core indicates that LLM-derived features remain complementary. Figure 5(c) shows the CDF of the normalized absolute error: RAN-MP-Pro and RAN-MP-Core achieve the smallest error at every percentile, enabling operators to optimize cell-sleeping decisions while maintaining service quality.
+
+I. §5.4 效率（第二段，约 200 词 → 约 90 词）
+
+第一段 “Auric-XGB 没有表示学习阶段、成本不可直接比较” 那几句保留，审稿人可能会问。只压第二段：
+
+Across all three use cases, RAN-MP-Core achieves the best efficiency, requiring the least memory and the lowest inference time: compared with the LLM-based approaches, NetLLM and RAN-MP-Pro, it reduces the total memory footprint (model and inference memory) by about 168× and inference time by 55× on average, while remaining competitive in accuracy. RAN-MP-Pro achieves the highest accuracy through complementary LLM-derived features, whereas RAN-MP-Core offers a lightweight alternative suited to frequent sector-level inference across large operational RANs.
+
+J. §5.5 结尾的 Summary 段：整段删掉
+
+原文是 “Summary: Across the two deployed use cases, RAN-NFM-Core provides the best efficiency–accuracy tradeoff...”。同样的话在 §5.4 结尾和 Conclusion 里都说过。
+
+两处顺带要改的
+Fig 5 的子图编号变了。 现在一行四张，应该是 (a) LTE PR、(b) NR PR、(c) EngSav CDF、(d) EngCon CDF。原文 EngSav 段写的是 “Figure 5(b) shows the CDF”，EngCon 写的是 “Figure 5(c)”，要分别改成 5(c) 和 5(d)。上面的 F 和 H 我已经按新编号写了。全文搜一下 “Figure 5(” 确认一遍。
+§5.5 开头那句要保留。 原文 “RAN-NFMs have been deployed for over six months across the first two use cases described above within a U.S. service provider” 是很重要的运营信息。之前我给 §5.5 写的新开头漏了这句，应该放在最前面：
+
+RAN-MP has been deployed for over six months for the first two use cases within a U.S. service provider. We next show how accuracy improvements translate into operational benefits in these deployments. For RANPerf, ...（后面接之前那版）。

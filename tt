@@ -1,0 +1,35 @@
+1. §5.3.2 Effect of pretraining（约 400 词 → 约 260 词，−0.3 页）
+
+压缩的地方：两个变体的定义合成一句；NR 的 F1 解释只留因果，不再单独解释 “F1 只反映一个工作点”，这个在 §5.2 讲阈值时已经说过了；EngSav 和 EngCon 各压成一句。
+
+Effect of pretraining. To isolate the contribution of pretraining, we compare RAN-MP-Core with two variants that share its architecture, inputs, and prediction head (Table 6): Core-Scratch, trained from random initialization with the same fine-tuning procedure, and Core-Frozen, which keeps the pretrained backbone fixed and trains only the prediction head and, for NR, the input adapters. On LTE RANPerf, pretraining improves AUPRC from [X] to 0.2510 and F1 from [X] to 0.2909. Core-Frozen reaches an AUPRC of [X], compared with 0.07 for the same frozen architecture with random weights, showing that the pretrained representations carry task-relevant information before fine-tuning. On NR RANPerf, RAN-MP-Core achieves a higher AUPRC than Core-Scratch ([X] vs. [X]) but a lower F1 at the 0.5 threshold ([X] vs. [X]). With only about [X] positive training samples, Core-Scratch identifies a subset of positive changes with high confidence, but its precision drops faster as recall increases and falls below that of RAN-MP-Core beyond about 42% recall. On EngSav, Core-Frozen performs nearly identically to RAN-MP-Core (relative MAPE [X] vs. 0.940), and both outperform Core-Scratch ([X]); since the EngSav samples are drawn from the pretraining data, the pretrained representations already capture the throughput patterns this task needs. On EngCon, Core-Scratch achieves lower errors (relative MAPE [X] vs. 0.591), as weekly eNodeB energy consumption is stable over time and the same eNodeBs appear in both the training and test periods. Overall, pretraining improves the primary metric in three of the four settings.
+
+2. §5.5.1 Evaluation on 5G NR（三段约 330 词 → 两段约 200 词，−0.25 页）
+
+压缩的地方：Fig 6(h) 的 AUC 不再单独成段，并进第一段，作为 observation (1) 的证据；三个组逐个描述，改成"Btm-20 重点讲，Mid-60 和 Top-20 合并讲"。
+
+Evaluation on 5G NR. Figures 6(e)–6(h) repeat this analysis on NR. [如果没部署：Unlike the LTE results, this is an offline evaluation based on historical configuration changes and their observed throughput outcomes.] Observation (1) carries over: Btm-20 sectors again show the largest gains, exceeding 80% for the top-ranked changes, compared with about 25% for Mid-60 and at most about 7% for Top-20 sectors, and the AUC in the bottom 10% throughput range is about 3.5× that in the next range (Figure 6(h)). In the Btm-20 group, which matters most to operators, RAN-MP-Pro achieves the highest or near-highest gains, closely followed by Auric-XGB and RAN-MP-Core. In the Mid-60 group, NetLLM and Auric-XGB achieve the highest gains among the top-ranked changes, and NetLLM also leads in the Top-20 group, where the gains of all models remain marginal.
+
+Unlike on LTE, the pretrained models therefore do not outperform Auric-XGB by a large margin on NR. A likely reason is that none of the NR configuration features appear in the LTE pretraining data (Section 4.2): the pretrained KPI encoder can be reused, but the representations of the configuration features, which determine the effect of a configuration change, are learned from the limited NR labels alone, a setting in which XGBoost on engineered features remains a strong baseline.
+
+3. §5.3.1 RANPerf on 5G NR（两段约 250 词 → 一段约 150 词，−0.15 页）
+
+压缩的地方：PR 曲线不再按 recall 区间逐段描述，只讲三件事：曲线因为样本少而交叉、15% 以后 Pro 领先、18% 以后两个 RAN-MP 模型都高于 baseline。
+
+RANPerf on 5G NR: On NR, RAN-MP-Pro again achieves the highest AUPRC. Relative to the XGBoost baseline, RAN-MP-Core improves AUPRC by [X]% and F1 by [X]%, and RAN-MP-Pro improves them by [X]% and [X]%, respectively. Figure 5(b) shows the PR curves. Because the NR test set contains only [X] positive samples, the curves are noisier and cross at low recall, where TPB-TM reaches the highest precision. Beyond about 15% recall, RAN-MP-Pro achieves the highest or near-highest precision, followed by NetLLM and RAN-MP-Core, and from about 18% recall onward both RAN-MP models stay above Auric-XGB and the TPB baselines.
+
+这段有两点要你确认：
+
+F1 的排序。 去掉 Scratch 以后，5G 上 Pro 和 NetLLM 谁的 F1 高，之前一直没有确认。如果 NetLLM 更高，在 “respectively.” 后面加一句：NetLLM achieves the highest F1 ([X]), consistent with its competitive accuracy on LTE.
+baseline 叫什么。 5G 的 baseline 在图例里叫 Auric-XGB，但实际是不是"XGBoost 跑在原始 NR 特征上"？两处名字要统一。我这里先写成 “the XGBoost baseline”。
+8. §2 Problem Statement（−0.5 页）
+
+还是之前那两版：§2.1 两段合成一段，§2.2 前三段合成一段。按"运营内容不删"的原则又检查了一遍：RAN 的结构、两类数据的定义、运营人员靠 sector 画像做决策、自动化控制闭环，这些都保留了。删掉的只是和 Intro 第二、三段重复的内容。
+
+§2.1 RAN Background（替换原来两段）：
+
+The RAN consists of base stations that provide radio coverage across geographic regions. An LTE base station (eNodeB) typically comprises three directional sectors, each hosting one or more cells, which are the units of scheduling, configuration, and performance measurement; metrics may also be aggregated at the sector or base-station level. RAN profiling, i.e., predicting behaviors such as traffic growth, congestion risk, and performance degradation, underlies many engineering tasks, including configuration tuning [8, 9], troubleshooting [30, 31], and mobility management [11]. Two data types are the most widely used: RAN property data, comprising configuration parameters and long-term performance indicators stored as structured, order-agnostic tabular fields, and runtime performance data, comprising time-varying KPIs collected at cell or sector granularity and at hourly intervals, which exhibit temporal structure.
+
+§2.2 Problem Statement（替换原来前三段，后面的 requirements 和 challenges 保留）：
+
+RAN operators rely on the profile of each sector, i.e., its configuration properties and measurement data, to make operational decisions and detect anomalies, increasingly through automated control loops. As discussed in Section 1, rule-based systems struggle with the dimensionality and heterogeneity of modern RAN data, and learning-based models [15, 26, 30, 31, 34, 42] are trained for a single task and dataset, so operators must repeatedly redesign feature pipelines and retrain models. Our goal is therefore to jointly learn from RAN property data and runtime measurements representations of sectors that are reusable across downstream network management tasks and can be adapted through lightweight fine-tuning.

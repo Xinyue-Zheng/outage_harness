@@ -1,6 +1,0 @@
-**Results wrap-up**
-- 5G NR (RANPerf): mostly consistent with LTE. RAN-MP-Pro has the highest AUPRC, and beyond ~20% recall the ranking (Pro > NetLLM > Core) matches LTE. Field-deployment results are less stable: low-throughput sectors still see the largest gains and Pro is among the best there, but the margin over Auric-XGB is much smaller than on LTE, likely because the NR configuration features are absent from LTE pretraining.
-- Ablation: added Core-Scratch (no pretraining) and Core-Frozen (frozen pretrained backbone) on all tasks. Core outperforms Scratch on the primary metric in 3 of 4 settings (LTE RANPerf, NR RANPerf, EngSav), supporting the value of pretraining. On EngSav in particular, the frozen backbone performs almost the same as full fine-tuning (relative MAPE 0.943 vs. 0.940), showing that the pretrained representations already capture the throughput patterns this task needs. On EngCon, Scratch is better (0.335 vs. 0.591); this task is relatively simple, since weekly eNodeB energy is stable and the same eNodeBs appear in the training and test periods.
-
-**Status**
-All experiment content is written. I'm now rephrasing and cutting to 16 pages; the appendix is still in progress. Feedback on the new model name/title (RAN-MP) is also welcome, since I'll update all the figures once it's settled.
